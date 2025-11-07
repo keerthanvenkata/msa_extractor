@@ -79,9 +79,10 @@ class StrategyFactory:
         Returns:
             Appropriate extractor instance
         """
-        # Detect PDF type
+        # Detect PDF type and cache it in extractor to avoid re-detection
         pdf_extractor = PDFExtractor(gemini_client=self.gemini_client)
         pdf_type = pdf_extractor._detect_pdf_type(file_path)
+        pdf_extractor._cached_pdf_type = pdf_type  # Cache to avoid re-detection
         
         self.logger.info(f"Auto strategy: Detected PDF type: {pdf_type}")
         
