@@ -223,7 +223,7 @@ Error handling is inconsistent across the codebase:
   - Use return values (Result pattern) for recoverable errors
   - Document error handling strategy in coding guidelines
 
-**Status:** 🔵 Open
+**Status:** 🟢 Fixed (2025-01-07) - Custom exception classes created, error handling strategy defined. Gradual migration in progress.
 
 ---
 
@@ -309,7 +309,7 @@ Add structured logging configuration:
 
 **Priority:** P2 - Nice to have
 
-**Status:** 📋 TODO
+**Status:** 🟢 Fixed (2025-01-07) - Centralized logging with file rotation, JSON format, and module-level control implemented.
 
 ---
 
