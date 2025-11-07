@@ -167,6 +167,15 @@ EXTRACTION RULES:
    - Example: "John Doe, VP of Operations; Jane Smith, CFO"
 6. Return no commentary, no extra keys, and no markdown — JSON only.
 
+SEARCH GUIDANCE:
+- Agreements may have different structures and section names. Search the ENTIRE document thoroughly.
+- Information may appear in: main body, signature pages, appendices, exhibits, schedules, or footers/headers.
+- Execution Date and Authorized Signatory are often on signature pages (typically last page or last few pages).
+- Payment Terms, Billing Frequency may be in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
+- Indemnification, Limitation of Liability, Insurance may be in: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
+- Look for information regardless of exact section names - focus on content and context.
+- Cross-reference related fields (e.g., Effective Date may be defined relative to Execution Date).
+
 MSA TEXT:
 \"\"\"{text}\"\"\"
 """
@@ -195,6 +204,15 @@ EXTRACTION RULES:
    - Combine with semicolons
    - Example: "John Doe, VP of Operations; Jane Smith, CFO"
 6. Return no commentary, no extra keys, and no markdown — JSON only.
+
+SEARCH GUIDANCE:
+- Agreements may have different structures and section names. Search the ENTIRE document thoroughly.
+- Information may appear in: main body, signature pages, appendices, exhibits, schedules, or footers/headers.
+- Execution Date and Authorized Signatory are often on signature pages (typically last page or last few pages).
+- Payment Terms, Billing Frequency may be in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
+- Indemnification, Limitation of Liability, Insurance may be in: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
+- Look for information regardless of exact section names - focus on content and context.
+- Cross-reference related fields (e.g., Effective Date may be defined relative to Execution Date).
 
 Extract all text from the image and analyze it to fill in the schema above.
 """
