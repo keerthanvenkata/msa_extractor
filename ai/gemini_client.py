@@ -54,10 +54,13 @@ class GeminiClient:
             Dictionary with extracted metadata matching schema
         """
         # Truncate text if too long
-        if len(text) > MAX_TEXT_LENGTH:
+        original_length = len(text)
+        if original_length > MAX_TEXT_LENGTH:
+            truncated_length = original_length - MAX_TEXT_LENGTH
             self.logger.warning(
-                f"Text length ({len(text)}) exceeds MAX_TEXT_LENGTH ({MAX_TEXT_LENGTH}). "
-                "Truncating text."
+                f"Text length ({original_length:,} chars) exceeds MAX_TEXT_LENGTH ({MAX_TEXT_LENGTH:,} chars). "
+                f"Truncating {truncated_length:,} characters from the end. "
+                f"This may result in missing metadata. Consider implementing chunking for long documents."
             )
             text = text[:MAX_TEXT_LENGTH]
         
