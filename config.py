@@ -50,7 +50,8 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # Schema Constants
 # ============================================================================
 
-# JSON Schema structure (as defined in PROMPT.md)
+# JSON Schema structure (as defined in docs/REQUIREMENTS.md)
+# See docs/REQUIREMENTS.md for field definitions, examples, and update checklist
 METADATA_SCHEMA = {
     "Contract Lifecycle": {
         "Execution Date": "",
@@ -68,6 +69,27 @@ METADATA_SCHEMA = {
         "Limitation of Liability Cap": "",
         "Insurance Requirements": "",
         "Warranties / Disclaimers": ""
+    }
+}
+
+# Field definitions for LLM prompts (from docs/REQUIREMENTS.md)
+FIELD_DEFINITIONS = {
+    "Contract Lifecycle": {
+        "Execution Date": "Date when both parties have signed the agreement. Format: ISO yyyy-mm-dd (e.g., 2025-03-14)",
+        "Effective Date": "Date the MSA becomes legally effective (may differ from execution). Format: ISO yyyy-mm-dd (e.g., 2025-04-01)",
+        "Expiration / Termination Date": "Date on which the agreement expires or terminates unless renewed. Format: ISO yyyy-mm-dd or 'Evergreen' if auto-renews (e.g., 2028-03-31 or Evergreen)",
+        "Authorized Signatory": "Name and designation of the individual authorized to sign on behalf of each party. Format: Full name and title (e.g., John Doe, VP of Operations). If multiple, separate with semicolons."
+    },
+    "Commercial Operations": {
+        "Billing Frequency": "How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced",
+        "Payment Terms": "Time allowed for payment after invoice submission. Format: Terms as stated (e.g., Net 30 days from invoice date)",
+        "Expense Reimbursement Rules": "Terms governing travel, lodging, and other reimbursable expenses. Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required)"
+    },
+    "Risk & Compliance": {
+        "Indemnification Clause Reference": "Clause defining indemnity obligations and covered risks. Format: Section heading/number and 1-2 sentence excerpt (e.g., Section 12 – Indemnification: Each party agrees to indemnify...)",
+        "Limitation of Liability Cap": "Maximum financial liability for either party. Format: Cap as stated (e.g., Aggregate liability not to exceed fees paid in previous 12 months)",
+        "Insurance Requirements": "Types and minimum coverage levels required by client. Format: Requirements as stated (e.g., CGL $2M per occurrence; Workers Comp as per law)",
+        "Warranties / Disclaimers": "Assurances or disclaimers related to service performance or quality. Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied)"
     }
 }
 
