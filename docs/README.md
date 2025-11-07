@@ -6,6 +6,10 @@ The `docs/` directory contains module-level guides and setup references for the 
 
 - **[REQUIREMENTS.md](REQUIREMENTS.md)** — **Canonical source** for field definitions, examples, extraction rules, and update checklist. **Always reference this when modifying the schema.**
 
+## Project Management
+
+- **[ISSUES_AND_TODOS.md](ISSUES_AND_TODOS.md)** — Tracked bugs, TODOs, optimizations, and issues categorized by priority and type. Updated during code reviews and paper-based testing.
+
 ## Module Guides
 
 ### Core Extractors
