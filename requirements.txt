@@ -6,32 +6,13 @@
 # ============================================================================
 
 # ============================================================================
-# PDF EXTRACTION LIBRARIES (Choose ONE)
+# PDF EXTRACTION LIBRARIES
 # ============================================================================
-
-# Option 1: PyMuPDF (fitz) - RECOMMENDED in PROMPT.md
+# PyMuPDF (fitz) - RECOMMENDED in PROMPT.md
 # Pros: Fast, memory-efficient, supports text/image extraction, annotations, rendering
 # Cons: C dependencies (complex install), commercial license for some uses, steeper learning curve
 # Best for: High-performance text extraction, large files
-# PyMuPDF==1.23.8
-
-# Option 2: pypdf (formerly PyPDF2)
-# Pros: Pure Python, easy install, simple API, actively maintained
-# Cons: Slower on large files, limited advanced features
-# Best for: Simple text extraction, basic operations
-# pypdf==4.0.1
-
-# Option 3: pdfplumber
-# Pros: Excellent for tables/structured data, precise text extraction, good layout analysis
-# Cons: Slower than PyMuPDF, heavier dependencies
-# Best for: Complex layouts, table extraction
-# pdfplumber==0.10.3
-
-# Option 4: pdfminer.six
-# Pros: Fine-grained control, handles complex layouts well
-# Cons: Complex API, slower performance, steeper learning curve
-# Best for: Advanced parsing needs
-# pdfminer.six==20221105
+PyMuPDF==1.23.8
 
 # ============================================================================
 # DOCX EXTRACTION (Required)
@@ -52,20 +33,13 @@ python-docx==1.1.0
 google-generativeai==0.3.2
 
 # ============================================================================
-# UI FRAMEWORK (Choose ONE)
+# UI FRAMEWORK
 # ============================================================================
-
-# Option 1: Streamlit - RECOMMENDED in PROMPT.md
+# Streamlit - RECOMMENDED in PROMPT.md
 # Pros: Simple, fast development, built-in file upload, good for data apps
 # Cons: Less customizable than full web frameworks
 # Best for: Quick UI for file upload and results display
 streamlit==1.29.0
-
-# Option 2: Gradio - Alternative
-# Pros: Easy deployment, good for ML demos, customizable
-# Cons: Less mature ecosystem than Streamlit
-# Best for: ML-focused interfaces
-# gradio==4.7.1
 
 # ============================================================================
 # DATA PROCESSING (Required)
