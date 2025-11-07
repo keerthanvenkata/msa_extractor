@@ -2,6 +2,10 @@
 
 The `docs/` directory contains module-level guides and setup references for the MSA Metadata Extractor project.
 
+## Requirements & Schema
+
+- **[REQUIREMENTS.md](REQUIREMENTS.md)** — **Canonical source** for field definitions, examples, extraction rules, and update checklist. **Always reference this when modifying the schema.**
+
 ## Module Guides
 
 - [Base Extractor](base_extractor.md) — abstract interface and shared utilities
