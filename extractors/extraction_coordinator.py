@@ -61,7 +61,9 @@ class ExtractionCoordinator:
         extraction_result = self._extract_text(file_path, strategy)
         
         # Step 2: Process with LLM to extract metadata
-        if extraction_result.metadata.get("is_scanned") and EXTRACTION_STRATEGY == "gemini_vision":
+        # Check actual strategy used (from result metadata) not global config
+        if (extraction_result.metadata.get("is_scanned") and 
+            extraction_result.metadata.get("extraction_strategy") == "gemini_vision"):
             # Gemini Vision already extracted metadata directly
             metadata = extraction_result.metadata.get("extracted_metadata", {})
         else:
@@ -107,9 +109,10 @@ class ExtractionCoordinator:
         result = extractor.extract(file_path)
         
         # If image-based PDF and not using Gemini Vision, run OCR
+        # Check actual strategy used (from result metadata) not global config
         if (result.metadata.get("is_scanned") and 
             result.metadata.get("extraction_method") == "ocr" and
-            EXTRACTION_STRATEGY != "gemini_vision"):
+            result.metadata.get("extraction_strategy") != "gemini_vision"):
             
             # Get preprocessed images from result
             images = result.metadata.get("preprocessed_images", [])
@@ -122,6 +125,12 @@ class ExtractionCoordinator:
                 # Combine OCR text
                 result.raw_text = "\n\n".join(ocr_texts)
                 result.metadata["ocr_engine"] = OCR_ENGINE
+                
+                # Clear preprocessed images from memory after OCR is complete
+                # This is important for large PDFs to reduce memory usage
+                if "preprocessed_images" in result.metadata:
+                    del result.metadata["preprocessed_images"]
+                    self.logger.debug("Cleared preprocessed images from memory after OCR")
         
         return result
     
