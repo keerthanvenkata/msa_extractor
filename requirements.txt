@@ -63,6 +63,24 @@ python-dotenv==1.0.0
 jsonschema==4.20.0
 
 # ============================================================================
+# OCR & IMAGE PROCESSING
+# ============================================================================
+# numpy - Array operations for OpenCV/Pillow
+numpy==1.24.3
+
+# opencv-python - Image preprocessing for OCR
+opencv-python==4.8.1.78
+
+# Pillow - Image conversions between PyMuPDF and OpenCV
+Pillow==10.1.0
+
+# pytesseract - Python bindings for Tesseract OCR
+pytesseract==0.3.10
+
+# google-cloud-vision - Optional cloud OCR client
+google-cloud-vision==3.4.5
+
+# ============================================================================
 # TESTING (Required for development)
 # ============================================================================
 # pytest - Testing framework
