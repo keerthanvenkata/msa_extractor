@@ -79,10 +79,10 @@ class GeminiVisionExtractor(BaseExtractor):
                 img_data = pix.tobytes("png")
                 
                 # Extract metadata from image using Gemini Vision
-                # Note: For multi-page PDFs, we extract metadata from each page
-                # and combine them (or use first page's metadata)
-                if page_num == 0:
-                    # Extract metadata from first page
+                # Extract metadata from first 3 pages (cover + first 2 content pages)
+                # to catch metadata that might be on later pages (e.g., signature pages)
+                if page_num < 3:
+                    # Extract metadata from first 3 pages
                     metadata = self.gemini_client.extract_metadata_from_image(
                         img_data, 
                         image_mime_type="image/png"
@@ -104,9 +104,28 @@ class GeminiVisionExtractor(BaseExtractor):
             
             doc.close()
             
-            # Combine results
-            # Use metadata from first page (or merge if needed)
-            combined_metadata = all_metadata[0] if all_metadata else {}
+            # Combine results - merge metadata from first 3 pages intelligently
+            # Prefer non-empty values, with later pages taking precedence for conflicts
+            combined_metadata = {}
+            if all_metadata:
+                from ai.schema import SchemaValidator
+                validator = SchemaValidator()
+                
+                # Start with empty schema
+                combined_metadata = validator.get_empty_schema()
+                
+                # Merge metadata from all pages (first 3 pages)
+                # Later pages override earlier ones for the same field
+                for page_metadata in all_metadata:
+                    if page_metadata:
+                        for category, fields in page_metadata.items():
+                            if isinstance(fields, dict):
+                                for field_name, value in fields.items():
+                                    # Only update if value is not empty and not "Not Found"
+                                    if value and value != "Not Found":
+                                        if category not in combined_metadata:
+                                            combined_metadata[category] = {}
+                                        combined_metadata[category][field_name] = value
             
             # Combine text from all pages
             raw_text = "\n\n".join(all_text)
