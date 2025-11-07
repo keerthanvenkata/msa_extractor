@@ -38,4 +38,9 @@ The `docs/` directory contains module-level guides and setup references for the 
 
 - [Windows OCR & Dependency Setup](windows_ocr_setup.md) — installing Tesseract, VC++ runtime, and optional Google Cloud Vision tooling
 
+## System & Infrastructure
+
+- [Logging and Error Handling](LOGGING_AND_ERROR_HANDLING.md) — centralized logging configuration, custom exceptions, and error handling patterns
+- [Prompting Strategy Analysis](PROMPTING_STRATEGY_ANALYSIS.md) — analysis of current prompting approach and recommendations
+
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.
