@@ -44,7 +44,32 @@ CONTRACTS_DIR.mkdir(exist_ok=True)
 # Logging Configuration
 # ============================================================================
 
+# Overall log level
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+# File logging
+LOG_FILE_ENABLED = os.getenv("LOG_FILE_ENABLED", "true").lower() == "true"
+LOG_FILE_PATH = Path(os.getenv("LOG_FILE_PATH", BASE_DIR / "logs"))
+LOG_FILE_FORMAT = os.getenv("LOG_FILE_FORMAT", "text")  # text or json
+LOG_FILE_ROTATION_DAYS = int(os.getenv("LOG_FILE_ROTATION_DAYS", "30"))
+LOG_FILE_MAX_SIZE_MB = int(os.getenv("LOG_FILE_MAX_SIZE_MB", "10"))
+
+# Console logging
+LOG_CONSOLE_ENABLED = os.getenv("LOG_CONSOLE_ENABLED", "true").lower() == "true"
+LOG_CONSOLE_FORMAT = os.getenv("LOG_CONSOLE_FORMAT", "text")  # text or json
+
+# Module-specific log levels
+# Can override default LOG_LEVEL for specific modules
+LOG_LEVELS = {
+    "msa_extractor": LOG_LEVEL,
+    "msa_extractor.extractors": os.getenv("LOG_LEVEL_EXTRACTORS", "DEBUG"),
+    "msa_extractor.ai": os.getenv("LOG_LEVEL_AI", "INFO"),
+    "msa_extractor.extractors.ocr_handler": os.getenv("LOG_LEVEL_OCR", "WARNING"),
+}
+
+# Create logs directory if file logging enabled
+if LOG_FILE_ENABLED:
+    LOG_FILE_PATH.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # Schema Constants
@@ -152,10 +177,12 @@ def validate_config():
     Validate that required configuration is present.
     
     Raises:
-        ValueError: If required configuration is missing.
+        ConfigurationError: If required configuration is missing.
     """
+    from utils.exceptions import ConfigurationError
+    
     if not GEMINI_API_KEY:
-        raise ValueError(
+        raise ConfigurationError(
             "GEMINI_API_KEY not found in environment variables. "
             "Please set it in your .env file or environment."
         )
