@@ -219,6 +219,11 @@ When operating inside Cursor IDE (or any AI-assisted code generation for this pr
 - For changes that could affect downstream users, propose a migration plan.
 - Default to using Gemini for tasks involving contract understanding unless explicitly asked to switch.
 
+**Testing Methodology:**
+- Prefer paper-based execution simulation before unit testing or running code.
+- See `.cursorrules` for detailed paper-based testing methodology.
+- Document findings in `docs/ISSUES_AND_TODOS.md` with proper categorization.
+
 ---
 
 
