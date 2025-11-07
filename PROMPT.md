@@ -23,6 +23,8 @@ CORE METADATA SCHEMA
 --------------------
 All outputs MUST follow this exact JSON structure. If a value cannot be found, return the string `"Not Found"` (do not return null, empty list, or other placeholders).
 
+**IMPORTANT**: See `docs/REQUIREMENTS.md` for the canonical field definitions, examples, and update checklist.
+
 {
   "Contract Lifecycle": {
     "Execution Date": "",
@@ -43,17 +45,24 @@ All outputs MUST follow this exact JSON structure. If a value cannot be found, r
   }
 }
 
-Definitions / examples (for developer reference; keep in code comments or docs):
-- Execution Date: date contract is signed by both parties (ISO yyyy-mm-dd preferred).
-- Effective Date: date contract becomes legally effective (may differ).
-- Expiration / Termination Date: explicit expiry or "Evergreen" if auto-renews.
-- Authorized Signatory: name and title (e.g., "John Doe, VP of Operations").
-- Billing Frequency: Monthly / Quarterly / Milestone-based / As-invoiced.
-- Payment Terms: e.g., "Net 30 days from invoice date".
-- Indemnification Clause Reference: clause label or nearest text snippet (e.g., "Section 12 – Indemnification").
-- Limitation of Liability Cap: textual description or numeric cap with currency.
-- Insurance Requirements: e.g., "CGL $2M per occurrence".
-- Warranties / Disclaimers: short summary of performance warranties.
+**Field Definitions** (see `docs/REQUIREMENTS.md` for complete definitions):
+
+**Contract Lifecycle:**
+- Execution Date: Date when both parties have signed the agreement. Format: ISO yyyy-mm-dd (e.g., 2025-03-14)
+- Effective Date: Date the MSA becomes legally effective (may differ from execution). Format: ISO yyyy-mm-dd (e.g., 2025-04-01)
+- Expiration / Termination Date: Date on which the agreement expires or terminates unless renewed. Format: ISO yyyy-mm-dd or "Evergreen" if auto-renews (e.g., 2028-03-31 or Evergreen)
+- Authorized Signatory: Name and designation of the individual authorized to sign on behalf of each party. Format: Full name and title (e.g., John Doe, VP of Operations). If multiple, separate with semicolons.
+
+**Commercial Operations:**
+- Billing Frequency: How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced
+- Payment Terms: Time allowed for payment after invoice submission. Format: Terms as stated (e.g., Net 30 days from invoice date)
+- Expense Reimbursement Rules: Terms governing travel, lodging, and other reimbursable expenses. Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required)
+
+**Risk & Compliance:**
+- Indemnification Clause Reference: Clause defining indemnity obligations and covered risks. Format: Section heading/number and 1-2 sentence excerpt (e.g., Section 12 – Indemnification: Each party agrees to indemnify...)
+- Limitation of Liability Cap: Maximum financial liability for either party. Format: Cap as stated (e.g., Aggregate liability not to exceed fees paid in previous 12 months)
+- Insurance Requirements: Types and minimum coverage levels required by client. Format: Requirements as stated (e.g., CGL $2M per occurrence; Workers Comp as per law)
+- Warranties / Disclaimers: Assurances or disclaimers related to service performance or quality. Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied)
 
 ---
 
@@ -74,10 +83,21 @@ You are a contract analyst. Extract the following metadata fields from the given
 <insert full JSON schema here>
 
 Rules:
-1. If a field cannot be determined, use "Not Found".
-2. For dates, attempt ISO yyyy-mm-dd; if ambiguous, return the text found and include "AmbiguousDate" as a flag (in the result value).
-3. For clause references, return the section heading/number and a 1–2 sentence excerpt.
-4. Return no commentary, no extra keys, and no markdown — JSON only.
+1. If a field cannot be determined, use "Not Found" (never null, empty list, or other placeholders).
+2. For dates:
+   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
+   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
+   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
+3. For "Expiration / Termination Date":
+   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
+   - If no explicit expiration: Return "Not Found"
+4. For "Indemnification Clause Reference":
+   - Return the section heading/number and a 1–2 sentence excerpt
+   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
+5. For fields with multiple values (e.g., multiple signatories):
+   - Combine with semicolons
+   - Example: "John Doe, VP of Operations; Jane Smith, CFO"
+6. Return no commentary, no extra keys, and no markdown — JSON only.
 
 MSA TEXT:
 \"\"\"<contract text here>\"\"\"
