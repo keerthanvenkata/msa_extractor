@@ -102,7 +102,7 @@ NOT_FOUND_VALUE = "Not Found"
 
 # Maximum text length for LLM processing (characters)
 # For longer docs, implement chunking + aggregation
-MAX_TEXT_LENGTH = 12000
+MAX_TEXT_LENGTH = 50000
 
 # ============================================================================
 # PDF Preprocessing Configuration
