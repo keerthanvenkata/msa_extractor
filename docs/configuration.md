@@ -2,6 +2,8 @@
 
 `config.py` centralises environment-driven settings so modules stay declarative and easy to test. The table below summarises the main categories.
 
+**Important**: For metadata schema definitions and field requirements, see [`REQUIREMENTS.md`](REQUIREMENTS.md).
+
 ## API & Model Settings
 
 | Variable | Description | Default |
