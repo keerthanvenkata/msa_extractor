@@ -294,16 +294,137 @@ class PDFExtractor(BaseExtractor):
         """
         Extract text from mixed PDF (some pages text, some images).
         
+        Handles documents where most pages are text-based but some pages (typically
+        signature pages at the end) are image-based. Extracts text from text pages
+        and OCRs image pages, then combines both.
+        
         Args:
             file_path: Path to PDF file
         
         Returns:
-            ExtractedTextResult with extracted text
+            ExtractedTextResult with extracted text from both text and image pages
         """
-        # For now, treat as text-based and extract what we can
-        # Future: Handle each page individually
-        self.logger.warning("Mixed PDF detected, extracting text-based pages only")
-        return self._extract_text_based(file_path)
+        doc = fitz.open(file_path)
+        
+        try:
+            if doc.is_encrypted:
+                raise ValueError("PDF is encrypted/password-protected")
+            
+            page_count = len(doc)
+            text_pages_text = []
+            image_pages = []
+            text_blocks = []
+            min_text_length = 50  # Minimum characters to consider page as text-based
+            
+            # Process each page individually
+            for page_num in range(page_count):
+                page = doc.load_page(page_num)
+                
+                # Try to extract text
+                text = page.get_text().strip()
+                
+                if len(text) > min_text_length:
+                    # Text-based page: extract text with structure
+                    text_dict = page.get_text("dict")
+                    
+                    for block in text_dict.get("blocks", []):
+                        if "lines" in block:
+                            for line in block.get("lines", []):
+                                for span in line.get("spans", []):
+                                    span_text = span.get("text", "")
+                                    if span_text.strip():
+                                        text_pages_text.append(span_text)
+                                        text_blocks.append({
+                                            "text": span_text,
+                                            "font_size": span.get("size", 0),
+                                            "font_name": span.get("font", ""),
+                                            "is_bold": "bold" in span.get("font", "").lower(),
+                                            "is_italic": "italic" in span.get("font", "").lower(),
+                                            "page_number": page_num + 1,
+                                            "bbox": span.get("bbox", (0, 0, 0, 0))
+                                        })
+                    
+                    # Add line break after page
+                    if text_pages_text:
+                        text_pages_text.append("\n")
+                else:
+                    # Image-based page: convert to image for OCR
+                    self.logger.info(f"Page {page_num + 1} detected as image-based, will OCR")
+                    
+                    # Convert page to image
+                    mat = fitz.Matrix(PDF_PREPROCESSING_DPI / 72, PDF_PREPROCESSING_DPI / 72)
+                    pix = page.get_pixmap(matrix=mat)
+                    
+                    # Convert to numpy array
+                    img_data = pix.tobytes("ppm")
+                    pil_img = PILImage.open(io.BytesIO(img_data))
+                    cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                    
+                    # Preprocess if enabled
+                    if ENABLE_IMAGE_PREPROCESSING:
+                        cv_img = self.preprocessor.preprocess(cv_img)
+                    
+                    image_pages.append((page_num + 1, cv_img))
+            
+            # Extract metadata before closing
+            metadata = doc.metadata if hasattr(doc, 'metadata') else {}
+            
+            doc.close()
+            
+            # OCR image-based pages if any
+            ocr_texts = []
+            if image_pages:
+                from .ocr_handler import OCRHandler
+                from config import OCR_ENGINE
+                
+                self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s)")
+                ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
+                
+                # Extract images (just the numpy arrays)
+                images = [img for _, img in image_pages]
+                ocr_texts = ocr_handler.extract_text_from_images(images)
+                
+                # Add OCR text with page markers
+                for i, (page_num, _) in enumerate(image_pages):
+                    if i < len(ocr_texts) and ocr_texts[i]:
+                        text_pages_text.append(f"\n[Page {page_num} - OCR Text]\n")
+                        text_pages_text.append(ocr_texts[i])
+                        text_pages_text.append("\n")
+            
+            # Extract metadata before closing
+            metadata = doc.metadata if hasattr(doc, 'metadata') else {}
+            
+            doc.close()
+            
+            # Combine all text
+            raw_text = " ".join(text_pages_text) if text_pages_text else ""
+            
+            result = ExtractedTextResult(
+                raw_text=raw_text,
+                structured_text=text_blocks,
+                metadata={
+                    "file_type": "pdf",
+                    "is_scanned": len(image_pages) > 0,
+                    "page_count": page_count,
+                    "text_pages": page_count - len(image_pages),
+                    "image_pages": len(image_pages),
+                    "image_page_numbers": [page_num for page_num, _ in image_pages],
+                    "extraction_method": "mixed",
+                    "extraction_strategy": "pymupdf_with_ocr",
+                    "pdf_metadata": metadata
+                }
+            )
+            
+            self.logger.info(
+                f"Mixed PDF extraction complete: {page_count - len(image_pages)} text pages, "
+                f"{len(image_pages)} image pages (pages {[p for p, _ in image_pages]})"
+            )
+            
+            return result
+            
+        except Exception as e:
+            doc.close()
+            raise
     
     def pdf_to_images(self, file_path: str, dpi: int = None) -> List[np.ndarray]:
         """
