@@ -14,6 +14,7 @@ from config import (
     GEMINI_TEXT_MODEL,
     GEMINI_VISION_MODEL,
     METADATA_SCHEMA,
+    FIELD_DEFINITIONS,
     NOT_FOUND_VALUE,
     MAX_TEXT_LENGTH
 )
@@ -125,7 +126,7 @@ class GeminiClient:
     
     def _build_extraction_prompt(self, text: str) -> str:
         """
-        Build extraction prompt following PROMPT.md template.
+        Build extraction prompt following docs/REQUIREMENTS.md specifications.
         
         Args:
             text: Contract text (empty for vision model)
@@ -135,16 +136,33 @@ class GeminiClient:
         """
         schema_json = json.dumps(METADATA_SCHEMA, indent=2)
         
+        # Build field definitions section
+        definitions_text = self._build_field_definitions_text()
+        
         if text:
             prompt = f"""You are a contract analyst. Extract the following metadata fields from the given Master Service Agreement and return VALID JSON ONLY matching this schema:
 
 {schema_json}
 
-Rules:
-1. If a field cannot be determined, use "{NOT_FOUND_VALUE}".
-2. For dates, attempt ISO yyyy-mm-dd; if ambiguous, return the text found and include "AmbiguousDate" as a flag (in the result value).
-3. For clause references, return the section heading/number and a 1–2 sentence excerpt.
-4. Return no commentary, no extra keys, and no markdown — JSON only.
+FIELD DEFINITIONS:
+{definitions_text}
+
+EXTRACTION RULES:
+1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
+2. For dates:
+   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
+   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
+   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
+3. For "Expiration / Termination Date":
+   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
+   - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
+4. For "Indemnification Clause Reference":
+   - Return the section heading/number and a 1–2 sentence excerpt
+   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
+5. For fields with multiple values (e.g., multiple signatories):
+   - Combine with semicolons
+   - Example: "John Doe, VP of Operations; Jane Smith, CFO"
+6. Return no commentary, no extra keys, and no markdown — JSON only.
 
 MSA TEXT:
 \"\"\"{text}\"\"\"
@@ -155,16 +173,47 @@ MSA TEXT:
 
 {schema_json}
 
-Rules:
-1. If a field cannot be determined, use "{NOT_FOUND_VALUE}".
-2. For dates, attempt ISO yyyy-mm-dd; if ambiguous, return the text found and include "AmbiguousDate" as a flag (in the result value).
-3. For clause references, return the section heading/number and a 1–2 sentence excerpt.
-4. Return no commentary, no extra keys, and no markdown — JSON only.
+FIELD DEFINITIONS:
+{definitions_text}
+
+EXTRACTION RULES:
+1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
+2. For dates:
+   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
+   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
+   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
+3. For "Expiration / Termination Date":
+   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
+   - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
+4. For "Indemnification Clause Reference":
+   - Return the section heading/number and a 1–2 sentence excerpt
+   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
+5. For fields with multiple values (e.g., multiple signatories):
+   - Combine with semicolons
+   - Example: "John Doe, VP of Operations; Jane Smith, CFO"
+6. Return no commentary, no extra keys, and no markdown — JSON only.
 
 Extract all text from the image and analyze it to fill in the schema above.
 """
         
         return prompt
+    
+    def _build_field_definitions_text(self) -> str:
+        """
+        Build field definitions text for prompt.
+        
+        Returns:
+            Formatted field definitions string
+        """
+        lines = []
+        
+        for category, fields in FIELD_DEFINITIONS.items():
+            lines.append(f"{category}:")
+            for field_name, definition in fields.items():
+                lines.append(f"  - {field_name}: {definition}")
+            lines.append("")
+        
+        return "\n".join(lines)
     
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         """
