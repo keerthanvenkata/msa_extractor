@@ -6,7 +6,6 @@ Provides command-line interface for single-file and batch processing.
 
 import argparse
 import json
-import logging
 import sys
 from pathlib import Path
 from typing import List
@@ -14,13 +13,11 @@ from typing import List
 from config import validate_config, OUTPUT_DIR
 from extractors.extraction_coordinator import ExtractionCoordinator
 from ai.schema import SchemaValidator
+from utils.logger import get_logger
+from utils.exceptions import ConfigurationError, FileError, ExtractionError
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Set up centralized logging
+logger = get_logger(__name__)
 
 
 def extract_single_file(file_path: str, output_path: str = None, 
@@ -68,9 +65,12 @@ def extract_single_file(file_path: str, output_path: str = None,
         
         return metadata
         
-    except Exception as e:
-        logger.error(f"Error extracting metadata: {e}", exc_info=True)
+    except (FileError, ExtractionError) as e:
+        logger.error(f"Extraction failed: {e}", exc_info=True)
         raise
+    except Exception as e:
+        logger.error(f"Unexpected error extracting metadata: {e}", exc_info=True)
+        raise ExtractionError(f"Unexpected error: {e}") from e
 
 
 def extract_batch(input_dir: str, output_dir: str = None, 
@@ -206,7 +206,11 @@ def main():
         if args.validate_only:
             logger.info("Configuration validation successful")
             return 0
+    except ConfigurationError as e:
+        logger.error(f"Configuration error: {e}")
+        return 1
     except ValueError as e:
+        # Fallback for old-style validation errors
         logger.error(f"Configuration error: {e}")
         return 1
     
