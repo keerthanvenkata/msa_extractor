@@ -29,7 +29,7 @@ if extraction_result.metadata.get("is_scanned") and extraction_result.metadata.g
 
 **Priority:** P0 - Must fix before production
 
-**Status:** 🔴 Open
+**Status:** 🟢 Fixed (2025-01-07)
 
 ---
 
@@ -54,7 +54,7 @@ This opens the PDF twice and reads pages twice, which is inefficient.
 - Option 2: Cache result in a file-level cache (e.g., using `functools.lru_cache`)
 - Option 3: Store `pdf_type` in a temporary attribute after first detection
 
-**Status:** 🔴 Open
+**Status:** 🟢 Fixed (2025-01-07)
 
 ---
 
@@ -77,7 +77,7 @@ When using Gemini Vision strategy, metadata is only extracted from the first pag
 - Option 2: Extract metadata from first 3 pages (cover + first 2 content pages)
 - Option 3: Document limitation and add config option for page selection
 
-**Status:** 🔴 Open
+**Status:** 🟢 Fixed (2025-01-07)
 
 ---
 
@@ -140,7 +140,7 @@ Preprocessed images are stored in `result.metadata["preprocessed_images"]` and k
 - Clear `preprocessed_images` from metadata after OCR completes
 - Or store images to temporary files instead of memory
 
-**Status:** 🟡 Open
+**Status:** 🟢 Fixed (2025-01-07)
 
 ---
 
@@ -179,7 +179,7 @@ Text is truncated if it exceeds `MAX_TEXT_LENGTH` (12000 characters), but there'
 - Or at minimum, log warning with truncation details
 - Or raise exception if text exceeds limit
 
-**Status:** 🟠 Open
+**Status:** 🟢 Fixed (2025-01-07) - Added detailed warning with truncation length and impact
 
 ---
 
@@ -197,7 +197,7 @@ Schema validation happens after normalization. Since normalization fills missing
 - Validate before normalization to catch actual missing fields
 - Or remove redundant validation (normalization already ensures structure)
 
-**Status:** 🟠 Open
+**Status:** 🟢 Fixed (2025-01-07)
 
 ---
 
