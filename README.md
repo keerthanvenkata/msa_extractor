@@ -5,28 +5,33 @@ A Python-based contract intelligence system for extracting structured metadata f
 ## Overview
 
 The MSA Metadata Extractor processes Master Service Agreements to extract key metadata including:
+
 - Contract lifecycle dates (execution, effective, expiration)
 - Commercial operations (billing frequency, payment terms)
 - Risk & compliance information (indemnification, liability caps, insurance requirements)
 
-All outputs follow a fixed JSON schema, ensuring consistency and machine-readability.
+All outputs follow a fixed JSON schema, ensuring consistency and machine-readability. Detailed module documentation lives in [`docs/`](docs/README.md).
 
 ## Requirements
 
 - Python 3.10 or higher
 - Virtual environment (recommended)
+- Tesseract OCR (for scanned PDFs) — see [Windows OCR setup](docs/windows_ocr_setup.md)
+- Optional: Google Cloud Vision API credentials (for cloud OCR)
 
 ## Setup
 
 ### 1. Create Virtual Environment
 
 On Windows:
+
 ```powershell
 python -m venv venv
 venv\Scripts\activate
 ```
 
 On macOS/Linux:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -38,56 +43,85 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Key packages:
+
+- `pymupdf` — PDF parsing & rendering
+- `python-docx` — DOCX text extraction
+- `opencv-python`, `numpy`, `Pillow` — image preprocessing for OCR
+- `pytesseract` — Tesseract OCR bridge
+- `google-cloud-vision` (optional) — cloud OCR
+- `google-generativeai` — Gemini API client
+
 ### 3. Configure Environment Variables
 
 Copy the example environment file:
-```bash
+
+```powershell
 copy .env.example .env
 ```
 
 On macOS/Linux:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and add your Gemini API key:
-```
+
+```text
 GEMINI_API_KEY=your_api_key_here
 ```
 
+Optional environment toggles (full list in [configuration docs](docs/configuration.md)):
+
+```text
+PDF_PREPROCESSING_DPI=300
+ENABLE_IMAGE_PREPROCESSING=true
+EXTRACTION_STRATEGY=auto
+OCR_ENGINE=tesseract
+```
+
+### 4. Install Native OCR Dependencies (Windows)
+
+Follow the step-by-step instructions in [docs/windows_ocr_setup.md](docs/windows_ocr_setup.md) to install:
+
+- Python toolchain
+- Tesseract OCR (UB Mannheim build or Chocolatey)
+- Visual C++ Redistributable
+- Optional Google Cloud SDK for Vision API
+
 ## Project Structure
 
-```
+```text
 msa_extractor/
-├── main.py                   # CLI / Streamlit entry
-├── config.py                 # Environment variables, constants
-├── extractors/               # Text extraction modules
+├── docs/                    # Module documentation & setup guides
+├── main.py                  # CLI / Streamlit entry (placeholder)
+├── config.py                # Environment variables, constants
+├── extractors/              # Text extraction modules
+│   ├── base_extractor.py
 │   ├── pdf_extractor.py
-│   └── docx_extractor.py
-├── ai/                       # LLM integration
-│   ├── gemini_client.py
-│   └── schema.py
-├── processors/               # Post-processing modules
-│   ├── postprocess.py
-│   └── clause_finder.py
-├── storage/                  # Data persistence
-│   ├── sqlite_store.py
-│   └── file_store.py
-├── ui/                       # User interface
-│   └── streamlit_app.py
-└── tests/                    # Unit tests
+│   └── image_preprocessor.py
+├── ai/                      # LLM integration (placeholder)
+├── processors/              # Post-processing modules (placeholder)
+├── storage/                 # Data persistence (placeholder)
+├── ui/                      # User interface (placeholder)
+└── tests/                   # Unit tests
 ```
+
+See the [documentation index](docs/README.md) for module-level design notes.
 
 ## Usage
 
 ### CLI Usage
 
 Single file extraction:
+
 ```bash
 python main.py --file ./contracts/example_msa.pdf --out ./results/example_msa.json
 ```
 
 Batch processing:
+
 ```bash
 python main.py --dir ./contracts --out-dir ./results --parallel 4
 ```
@@ -139,6 +173,12 @@ pytest tests/
 - Follow PEP 8 guidelines
 - Include docstrings for all modules, classes, and functions
 - Keep code modular and testable
+
+## Additional Resources
+
+- [Module documentation](docs/README.md)
+- [PDF preprocessing reference](docs/pdf_preprocessing.md)
+- [Windows OCR setup](docs/windows_ocr_setup.md)
 
 ## License
 
