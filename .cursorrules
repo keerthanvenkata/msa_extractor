@@ -1,0 +1,140 @@
+# Cursor AI Personalization Rules
+
+This file contains personal preferences and methodologies for AI-assisted development in this project.
+
+---
+
+## Paper-Based Testing Methodology
+
+**Preferred Approach:** Before writing unit tests or running code, perform paper-based execution simulation.
+
+### When to Use Paper-Based Testing
+
+- Before writing unit tests
+- Before running code for the first time
+- When reviewing complex code flows
+- When debugging logic issues
+- When understanding object state transitions
+
+### Paper-Based Testing Process
+
+1. **Create a scratch file** (e.g., `scratch.txt` in project root) to document the simulation
+
+2. **Trace execution step-by-step:**
+   - Document each function call with parameters
+   - Track object creation and initialization
+   - Record state changes at each step
+   - Note memory usage and data flow
+   - Document return values and side effects
+
+3. **Simulate different scenarios:**
+   - Main execution path
+   - Alternative code paths
+   - Error conditions
+   - Edge cases
+
+4. **Document object states:**
+   - Object creation and initialization
+   - Method calls with parameters
+   - State changes at each step
+   - Memory usage tracking
+   - Return values and data flow
+
+5. **Identify issues:**
+   - Logic bugs
+   - Performance issues
+   - Memory leaks
+   - Error handling gaps
+   - Code quality issues
+
+6. **Categorize findings:**
+   - Critical bugs (P0)
+   - High priority issues (P1)
+   - Medium priority issues (P2)
+   - Low priority issues (P3)
+   - TODOs
+   - Optimizations
+
+### Example Structure for Scratch File
+
+```text
+================================================================================
+CODE REVIEW & EXECUTION SIMULATION
+================================================================================
+Date: YYYY-MM-DD
+Test Case: Description of test scenario
+Command: Command line or function call
+
+================================================================================
+INITIAL STATE
+================================================================================
+ENVIRONMENT:
+- Python version
+- Working directory
+- Config values
+
+FILE SYSTEM:
+- Input files
+- Output files
+
+================================================================================
+EXECUTION FLOW - STEP BY STEP
+================================================================================
+
+STEP N: Module - Function
+--------------------------------------------------------------------------------
+Line X: Code location
+
+OBJECT STATE:
+- Object attributes and values
+
+EXECUTION:
+- Step-by-step execution flow
+
+MEMORY:
+- Memory usage tracking
+
+NEXT: Next step
+
+================================================================================
+ISSUES IDENTIFIED
+================================================================================
+[Document all issues found]
+
+================================================================================
+END OF SIMULATION
+================================================================================
+```
+
+### Benefits
+
+- **Early bug detection:** Find logic errors before running code
+- **Better understanding:** Deep understanding of code flow
+- **Performance insights:** Identify performance bottlenecks
+- **Memory analysis:** Track memory usage patterns
+- **Documentation:** Creates detailed execution documentation
+
+### Integration with Testing
+
+- Use paper-based testing to identify test cases
+- Use findings to write targeted unit tests
+- Use simulation results to create integration tests
+- Document edge cases discovered during simulation
+
+---
+
+## Code Review Preferences
+
+- Always perform paper-based testing before unit testing
+- Document findings in `docs/ISSUES_AND_TODOS.md`
+- Categorize issues by priority and type
+- Track object states throughout execution
+- Simulate multiple scenarios (main path, alternatives, errors)
+
+## Project-Specific Rules
+
+- Follow `PROMPT.md` as authoritative project guide
+- Always include tests and docstrings when writing code
+- Suggest improvements but avoid breaking the schema
+- For changes affecting downstream users, propose migration plan
+- Default to using Gemini for contract understanding tasks
