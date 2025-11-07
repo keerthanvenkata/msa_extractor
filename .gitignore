@@ -55,6 +55,7 @@ results/
 # Logs
 *.log
 logs/
+!logs/.gitkeep
 
 # OS
 Thumbs.db
