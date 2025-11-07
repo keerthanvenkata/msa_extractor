@@ -37,7 +37,7 @@ class BaseExtractor(ABC):
     
     def __init__(self):
         """Initialize the extractor."""
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     @abstractmethod
     def extract(self, file_path: str) -> ExtractedTextResult:
@@ -73,13 +73,13 @@ class BaseExtractor(ABC):
         path = Path(file_path)
         
         if not path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
+            raise FileError(f"File not found: {file_path}", details={"file_path": file_path})
         
         if not path.is_file():
-            raise ValueError(f"Path is not a file: {file_path}")
+            raise FileError(f"Path is not a file: {file_path}", details={"file_path": file_path})
         
         if path.stat().st_size == 0:
-            raise ValueError(f"File is empty: {file_path}")
+            raise FileError(f"File is empty: {file_path}", details={"file_path": file_path})
         
         return True
     
