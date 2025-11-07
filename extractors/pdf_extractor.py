@@ -47,6 +47,7 @@ class PDFExtractor(BaseExtractor):
             enable_enhance=ENABLE_ENHANCE,
             enable_binarize=ENABLE_BINARIZE
         )
+        self._cached_pdf_type = None  # Cache PDF type to avoid re-detection
     
     def extract(self, file_path: str) -> ExtractedTextResult:
         """
@@ -68,8 +69,13 @@ class PDFExtractor(BaseExtractor):
         self.validate_file(file_path)
         
         try:
-            # Detect PDF type
-            pdf_type = self._detect_pdf_type(file_path)
+            # Detect PDF type (use cached value if available)
+            if self._cached_pdf_type is not None:
+                pdf_type = self._cached_pdf_type
+                self.logger.debug(f"Using cached PDF type: {pdf_type}")
+            else:
+                pdf_type = self._detect_pdf_type(file_path)
+                self._cached_pdf_type = pdf_type  # Cache for this instance
             
             if pdf_type == "text":
                 # Text-based PDF: extract text directly
