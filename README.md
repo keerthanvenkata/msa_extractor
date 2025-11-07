@@ -134,7 +134,7 @@ streamlit run ui/streamlit_app.py
 
 ## Output Schema
 
-All outputs follow this JSON structure:
+All outputs follow this JSON structure. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) for complete field definitions, examples, and extraction rules.
 
 ```json
 {
@@ -158,7 +158,14 @@ All outputs follow this JSON structure:
 }
 ```
 
-Fields that cannot be found will return `"Not Found"` (never null or empty).
+**Key Rules:**
+- Fields that cannot be found will return `"Not Found"` (never null or empty)
+- Dates: Preferred ISO format `yyyy-mm-dd`; if ambiguous, include `(AmbiguousDate)` flag
+- Expiration Date: Return `"Evergreen"` if contract auto-renews
+- Multiple values: Combine with semicolons (e.g., multiple signatories)
+- Clause references: Include section heading/number and 1-2 sentence excerpt
+
+See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) for complete field definitions and examples.
 
 ## Development
 
