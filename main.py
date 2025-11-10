@@ -44,8 +44,11 @@ def extract_single_file(file_path: str, output_path: str = None,
         logger.info(f"Extracting metadata from: {file_path}")
         metadata = coordinator.extract_metadata(file_path, strategy)
         
-        # Validate schema
-        validator = SchemaValidator()
+        # Validate schema (reuse validator from coordinator's gemini_client)
+        # Note: Metadata is already validated and normalized by GeminiClient
+        # This is a redundant check for safety, but we can skip creating a new validator
+        # since the coordinator's gemini_client already has one
+        validator = coordinator.gemini_client.schema_validator
         is_valid, error = validator.validate(metadata)
         
         if not is_valid:
