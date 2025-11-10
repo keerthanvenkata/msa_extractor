@@ -13,10 +13,11 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from PIL import Image as PILImage
 import io
-import logging
 
 from .base_extractor import BaseExtractor, ExtractedTextResult
 from .image_preprocessor import ImagePreprocessor
+from utils.logger import get_logger
+from utils.exceptions import FileError, ExtractionError
 from config import (
     PDF_PREPROCESSING_DPI,
     ENABLE_IMAGE_PREPROCESSING,
@@ -26,7 +27,7 @@ from config import (
     ENABLE_BINARIZE
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PDFExtractor(BaseExtractor):
@@ -90,9 +91,15 @@ class PDFExtractor(BaseExtractor):
             self._log_extraction_complete(file_path, result)
             return result
             
+        except (FileError, ExtractionError):
+            # Re-raise custom exceptions
+            raise
         except Exception as e:
             self._log_error(file_path, e)
-            raise
+            raise ExtractionError(
+                f"Failed to extract from PDF: {e}",
+                details={"file_path": file_path}
+            ) from e
     
     def _detect_pdf_type(self, file_path: str) -> str:
         """
@@ -104,12 +111,12 @@ class PDFExtractor(BaseExtractor):
         Returns:
             "text", "image", or "mixed"
         """
+        doc = None
         try:
             doc = fitz.open(file_path)
             total_pages = len(doc)
             
             if total_pages == 0:
-                doc.close()
                 return "image"
             
             text_pages = 0
@@ -131,8 +138,6 @@ class PDFExtractor(BaseExtractor):
                 except Exception as e:
                     self.logger.warning(f"Error checking page {page_num}: {e}")
             
-            doc.close()
-            
             # Calculate ratio
             checked_pages = len(pages_to_check)
             text_ratio = text_pages / checked_pages if checked_pages > 0 else 0
@@ -149,6 +154,10 @@ class PDFExtractor(BaseExtractor):
             self.logger.error(f"Error detecting PDF type: {e}")
             # Default to image-based if detection fails
             return "image"
+        finally:
+            # Ensure document is always closed, even if exception occurs
+            if doc is not None:
+                doc.close()
     
     def _extract_text_based(self, file_path: str) -> ExtractedTextResult:
         """
@@ -165,7 +174,10 @@ class PDFExtractor(BaseExtractor):
         try:
             # Check if encrypted
             if doc.is_encrypted:
-                raise ValueError("PDF is encrypted/password-protected")
+                raise FileError(
+                    "PDF is encrypted/password-protected",
+                    details={"file_path": file_path}
+                )
             
             # Extract text blocks with metadata
             text_blocks = []
@@ -245,7 +257,10 @@ class PDFExtractor(BaseExtractor):
         
         try:
             if doc.is_encrypted:
-                raise ValueError("PDF is encrypted/password-protected")
+                raise FileError(
+                    "PDF is encrypted/password-protected",
+                    details={"file_path": file_path}
+                )
             
             page_count = len(doc)
             preprocessed_images = []
@@ -308,7 +323,10 @@ class PDFExtractor(BaseExtractor):
         
         try:
             if doc.is_encrypted:
-                raise ValueError("PDF is encrypted/password-protected")
+                raise FileError(
+                    "PDF is encrypted/password-protected",
+                    details={"file_path": file_path}
+                )
             
             page_count = len(doc)
             text_pages_text = []
@@ -369,9 +387,7 @@ class PDFExtractor(BaseExtractor):
             # Extract metadata before closing
             metadata = doc.metadata if hasattr(doc, 'metadata') else {}
             
-            doc.close()
-            
-            # OCR image-based pages if any
+            # OCR image-based pages if any (before closing document)
             ocr_texts = []
             if image_pages:
                 from .ocr_handler import OCRHandler
@@ -390,11 +406,6 @@ class PDFExtractor(BaseExtractor):
                         text_pages_text.append(f"\n[Page {page_num} - OCR Text]\n")
                         text_pages_text.append(ocr_texts[i])
                         text_pages_text.append("\n")
-            
-            # Extract metadata before closing
-            metadata = doc.metadata if hasattr(doc, 'metadata') else {}
-            
-            doc.close()
             
             # Combine all text
             raw_text = " ".join(text_pages_text) if text_pages_text else ""
@@ -422,9 +433,13 @@ class PDFExtractor(BaseExtractor):
             
             return result
             
-        except Exception as e:
-            doc.close()
-            raise
+        finally:
+            # Ensure document is always closed, even if exception occurs
+            if 'doc' in locals() and doc is not None:
+                try:
+                    doc.close()
+                except Exception:
+                    pass  # Ignore errors when closing already-closed document
     
     def pdf_to_images(self, file_path: str, dpi: int = None) -> List[np.ndarray]:
         """
