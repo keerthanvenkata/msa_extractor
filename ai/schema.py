@@ -14,6 +14,17 @@ from utils.exceptions import ValidationError
 
 logger = get_logger(__name__)
 
+# Module-level singleton instance for convenience functions
+_shared_validator = None
+
+
+def _get_shared_validator():
+    """Get or create shared SchemaValidator instance."""
+    global _shared_validator
+    if _shared_validator is None:
+        _shared_validator = SchemaValidator()
+    return _shared_validator
+
 
 class SchemaValidator:
     """Validate extracted metadata against the canonical schema."""
@@ -115,6 +126,7 @@ def validate_metadata(metadata: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     Validate metadata against schema.
     
     Convenience function for quick validation.
+    Reuses shared SchemaValidator instance for performance.
     
     Args:
         metadata: Metadata dictionary to validate
@@ -122,7 +134,7 @@ def validate_metadata(metadata: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     Returns:
         Tuple of (is_valid, error_message)
     """
-    validator = SchemaValidator()
+    validator = _get_shared_validator()
     return validator.validate(metadata)
 
 
@@ -131,6 +143,7 @@ def normalize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     Normalize metadata to match schema.
     
     Convenience function for quick normalization.
+    Reuses shared SchemaValidator instance for performance.
     
     Args:
         metadata: Metadata dictionary to normalize
@@ -138,6 +151,6 @@ def normalize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Normalized metadata dictionary
     """
-    validator = SchemaValidator()
+    validator = _get_shared_validator()
     return validator.normalize(metadata)
 
