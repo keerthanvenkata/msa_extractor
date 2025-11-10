@@ -2,857 +2,805 @@
 CODE REVIEW & EXECUTION SIMULATION
 ================================================================================
 Date: 2025-01-07
-Test Case: Single text-based PDF extraction with auto strategy
+Test Case: Text-based PDF extraction with full pipeline
 Command: python main.py --file ./contracts/example.pdf --out ./results/example.json
 
 ================================================================================
 INITIAL STATE
 ================================================================================
-
 ENVIRONMENT:
-- Python 3.10
+- Python version: 3.10
 - Working directory: D:\dev\projects\msa_extractor
-- Config loaded from .env file
-- GEMINI_API_KEY: "test_key_12345" (assumed)
-- EXTRACTION_STRATEGY: "auto" (default)
-- OCR_ENGINE: "tesseract" (default)
-- PDF_PREPROCESSING_DPI: 300
-- ENABLE_IMAGE_PREPROCESSING: True
+- Config values:
+  - GEMINI_API_KEY: Set (assumed)
+  - EXTRACTION_STRATEGY: "auto"
+  - OCR_ENGINE: "tesseract"
+  - MAX_TEXT_LENGTH: 50000
+  - LOG_LEVEL: "INFO"
+  - LOG_FILE_ENABLED: true
+  - LOG_CONSOLE_ENABLED: true
 
 FILE SYSTEM:
-- Input file: ./contracts/example.pdf (exists, 500KB, text-based PDF, 5 pages)
-- Output file: ./results/example.json (will be created)
+- Input file: ./contracts/example.pdf (text-based PDF, 5 pages)
+- Output file: ./results/example.json (to be created)
+- Log file: ./logs/msa_extractor_2025-01-07.log (to be created)
 
 ================================================================================
 EXECUTION FLOW - STEP BY STEP
 ================================================================================
 
-STEP 1: main.py - main() function entry
+STEP 1: main.py - main() (entry point)
 --------------------------------------------------------------------------------
-Line 244: if __name__ == "__main__": sys.exit(main())
+Line 151-245: Main CLI entry point
 
 OBJECT STATE:
-- sys.argv = ["main.py", "--file", "./contracts/example.pdf", "--out", "./results/example.json"]
-- parser = argparse.ArgumentParser(...) [CREATED]
-- args = Namespace(file="./contracts/example.pdf", out="./results/example.json", 
-                   dir=None, out_dir=None, strategy=None, parallel=1, validate_only=False)
-
-MEMORY:
-- parser: ArgumentParser object
-- args: Namespace object with parsed arguments
-
-NEXT: Line 201: args = parser.parse_args()
-
-================================================================================
-
-STEP 2: main.py - Configuration validation
---------------------------------------------------------------------------------
-Line 204-211: validate_config() call
-
-OBJECT STATE:
-- config.validate_config() called
-- Checks: GEMINI_API_KEY != "" → True (assumed set)
-- No exception raised
-
-MEMORY:
-- No new objects created
-- Validation passes
-
-NEXT: Line 217: extract_single_file() call
-
-================================================================================
-
-STEP 3: main.py - extract_single_file() entry
---------------------------------------------------------------------------------
-Line 26-73: extract_single_file(file_path, output_path, strategy)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-- output_path = "./results/example.json"
-- strategy = None (will use config default "auto")
-
-OBJECT STATE:
-- coordinator: None (not yet created)
-- validator: None (not yet created)
-- metadata: None (not yet created)
-
-MEMORY:
-- Local variables initialized
-
-NEXT: Line 44: coordinator = ExtractionCoordinator()
-
-================================================================================
-
-STEP 4: extractors/extraction_coordinator.py - __init__()
---------------------------------------------------------------------------------
-Line 25-38: ExtractionCoordinator.__init__(gemini_client=None)
-
-OBJECT STATE:
-- self.gemini_client: None (will be created)
-- self.strategy_factory: None (will be created)
-- self.logger: Logger object [CREATED]
+- args: Namespace object from argparse
+  - file: "./contracts/example.pdf"
+  - out: "./results/example.json"
+  - dir: None
+  - out_dir: None
+  - strategy: None
+  - parallel: 1
+  - validate_only: False
 
 EXECUTION:
-- Line 32: Check if gemini_client is None → True
-- Line 33: Check if GeminiClient exists → True (imported)
-- Line 33: self.gemini_client = GeminiClient() [CREATED]
+- Line 204: validate_config() called
+  - Checks GEMINI_API_KEY exists → True
+  - No exception raised
+- Line 205: Check if args.validate_only → False
+- Line 207: Check if args.file → True
+- Line 208: extract_single_file() called with:
+  - file_path: "./contracts/example.pdf"
+  - output_path: "./results/example.json"
+  - strategy: None
 
 MEMORY:
-- coordinator: ExtractionCoordinator object
-  - gemini_client: GeminiClient object (see STEP 5)
-  - strategy_factory: None (will be created)
-  - logger: Logger("ExtractionCoordinator")
+- args: Namespace object
+- Logger initialized via utils.logger
 
-NEXT: Line 37: self.strategy_factory = StrategyFactory(gemini_client=self.gemini_client)
+NEXT: Call extract_single_file()
 
 ================================================================================
 
-STEP 5: ai/gemini_client.py - GeminiClient.__init__()
+STEP 2: main.py - extract_single_file()
 --------------------------------------------------------------------------------
-Line 29-44: GeminiClient.__init__(api_key=None)
+Line 23-73: Single file extraction function
 
 OBJECT STATE:
-- self.api_key: None (will use config)
-- self.text_model: None (will be created)
-- self.vision_model: None (will be created)
-- self.schema_validator: None (will be created)
+- file_path: "./contracts/example.pdf"
+- output_path: "./results/example.json"
+- strategy: None
+- logger: Logger instance (from utils.logger)
 
 EXECUTION:
-- Line 36: self.api_key = GEMINI_API_KEY or "" → "test_key_12345"
-- Line 37: Check if self.api_key → True
-- Line 40: genai.configure(api_key="test_key_12345")
-- Line 41: self.text_model = genai.GenerativeModel("gemini-1.5-flash") [CREATED]
-- Line 42: self.vision_model = genai.GenerativeModel("gemini-1.5-flash") [CREATED]
-- Line 43: self.schema_validator = SchemaValidator() [CREATED]
+- Line 38: validate_config() called
+  - Checks GEMINI_API_KEY → True
+  - No exception raised
+- Line 41: ExtractionCoordinator() created
+  - Calls __init__()
+- Line 44: logger.info("Extracting metadata from: ./contracts/example.pdf")
+- Line 45: coordinator.extract_metadata() called with:
+  - file_path: "./contracts/example.pdf"
+  - strategy: None
 
 MEMORY:
-- gemini_client: GeminiClient object
-  - api_key: "test_key_12345"
-  - text_model: GenerativeModel("gemini-1.5-flash")
-  - vision_model: GenerativeModel("gemini-1.5-flash")
-  - schema_validator: SchemaValidator object (see STEP 6)
-  - logger: Logger("GeminiClient")
+- coordinator: ExtractionCoordinator instance
+- Logger initialized
 
-NEXT: Return to ExtractionCoordinator.__init__()
+NEXT: Call coordinator.extract_metadata()
 
 ================================================================================
 
-STEP 6: ai/schema.py - SchemaValidator.__init__()
+STEP 3: extractors/extraction_coordinator.py - ExtractionCoordinator.__init__()
 --------------------------------------------------------------------------------
-Line 20-23: SchemaValidator.__init__()
+Line 25-39: Coordinator initialization
 
 OBJECT STATE:
-- self.schema: None (will be built)
+- gemini_client: None (passed as None)
+- self.gemini_client: Will be created
+- self.strategy_factory: Will be created
+- self.logger: Logger instance
 
 EXECUTION:
-- Line 22: self.schema = self._build_json_schema() [CALLED]
+- Line 33: Check if gemini_client is None → True
+- Line 34: Check if GeminiClient → True (class exists)
+- Line 35: self.gemini_client = GeminiClient() created
+  - Calls GeminiClient.__init__()
+- Line 38: self.strategy_factory = StrategyFactory(gemini_client=self.gemini_client)
+  - Calls StrategyFactory.__init__()
+- Line 39: self.logger = get_logger(self.__class__.__module__)
 
 MEMORY:
-- schema_validator: SchemaValidator object
-  - schema: None (building...)
-  - logger: Logger("SchemaValidator")
+- self.gemini_client: GeminiClient instance
+- self.strategy_factory: StrategyFactory instance
+- self.logger: Logger instance
 
-NEXT: Line 25: _build_json_schema()
+NEXT: GeminiClient.__init__() → StrategyFactory.__init__() → extract_metadata()
 
 ================================================================================
 
-STEP 7: ai/schema.py - _build_json_schema()
+STEP 4: ai/gemini_client.py - GeminiClient.__init__()
 --------------------------------------------------------------------------------
-Line 25-51: SchemaValidator._build_json_schema()
-
-EXECUTION:
-- Line 32-36: Initialize schema structure
-- Line 38: Iterate through METADATA_SCHEMA from config
-  - Category 1: "Contract Lifecycle" with 4 fields
-  - Category 2: "Commercial Operations" with 3 fields
-  - Category 3: "Risk & Compliance" with 4 fields
-- Line 45-49: Build JSON Schema properties for each field
-- Line 49: Mark all fields as required
-
-RETURN VALUE:
-{
-  "type": "object",
-  "properties": {
-    "Contract Lifecycle": {
-      "type": "object",
-      "properties": {
-        "Execution Date": {"type": "string"},
-        "Effective Date": {"type": "string"},
-        "Expiration / Termination Date": {"type": "string"},
-        "Authorized Signatory": {"type": "string"}
-      },
-      "required": ["Execution Date", "Effective Date", ...]
-    },
-    ...
-  }
-}
-
-MEMORY:
-- schema_validator.schema: JSON Schema dict [UPDATED]
-
-NEXT: Return to GeminiClient.__init__() → ExtractionCoordinator.__init__()
-
-================================================================================
-
-STEP 8: extractors/strategy_factory.py - StrategyFactory.__init__()
---------------------------------------------------------------------------------
-Line 27-35: StrategyFactory.__init__(gemini_client=gemini_client)
+Line 29-45: Gemini client initialization
 
 OBJECT STATE:
-- self.gemini_client: GeminiClient object (passed in)
-- self.logger: None (will be created)
+- api_key: None (default)
+- GEMINI_API_KEY: Set in config
+- self.api_key: Will be set
+- self.text_model: Will be created
+- self.vision_model: Will be created
+- self.schema_validator: Will be created
+- self.logger: Will be created
 
 EXECUTION:
-- Line 34: self.gemini_client = gemini_client (GeminiClient object)
-- Line 35: self.logger = Logger("StrategyFactory") [CREATED]
+- Line 37: self.api_key = api_key or GEMINI_API_KEY
+  - api_key is None → uses GEMINI_API_KEY
+  - self.api_key = "..." (assumed set)
+- Line 38: Check if not self.api_key → False
+- Line 41: genai.configure(api_key=self.api_key)
+  - Configures Gemini API
+- Line 42: self.text_model = genai.GenerativeModel(GEMINI_TEXT_MODEL)
+  - Creates text model instance
+- Line 43: self.vision_model = genai.GenerativeModel(GEMINI_VISION_MODEL)
+  - Creates vision model instance
+- Line 44: self.schema_validator = SchemaValidator()
+  - Calls SchemaValidator.__init__()
+- Line 45: self.logger = get_logger(self.__class__.__module__)
 
 MEMORY:
-- strategy_factory: StrategyFactory object
-  - gemini_client: GeminiClient object (reference, not copy)
-  - logger: Logger("StrategyFactory")
+- self.api_key: String (API key)
+- self.text_model: GenerativeModel instance
+- self.vision_model: GenerativeModel instance
+- self.schema_validator: SchemaValidator instance
+- self.logger: Logger instance
 
-NEXT: Return to ExtractionCoordinator.__init__() → extract_single_file()
+NEXT: SchemaValidator.__init__() → StrategyFactory.__init__() → extract_metadata()
 
 ================================================================================
 
-STEP 9: extractors/extraction_coordinator.py - extract_metadata()
+STEP 5: ai/schema.py - SchemaValidator.__init__()
 --------------------------------------------------------------------------------
-Line 40-71: coordinator.extract_metadata(file_path, strategy)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-- strategy = None (will use config default "auto")
+Line 20-24: Schema validator initialization
 
 OBJECT STATE:
-- extraction_result: None (will be created)
+- self.schema: Will be built
+- self.logger: Will be created
 
 EXECUTION:
-- Line 58: Log "Starting metadata extraction for: ./contracts/example.pdf"
-- Line 61: extraction_result = self._extract_text(file_path, strategy) [CALLED]
+- Line 23: self.schema = self._build_json_schema()
+  - Calls _build_json_schema()
+- Line 24: self.logger = get_logger(self.__class__.__module__)
 
 MEMORY:
-- coordinator.extract_metadata() executing
-- extraction_result: None (extracting...)
+- self.schema: Dict with JSON schema structure
+- self.logger: Logger instance
 
-NEXT: Line 61: _extract_text()
+NEXT: _build_json_schema() → StrategyFactory.__init__() → extract_metadata()
 
 ================================================================================
 
-STEP 10: extractors/extraction_coordinator.py - _extract_text()
+STEP 6: ai/schema.py - SchemaValidator._build_json_schema()
 --------------------------------------------------------------------------------
-Line 73-92: coordinator._extract_text(file_path, strategy)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-- strategy = None
+Line 26-52: Build JSON schema from METADATA_SCHEMA
 
 OBJECT STATE:
-- file_ext: None (will be determined)
+- METADATA_SCHEMA: Dict from config.py
+  - Contract Lifecycle: 4 fields
+  - Commercial Operations: 3 fields
+  - Risk & Compliance: 4 fields
+- schema: Will be built
 
 EXECUTION:
-- Line 85: file_ext = Path("./contracts/example.pdf").suffix.lower() → ".pdf"
-- Line 87: Check if file_ext == ".pdf" → True
-- Line 88: return self._extract_from_pdf(file_path, strategy) [CALLED]
+- Line 27: schema = {"type": "object", "properties": {}, "required": []}
+- Line 29: Loop through METADATA_SCHEMA.items()
+  - category: "Contract Lifecycle"
+  - fields: Dict with 4 field names
+- Line 30: schema["properties"][category] = {"type": "object", "properties": {}}
+- Line 32: Loop through fields.items()
+  - field_name: "Execution Date"
+  - field_info: Dict with definition
+- Line 33: schema["properties"][category]["properties"][field_name] = {"type": "string"}
+- Line 34: schema["required"].append(f"{category}.{field_name}")
+- Repeat for all 11 fields
+- Line 51: return schema
+
+MEMORY:
+- schema: Dict with complete JSON schema
+  - properties: 3 categories, 11 fields total
+  - required: 11 field paths
+
+NEXT: Return to __init__() → StrategyFactory.__init__() → extract_metadata()
+
+================================================================================
+
+STEP 7: extractors/strategy_factory.py - StrategyFactory.__init__()
+--------------------------------------------------------------------------------
+Line 27-36: Strategy factory initialization
+
+OBJECT STATE:
+- gemini_client: GeminiClient instance (passed)
+- self.gemini_client: Will be set
+- self.logger: Will be created
+
+EXECUTION:
+- Line 35: self.gemini_client = gemini_client
+  - Sets reference to GeminiClient instance
+- Line 36: self.logger = get_logger(self.__class__.__module__)
+
+MEMORY:
+- self.gemini_client: Reference to GeminiClient instance
+- self.logger: Logger instance
+
+NEXT: Return to ExtractionCoordinator.__init__() → extract_metadata()
+
+================================================================================
+
+STEP 8: extractors/extraction_coordinator.py - extract_metadata()
+--------------------------------------------------------------------------------
+Line 41-73: Main extraction method
+
+OBJECT STATE:
+- file_path: "./contracts/example.pdf"
+- strategy: None
+- self.gemini_client: GeminiClient instance
+- self.strategy_factory: StrategyFactory instance
+- self.logger: Logger instance
+
+EXECUTION:
+- Line 50: self._extract_text() called with:
+  - file_path: "./contracts/example.pdf"
+  - strategy: None
+- Returns ExtractedTextResult
+
+MEMORY:
+- extraction_result: ExtractedTextResult (to be returned from _extract_text)
+
+NEXT: Call _extract_text()
+
+================================================================================
+
+STEP 9: extractors/extraction_coordinator.py - _extract_text()
+--------------------------------------------------------------------------------
+Line 76-99: Text extraction coordination
+
+OBJECT STATE:
+- file_path: "./contracts/example.pdf"
+- strategy: None
+- file_ext: Will be determined
+
+EXECUTION:
+- Line 88: file_ext = Path(file_path).suffix.lower()
+  - file_ext = ".pdf"
+- Line 90: Check if file_ext == ".pdf" → True
+- Line 91: self._extract_from_pdf() called with:
+  - file_path: "./contracts/example.pdf"
+  - strategy: None
 
 MEMORY:
 - file_ext: ".pdf"
-- Returning to _extract_from_pdf()
+- result: ExtractedTextResult (to be returned from _extract_from_pdf)
 
-NEXT: Line 88: _extract_from_pdf()
+NEXT: Call _extract_from_pdf()
 
 ================================================================================
 
-STEP 11: extractors/extraction_coordinator.py - _extract_from_pdf()
+STEP 10: extractors/extraction_coordinator.py - _extract_from_pdf()
 --------------------------------------------------------------------------------
-Line 94-126: coordinator._extract_from_pdf(file_path, strategy)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-- strategy = None
+Line 100-139: PDF extraction coordination
 
 OBJECT STATE:
-- extractor: None (will be created)
-- result: None (will be created)
-- ocr_handler: None (may be created)
+- file_path: "./contracts/example.pdf"
+- strategy: None
+- extractor: Will be created
+- result: Will be returned
 
 EXECUTION:
-- Line 106: extractor = self.strategy_factory.get_extractor(file_path, strategy) [CALLED]
+- Line 112: extractor = self.strategy_factory.get_extractor(file_path, strategy)
+  - Calls StrategyFactory.get_extractor()
+- Line 113: result = extractor.extract(file_path)
+  - Calls extractor.extract()
+- Line 117: Check if result.metadata.get("is_scanned") → False (text-based PDF)
+- Line 139: return result
 
 MEMORY:
-- extractor: None (getting from factory...)
+- extractor: BaseExtractor instance (PDFExtractor)
+- result: ExtractedTextResult
 
-NEXT: Line 106: strategy_factory.get_extractor()
+NEXT: StrategyFactory.get_extractor() → extractor.extract()
 
 ================================================================================
 
-STEP 12: extractors/strategy_factory.py - get_extractor()
+STEP 11: extractors/strategy_factory.py - get_extractor()
 --------------------------------------------------------------------------------
-Line 37-70: strategy_factory.get_extractor(file_path, strategy)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-- strategy = None
+Line 38-77: Get appropriate extractor
 
 OBJECT STATE:
-- strategy: None (will use config)
-- file_ext: None (will be determined)
+- file_path: "./contracts/example.pdf"
+- strategy: None
+- EXTRACTION_STRATEGY: "auto" (from config)
 
 EXECUTION:
-- Line 48: strategy = None or EXTRACTION_STRATEGY → "auto"
-- Line 49: file_ext = Path("./contracts/example.pdf").suffix.lower() → ".pdf"
+- Line 48: strategy = strategy or EXTRACTION_STRATEGY
+  - strategy is None → uses "auto"
+- Line 49: file_ext = Path(file_path).suffix.lower()
+  - file_ext = ".pdf"
 - Line 56: Check if file_ext == ".pdf" → True
 - Line 57: Check if strategy == "auto" → True
-- Line 58: return self._get_auto_strategy_extractor(file_path) [CALLED]
+- Line 58: self._get_auto_strategy_extractor() called with file_path
 
 MEMORY:
 - strategy: "auto"
 - file_ext: ".pdf"
-- Returning to _get_auto_strategy_extractor()
+- extractor: BaseExtractor (to be returned)
 
-NEXT: Line 58: _get_auto_strategy_extractor()
-
-================================================================================
-
-STEP 13: extractors/strategy_factory.py - _get_auto_strategy_extractor()
---------------------------------------------------------------------------------
-Line 72-102: strategy_factory._get_auto_strategy_extractor(file_path)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
-
-OBJECT STATE:
-- pdf_extractor: None (will be created)
-- pdf_type: None (will be detected)
-
-EXECUTION:
-- Line 83: pdf_extractor = PDFExtractor(gemini_client=self.gemini_client) [CREATED]
-- Line 84: pdf_type = pdf_extractor._detect_pdf_type(file_path) [CALLED]
-
-MEMORY:
-- pdf_extractor: PDFExtractor object (see STEP 14)
-- pdf_type: None (detecting...)
-
-NEXT: Line 84: pdf_extractor._detect_pdf_type()
+NEXT: Call _get_auto_strategy_extractor()
 
 ================================================================================
 
-STEP 14: extractors/pdf_extractor.py - PDFExtractor.__init__()
+STEP 12: extractors/strategy_factory.py - _get_auto_strategy_extractor()
 --------------------------------------------------------------------------------
-Line 35-49: PDFExtractor.__init__(gemini_client=gemini_client)
+Line 79-103: Auto strategy extractor selection
 
 OBJECT STATE:
-- self.gemini_client: GeminiClient object (passed in)
-- self.preprocessor: None (will be created)
+- file_path: "./contracts/example.pdf"
+- pdf_extractor: Will be created
+- pdf_type: Will be detected
 
 EXECUTION:
-- Line 42: super().__init__() → BaseExtractor.__init__()
-- Line 43: self.gemini_client = gemini_client
-- Line 44-48: self.preprocessor = ImagePreprocessor(...) [CREATED]
+- Line 83: pdf_extractor = PDFExtractor(gemini_client=self.gemini_client)
+  - Creates PDFExtractor instance
+- Line 84: pdf_type = pdf_extractor._detect_pdf_type(file_path)
+  - Calls _detect_pdf_type()
+- Line 85: pdf_extractor._cached_pdf_type = pdf_type
+  - Caches PDF type to avoid re-detection
+- Line 87: self.logger.info(f"Auto strategy: Detected PDF type: {pdf_type}")
+- Line 89: Check if pdf_type == "text" → True
+- Line 91: return pdf_extractor
 
 MEMORY:
-- pdf_extractor: PDFExtractor object
-  - gemini_client: GeminiClient object (reference)
-  - preprocessor: ImagePreprocessor object
-  - logger: Logger("PDFExtractor") (from BaseExtractor)
+- pdf_extractor: PDFExtractor instance
+- pdf_type: "text" (detected)
+- pdf_extractor._cached_pdf_type: "text"
 
-NEXT: Return to _get_auto_strategy_extractor() → _detect_pdf_type()
+NEXT: _detect_pdf_type() → return pdf_extractor → extractor.extract()
 
 ================================================================================
 
-STEP 15: extractors/pdf_extractor.py - _detect_pdf_type()
+STEP 13: extractors/pdf_extractor.py - _detect_pdf_type()
 --------------------------------------------------------------------------------
-Line 91-145: pdf_extractor._detect_pdf_type(file_path)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
+Line 104-160: PDF type detection
 
 OBJECT STATE:
-- doc: None (will be opened)
-- total_pages: None
-- text_pages: 0
-- text_ratio: None
+- file_path: "./contracts/example.pdf"
+- doc: Will be opened
+- total_pages: Will be determined
+- text_pages: Will be counted
 
 EXECUTION:
-- Line 102: doc = fitz.open("./contracts/example.pdf") [CREATED]
-- Line 103: total_pages = len(doc) → 5
-- Line 109: text_pages = 0
-- Line 110: min_text_length = 50
-- Line 113: sample_pages = min(5, 5) → 5
-- Line 114: pages_to_check = [0, 1, 2, 3, 4]
-- Line 115: Check if total_pages > sample_pages → False (5 > 5 = False)
-- Line 118-126: Loop through pages_to_check
-  - Page 0: text = "MASTER SERVICE AGREEMENT\nThis Agreement...", len=1200 → text_pages = 1
-  - Page 1: text = "Section 1. Definitions...", len=800 → text_pages = 2
-  - Page 2: text = "Section 2. Services...", len=600 → text_pages = 3
-  - Page 3: text = "Section 3. Payment Terms...", len=700 → text_pages = 4
-  - Page 4: text = "Section 4. Indemnification...", len=500 → text_pages = 5
-- Line 128: doc.close()
-- Line 131: checked_pages = 5
-- Line 132: text_ratio = 5 / 5 = 1.0
-- Line 135: Check if text_ratio > 0.8 → True
-- Line 136: return "text"
-
-RETURN VALUE: "text"
+- Line 114: doc = None (initialized)
+- Line 116: doc = fitz.open(file_path)
+  - Opens PDF document
+- Line 117: total_pages = len(doc)
+  - total_pages = 5
+- Line 119: Check if total_pages == 0 → False
+- Line 122: text_pages = 0
+- Line 123: min_text_length = 50
+- Line 126: sample_pages = min(5, total_pages)
+  - sample_pages = 5
+- Line 127: pages_to_check = [0, 1, 2, 3, 4]
+- Line 128: Check if total_pages > sample_pages → False
+- Line 131: Loop through pages_to_check:
+  - page_num = 0: page = doc.load_page(0), text = "...", len(text) = 500 > 50 → text_pages = 1
+  - page_num = 1: page = doc.load_page(1), text = "...", len(text) = 600 > 50 → text_pages = 2
+  - page_num = 2: page = doc.load_page(2), text = "...", len(text) = 550 > 50 → text_pages = 3
+  - page_num = 3: page = doc.load_page(3), text = "...", len(text) = 580 > 50 → text_pages = 4
+  - page_num = 4: page = doc.load_page(4), text = "...", len(text) = 200 > 50 → text_pages = 5
+- Line 141: checked_pages = 5
+- Line 142: text_ratio = text_pages / checked_pages
+  - text_ratio = 5 / 5 = 1.0
+- Line 145: Check if text_ratio > 0.8 → True
+- Line 146: return "text"
+- Line 157: finally block:
+  - Check if doc is not None → True
+  - doc.close() called
 
 MEMORY:
+- doc: fitz.Document (closed after detection)
 - pdf_type: "text"
-- doc: Closed
+- text_pages: 5
+- text_ratio: 1.0
 
-NEXT: Return to _get_auto_strategy_extractor()
+NEXT: Return "text" → return pdf_extractor → extractor.extract()
 
 ================================================================================
 
-STEP 16: extractors/strategy_factory.py - _get_auto_strategy_extractor() (continued)
+STEP 14: extractors/pdf_extractor.py - PDFExtractor.extract()
 --------------------------------------------------------------------------------
-Line 86-90: After pdf_type detection
+Line 57-102: Main extraction method
 
 OBJECT STATE:
-- pdf_type = "text"
+- file_path: "./contracts/example.pdf"
+- self._cached_pdf_type: "text" (set by StrategyFactory)
+- self.logger: Logger instance
+- self.preprocessor: ImagePreprocessor instance (from __init__)
 
 EXECUTION:
-- Line 86: Log "Auto strategy: Detected PDF type: text"
-- Line 88: Check if pdf_type == "text" → True
-- Line 89: return pdf_extractor (PDFExtractor object)
-
-RETURN VALUE: PDFExtractor object
+- Line 68: self._log_extraction_start(file_path)
+  - Logs: "Starting extraction for: ./contracts/example.pdf"
+- Line 70: self.validate_file(file_path)
+  - Calls BaseExtractor.validate_file()
+- Line 72: Check if self._cached_pdf_type is not None → True
+- Line 75: pdf_type = self._cached_pdf_type
+  - pdf_type = "text"
+- Line 76: self.logger.debug("Using cached PDF type: text")
+- Line 78: Check if pdf_type == "text" → True
+- Line 80: result = self._extract_text_based(file_path)
+  - Calls _extract_text_based()
+- Line 91: self._log_extraction_complete(file_path, result)
+  - Logs completion
+- Line 92: return result
 
 MEMORY:
-- Returning PDFExtractor instance to get_extractor()
+- pdf_type: "text" (from cache)
+- result: ExtractedTextResult (from _extract_text_based)
 
-NEXT: Return to get_extractor() → _extract_from_pdf()
+NEXT: BaseExtractor.validate_file() → _extract_text_based()
+
+================================================================================
+
+STEP 15: extractors/base_extractor.py - validate_file()
+--------------------------------------------------------------------------------
+Line 59-84: File validation
+
+OBJECT STATE:
+- file_path: "./contracts/example.pdf"
+- path: Path object
+
+EXECUTION:
+- Line 73: path = Path(file_path)
+- Line 75: Check if not path.exists() → False
+- Line 78: Check if not path.is_file() → False
+- Line 81: Check if path.stat().st_size == 0 → False
+- Line 84: return True
+
+MEMORY:
+- path: Path object
+- File is valid
+
+NEXT: Return True → _extract_text_based()
+
+================================================================================
+
+STEP 16: extractors/pdf_extractor.py - _extract_text_based()
+--------------------------------------------------------------------------------
+Line 162-241: Text-based PDF extraction
+
+OBJECT STATE:
+- file_path: "./contracts/example.pdf"
+- doc: Will be opened
+- text_blocks: Will be collected
+- full_text: Will be collected
+- page_count: Will be determined
+
+EXECUTION:
+- Line 172: doc = fitz.open(file_path)
+  - Opens PDF document
+- Line 174: Check if doc.is_encrypted → False
+- Line 181: text_blocks = []
+- Line 182: full_text = []
+- Line 183: page_count = len(doc)
+  - page_count = 5
+- Line 185: Loop through range(page_count):
+  - page_num = 0: page = doc.load_page(0)
+    - text_dict = page.get_text("dict")
+    - Loop through blocks, lines, spans
+    - Extract text and metadata
+    - text_blocks.append({...})
+    - full_text.append(text)
+  - Repeat for pages 1-4
+- Line 217: raw_text = " ".join(full_text)
+  - Combines all text
+- Line 221: metadata = doc.metadata
+  - Gets PDF metadata
+- Line 223: result = ExtractedTextResult(...)
+  - Creates result object
+- Line 236: return result
+- Line 238: finally block:
+  - doc.close() called
+
+MEMORY:
+- doc: fitz.Document (closed in finally)
+- result: ExtractedTextResult
+  - raw_text: Full document text
+  - structured_text: List of text blocks
+  - headers: [] (empty, not extracted here)
+  - metadata: Dict with file info
+
+NEXT: Return result → _extract_from_pdf() → _process_with_llm()
 
 ================================================================================
 
 STEP 17: extractors/extraction_coordinator.py - _extract_from_pdf() (continued)
 --------------------------------------------------------------------------------
-Line 106-107: After getting extractor
+Line 115-139: OCR handling and return
 
 OBJECT STATE:
-- extractor: PDFExtractor object
-- result: None (will be created)
+- result: ExtractedTextResult (from extractor.extract())
+- is_scanned: False (from result.metadata)
+- extraction_method: "text" (from result.metadata)
 
 EXECUTION:
-- Line 107: result = extractor.extract(file_path) [CALLED]
+- Line 117: Check if result.metadata.get("is_scanned") → False
+  - Text-based PDF, skip OCR
+- Line 139: return result
 
 MEMORY:
-- extractor: PDFExtractor object
-- result: None (extracting...)
+- result: ExtractedTextResult (unchanged)
 
-NEXT: Line 107: pdf_extractor.extract()
+NEXT: Return result → extract_metadata() → _process_with_llm()
 
 ================================================================================
 
-STEP 18: extractors/pdf_extractor.py - extract()
+STEP 18: extractors/extraction_coordinator.py - extract_metadata() (continued)
 --------------------------------------------------------------------------------
-Line 51-89: pdf_extractor.extract(file_path)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
+Line 64-73: LLM processing
 
 OBJECT STATE:
-- pdf_type: None (will be detected again)
-- result: None (will be created)
+- extraction_result: ExtractedTextResult (from _extract_text())
+- is_scanned: False
+- extraction_strategy: "pymupdf" (from result.metadata)
 
 EXECUTION:
-- Line 65: Log "Starting extraction for: ./contracts/example.pdf"
-- Line 68: self.validate_file(file_path) [CALLED]
-  - Checks file exists → True
-  - Checks is file → True
-  - Checks size > 0 → True
-- Line 72: pdf_type = self._detect_pdf_type(file_path) [CALLED]
-  - Returns "text" (same as before)
-- Line 74: Check if pdf_type == "text" → True
-- Line 76: result = self._extract_text_based(file_path) [CALLED]
+- Line 66: Check if extraction_result.metadata.get("is_scanned") → False
+- Line 67: Check if extraction_result.metadata.get("extraction_strategy") == "gemini_vision" → False
+- Line 70: metadata = self._process_with_llm(extraction_result)
+  - Calls _process_with_llm()
 
 MEMORY:
-- pdf_type: "text"
-- result: None (extracting text...)
+- extraction_result: ExtractedTextResult
+- metadata: Dict (to be returned from _process_with_llm)
 
-NEXT: Line 76: _extract_text_based()
+NEXT: Call _process_with_llm()
 
 ================================================================================
 
-STEP 19: extractors/pdf_extractor.py - _extract_text_based()
+STEP 19: extractors/extraction_coordinator.py - _process_with_llm()
 --------------------------------------------------------------------------------
-Line 147-223: pdf_extractor._extract_text_based(file_path)
-
-PARAMETERS:
-- file_path = "./contracts/example.pdf"
+Line 155-182: LLM processing for metadata extraction
 
 OBJECT STATE:
-- doc: None (will be opened)
-- text_blocks: [] (empty list)
-- full_text: [] (empty list)
-- page_count: None
-- raw_text: None
+- extraction_result: ExtractedTextResult
+  - raw_text: Full document text
+  - metadata: Dict with file info
+- self.gemini_client: GeminiClient instance
 
 EXECUTION:
-- Line 157: doc = fitz.open("./contracts/example.pdf") [CREATED]
-- Line 161: Check if doc.is_encrypted → False
-- Line 165: text_blocks = []
-- Line 166: full_text = []
-- Line 167: page_count = len(doc) → 5
-- Line 169: Loop through pages (0-4):
-  
-  PAGE 0:
-  - Line 170: page = doc.load_page(0)
-  - Line 173: text_dict = page.get_text("dict")
-    - Returns dict with "blocks" key containing text blocks
-  - Line 176: Loop through blocks:
-    - Block 0: Header block
-      - Line 180: Loop through spans:
-        - Span 0: text="MASTER", font_size=18.0, font="Arial-Bold", bbox=(100, 50, 200, 70)
-          - text_blocks.append({"text": "MASTER", "font_size": 18.0, ...})
-          - full_text.append("MASTER")
-        - Span 1: text="SERVICE", font_size=18.0, ...
-        - Span 2: text="AGREEMENT", font_size=18.0, ...
-      - full_text.append("\n")
-    - Block 1: Body text block
-      - Multiple spans with font_size=12.0, font="Arial"
-      - All text added to text_blocks and full_text
-  
-  PAGE 1-4: Similar processing...
-
-- Line 202: raw_text = " ".join(full_text)
-  - Result: "MASTER SERVICE AGREEMENT\nThis Agreement is entered into... Section 1... Section 2..."
-  - Length: ~5000 characters
-
-- Line 205: metadata = doc.metadata
-  - Returns: {"title": "MSA", "author": "Company", ...}
-
-- Line 207-218: Create ExtractedTextResult
-  - raw_text: "MASTER SERVICE AGREEMENT\n..."
-  - structured_text: [list of 200+ text blocks with metadata]
-  - headers: [] (empty, not yet detected)
-  - metadata: {
-      "file_type": "pdf",
-      "is_scanned": False,
-      "page_count": 5,
-      "extraction_method": "text",
-      "extraction_strategy": "pymupdf",
-      "pdf_metadata": {...}
-    }
-
-- Line 222: doc.close()
-
-RETURN VALUE: ExtractedTextResult object
+- Line 165: Check if not extraction_result.raw_text → False
+  - Text exists, continue
+- Line 171: try block:
+  - Line 173: metadata = self.gemini_client.extract_metadata_from_text(extraction_result.raw_text)
+    - Calls GeminiClient.extract_metadata_from_text()
+- Line 176: return metadata
+- Line 177: except LLMError as e:
+  - Not triggered (assume success)
 
 MEMORY:
-- result: ExtractedTextResult object
-  - raw_text: "MASTER SERVICE AGREEMENT\n..." (~5000 chars)
-  - structured_text: [200+ text block dicts]
-  - headers: []
-  - metadata: {...}
+- metadata: Dict (to be returned from extract_metadata_from_text)
 
-NEXT: Return to extract() → _extract_from_pdf()
+NEXT: Call extract_metadata_from_text()
 
 ================================================================================
 
-STEP 20: extractors/extraction_coordinator.py - _extract_from_pdf() (continued)
+STEP 20: ai/gemini_client.py - extract_metadata_from_text()
 --------------------------------------------------------------------------------
-Line 109-125: After extraction
+Line 47-97: Text-based metadata extraction
 
 OBJECT STATE:
-- result: ExtractedTextResult object
-- images: None (not needed for text-based)
-- ocr_handler: None (not needed)
+- text: Full document text (from extraction_result.raw_text)
+- original_length: Will be determined
+- MAX_TEXT_LENGTH: 50000 (from config)
+- prompt: Will be built
+- response: Will be received
+- metadata: Will be parsed
 
 EXECUTION:
-- Line 110: Check if result.metadata.get("is_scanned") → False
-- Line 110-124: OCR block skipped (condition False)
-
-RETURN VALUE: ExtractedTextResult object
-
-MEMORY:
-- result: ExtractedTextResult object (unchanged)
-- Returning to _extract_text()
-
-NEXT: Return to _extract_text() → extract_metadata()
-
-================================================================================
-
-STEP 21: extractors/extraction_coordinator.py - extract_metadata() (continued)
---------------------------------------------------------------------------------
-Line 63-70: After text extraction
-
-OBJECT STATE:
-- extraction_result: ExtractedTextResult object
-- metadata: None (will be created)
-
-EXECUTION:
-- Line 64: Check if extraction_result.metadata.get("is_scanned") → False
-- Line 64: Check if EXTRACTION_STRATEGY == "gemini_vision" → False
-- Line 64: Condition False, go to else
-- Line 69: metadata = self._process_with_llm(extraction_result) [CALLED]
-
-MEMORY:
-- extraction_result: ExtractedTextResult object
-- metadata: None (processing with LLM...)
-
-NEXT: Line 69: _process_with_llm()
-
-================================================================================
-
-STEP 22: extractors/extraction_coordinator.py - _process_with_llm()
---------------------------------------------------------------------------------
-Line 142-163: coordinator._process_with_llm(extraction_result)
-
-PARAMETERS:
-- extraction_result: ExtractedTextResult object
-
-OBJECT STATE:
-- metadata: None (will be created)
-
-EXECUTION:
-- Line 152: Check if not extraction_result.raw_text → False (has text)
-- Line 159: metadata = self.gemini_client.extract_metadata_from_text(
-              extraction_result.raw_text) [CALLED]
-
-MEMORY:
-- metadata: None (calling Gemini...)
-
-NEXT: Line 159: gemini_client.extract_metadata_from_text()
-
-================================================================================
-
-STEP 23: ai/gemini_client.py - extract_metadata_from_text()
---------------------------------------------------------------------------------
-Line 46-87: gemini_client.extract_metadata_from_text(text)
-
-PARAMETERS:
-- text = "MASTER SERVICE AGREEMENT\n..." (~5000 characters)
-
-OBJECT STATE:
-- prompt: None (will be built)
-- response: None (will be created)
-- metadata: None (will be parsed)
-
-EXECUTION:
-- Line 57: Check if len(text) > MAX_TEXT_LENGTH → False (5000 < 12000)
-- Line 65: prompt = self._build_extraction_prompt(text) [CALLED]
-
-MEMORY:
-- text: "MASTER SERVICE AGREEMENT\n..." (unchanged)
-- prompt: None (building...)
-
-NEXT: Line 65: _build_extraction_prompt()
-
-================================================================================
-
-STEP 24: ai/gemini_client.py - _build_extraction_prompt()
---------------------------------------------------------------------------------
-Line 127-199: gemini_client._build_extraction_prompt(text)
-
-PARAMETERS:
-- text = "MASTER SERVICE AGREEMENT\n..." (~5000 chars)
-
-OBJECT STATE:
-- schema_json: None (will be created)
-- definitions_text: None (will be created)
-- prompt: None (will be built)
-
-EXECUTION:
-- Line 137: schema_json = json.dumps(METADATA_SCHEMA, indent=2)
-  - Result: JSON string with schema structure
-- Line 140: definitions_text = self._build_field_definitions_text() [CALLED]
-
-MEMORY:
-- schema_json: JSON string
-- definitions_text: None (building...)
-
-NEXT: Line 140: _build_field_definitions_text()
-
-================================================================================
-
-STEP 25: ai/gemini_client.py - _build_field_definitions_text()
---------------------------------------------------------------------------------
-Line 201-216: gemini_client._build_field_definitions_text()
-
-EXECUTION:
-- Line 208: Initialize lines = []
-- Line 210: Loop through FIELD_DEFINITIONS:
-  - "Contract Lifecycle":
-    - "Execution Date": "Date when both parties..."
-    - "Effective Date": "Date the MSA becomes..."
-    - ...
-  - "Commercial Operations": ...
-  - "Risk & Compliance": ...
-- Line 211-213: Build formatted text for each field
-- Line 216: return "\n".join(lines)
-
-RETURN VALUE: Formatted string with all field definitions
-
-MEMORY:
-- definitions_text: String with field definitions
-- Returning to _build_extraction_prompt()
-
-NEXT: Line 143: Build full prompt
-
-================================================================================
-
-STEP 26: ai/gemini_client.py - _build_extraction_prompt() (continued)
---------------------------------------------------------------------------------
-Line 142-169: Building full prompt
-
-EXECUTION:
-- Line 143: Check if text → True (has text)
-- Line 143-169: Build prompt string:
-  - Role: "You are a contract analyst..."
-  - Schema: JSON schema structure
-  - Field Definitions: All field definitions
-  - Extraction Rules: 6 rules (dates, Evergreen, clause refs, etc.)
-  - MSA TEXT: The actual contract text
-
-RETURN VALUE: Full prompt string (~8000 characters)
-
-MEMORY:
-- prompt: Full prompt string
-- Returning to extract_metadata_from_text()
-
-NEXT: Line 68: Call Gemini API
-
-================================================================================
-
-STEP 27: ai/gemini_client.py - extract_metadata_from_text() (continued)
---------------------------------------------------------------------------------
-Line 67-82: Call Gemini API and process response
-
-EXECUTION:
-- Line 69: response = self.text_model.generate_content(prompt)
-  - API CALL: POST to Gemini API
-  - Request: prompt string
-  - Response: JSON string with metadata
-  
-  SIMULATED RESPONSE:
-  {
-    "Contract Lifecycle": {
-      "Execution Date": "2025-03-14",
-      "Effective Date": "2025-04-01",
-      "Expiration / Termination Date": "2028-03-31",
-      "Authorized Signatory": "John Doe, VP of Operations"
-    },
-    "Commercial Operations": {
-      "Billing Frequency": "Monthly",
-      "Payment Terms": "Net 30 days from invoice date",
-      "Expense Reimbursement Rules": "Reimbursed as per client travel policy"
-    },
-    "Risk & Compliance": {
-      "Indemnification Clause Reference": "Section 12 – Indemnification: Each party agrees...",
-      "Limitation of Liability Cap": "Aggregate liability not to exceed fees paid in previous 12 months",
-      "Insurance Requirements": "CGL $2M per occurrence; Workers Comp as per law",
-      "Warranties / Disclaimers": "Services to be performed in a professional manner"
-    }
-  }
-
-- Line 72: metadata = self._parse_json_response(response.text) [CALLED]
-
-MEMORY:
-- response: Gemini API response object
-- metadata: None (parsing...)
-
-NEXT: Line 72: _parse_json_response()
-
-================================================================================
-
-STEP 28: ai/gemini_client.py - _parse_json_response()
---------------------------------------------------------------------------------
-Line 218-250: gemini_client._parse_json_response(response_text)
-
-PARAMETERS:
-- response_text: JSON string from Gemini
-
-EXECUTION:
-- Line 221: text = response_text.strip()
-- Line 223: Check if text.startswith("```") → False (clean JSON)
-- Line 238: return json.loads(text)
-  - Parses JSON string to dict
-
-RETURN VALUE: Dictionary with extracted metadata
-
-MEMORY:
-- metadata: Dict with extracted values
-- Returning to extract_metadata_from_text()
-
-NEXT: Line 75: Normalize metadata
-
-================================================================================
-
-STEP 29: ai/gemini_client.py - extract_metadata_from_text() (continued)
---------------------------------------------------------------------------------
-Line 74-82: Normalize and validate
-
-EXECUTION:
-- Line 75: metadata = self.schema_validator.normalize(metadata)
-  - Ensures all fields present, fills missing with "Not Found"
-  - In this case, all fields present, no changes needed
+- Line 58: original_length = len(text)
+  - original_length = 2500 (example)
+- Line 59: Check if original_length > MAX_TEXT_LENGTH → False
+  - No truncation needed
+- Line 69: prompt = self._build_extraction_prompt(text)
+  - Calls _build_extraction_prompt()
+- Line 72: response = self.text_model.generate_content(prompt)
+  - Calls Gemini API
+  - response.text contains JSON string
+- Line 76: metadata = self._parse_json_response(response.text)
+  - Calls _parse_json_response()
 - Line 78: is_valid, error = self.schema_validator.validate(metadata)
-  - Validates against JSON Schema
-  - All fields present and strings → True
-- Line 79: Check if not is_valid → False
-- Line 82: return metadata
-
-RETURN VALUE: Normalized metadata dict
+  - VALIDATES BEFORE NORMALIZATION (FIXED!)
+  - Checks raw LLM response
+  - If incomplete, is_valid = False
+- Line 79: Check if not is_valid → False (assume complete response)
+- Line 87: metadata = self.schema_validator.normalize(metadata)
+  - Fills missing fields with "Not Found"
+- Line 90: return metadata
 
 MEMORY:
-- metadata: Dict with all fields filled
-- Returning to _process_with_llm()
+- text: String (2500 chars)
+- prompt: String (with field definitions)
+- response: GenerateContentResponse
+- metadata: Dict (normalized, all fields present)
 
-NEXT: Return to _process_with_llm() → extract_metadata()
+NEXT: _build_extraction_prompt() → _parse_json_response() → return metadata
 
 ================================================================================
 
-STEP 30: extractors/extraction_coordinator.py - extract_metadata() (final)
+STEP 21: ai/gemini_client.py - _build_extraction_prompt()
 --------------------------------------------------------------------------------
-Line 69-71: Return metadata
+Line 142-240: Build extraction prompt
+
+OBJECT STATE:
+- text: Full document text
+- FIELD_DEFINITIONS: Dict from config.py
+- METADATA_SCHEMA: Dict from config.py
+- prompt: Will be built
 
 EXECUTION:
-- Line 69: metadata = {...} (from LLM)
+- Line 144: prompt = "..." (template start)
+- Line 147: Loop through FIELD_DEFINITIONS.items()
+  - Adds field definitions to prompt
+- Line 160: prompt += "\n\nEXTRACTION RULES:\n"
+  - Adds extraction rules
+- Line 180: prompt += "\n\nSEARCH GUIDANCE:\n"
+  - Adds search guidance (for varied document structures)
+- Line 200: prompt += "\n\nSCHEMA STRUCTURE:\n"
+  - Adds schema structure
+- Line 220: prompt += "\n\nCONTRACT TEXT:\n"
+- Line 221: prompt += text
+  - Adds contract text
+- Line 223: prompt += "\n\nPlease extract the metadata..."
+  - Adds final instructions
+- Line 224: return prompt
+
+MEMORY:
+- prompt: String (comprehensive prompt with field definitions, rules, and text)
+
+NEXT: Return prompt → generate_content() → _parse_json_response()
+
+================================================================================
+
+STEP 22: ai/gemini_client.py - _parse_json_response()
+--------------------------------------------------------------------------------
+Line 250-292: Parse JSON from LLM response
+
+OBJECT STATE:
+- response_text: JSON string from LLM
+- text: Will be extracted
+- metadata: Will be parsed
+
+EXECUTION:
+- Line 252: response_text = response.text
+  - Contains JSON string (possibly with markdown)
+- Line 254: Check if "```json" in response_text → False (assume clean JSON)
+- Line 256: Check if "```" in response_text → False
+- Line 258: text = response_text.strip()
+- Line 282: try block:
+  - Line 283: return json.loads(text)
+    - Parses JSON
+    - Returns Dict
+
+MEMORY:
+- response_text: String (JSON)
+- metadata: Dict (parsed JSON)
+
+NEXT: Return metadata → validate() → normalize() → return metadata
+
+================================================================================
+
+STEP 23: ai/gemini_client.py - extract_metadata_from_text() (continued)
+--------------------------------------------------------------------------------
+Line 78-90: Validation and normalization
+
+OBJECT STATE:
+- metadata: Dict (raw from LLM)
+- is_valid: Will be determined
+- error: Will be set if invalid
+
+EXECUTION:
+- Line 78: is_valid, error = self.schema_validator.validate(metadata)
+  - VALIDATES RAW LLM RESPONSE (FIXED!)
+  - Checks if all required fields present
+  - Checks if types are correct
+  - Example: metadata has 10 fields, missing 1 → is_valid = False
+- Line 79: Check if not is_valid → False (assume complete)
+  - If True, logs warning about incomplete response
+- Line 87: metadata = self.schema_validator.normalize(metadata)
+  - Fills missing fields with "Not Found"
+  - Ensures all 11 fields present
+- Line 90: return metadata
+
+MEMORY:
+- metadata: Dict (normalized, all 11 fields present)
+
+NEXT: Return metadata → _process_with_llm() → extract_metadata() → main.py
+
+================================================================================
+
+STEP 24: extractors/extraction_coordinator.py - _process_with_llm() (continued)
+--------------------------------------------------------------------------------
+Line 176-182: Return metadata
+
+OBJECT STATE:
+- metadata: Dict (from GeminiClient)
+
+EXECUTION:
+- Line 176: return metadata
+
+MEMORY:
+- metadata: Dict (complete metadata)
+
+NEXT: Return metadata → extract_metadata() → main.py
+
+================================================================================
+
+STEP 25: extractors/extraction_coordinator.py - extract_metadata() (final)
+--------------------------------------------------------------------------------
+Line 71-73: Return final metadata
+
+OBJECT STATE:
+- metadata: Dict (from _process_with_llm())
+
+EXECUTION:
 - Line 71: return metadata
 
-RETURN VALUE: Metadata dictionary
-
 MEMORY:
-- metadata: Dict with extracted metadata
-- Returning to extract_single_file()
+- metadata: Dict (complete metadata)
 
-NEXT: Return to extract_single_file()
+NEXT: Return metadata → main.py extract_single_file()
 
 ================================================================================
 
-STEP 31: main.py - extract_single_file() (continued)
+STEP 26: main.py - extract_single_file() (continued)
 --------------------------------------------------------------------------------
-Line 48-69: Validate and save
+Line 45-66: Validation and saving
+
+OBJECT STATE:
+- metadata: Dict (from coordinator)
+- validator: Will be created
+- is_valid: Will be determined
 
 EXECUTION:
-- Line 48: metadata = {...} (from coordinator)
-- Line 51: validator = SchemaValidator() [CREATED]
-- Line 52: is_valid, error = validator.validate(metadata)
-  - Returns (True, None)
-- Line 54: Check if not is_valid → False
-- Line 60: Check if output_path → True
-- Line 61: output_path = Path("./results/example.json")
-- Line 62: output_path.parent.mkdir(parents=True, exist_ok=True)
-  - Creates ./results/ directory if needed
-- Line 64-65: Write JSON to file
-  - Opens file in write mode
-  - json.dump(metadata, f, indent=2, ensure_ascii=False)
-  - Closes file
-- Line 67: Log "Metadata saved to: ./results/example.json"
-- Line 69: return metadata
-
-RETURN VALUE: Metadata dictionary
+- Line 48: validator = SchemaValidator()
+  - Creates new validator instance
+- Line 49: is_valid, error = validator.validate(metadata)
+  - Validates already-normalized data
+  - Should always pass (all fields present)
+- Line 51: Check if not is_valid → False
+  - If True, normalizes again (redundant)
+- Line 56: Check if output_path → True
+- Line 58: output_path = Path("./results/example.json")
+- Line 59: output_path.parent.mkdir(parents=True, exist_ok=True)
+  - Creates ./results/ directory
+- Line 61: with open(output_path, 'w', encoding='utf-8') as f:
+  - Opens file for writing
+- Line 62: json.dump(metadata, f, indent=2, ensure_ascii=False)
+  - Writes JSON to file
+- Line 64: logger.info(f"Metadata saved to: ./results/example.json")
+- Line 66: return metadata
 
 MEMORY:
 - metadata: Dict (saved to file)
 - File written: ./results/example.json
 
-NEXT: Return to main()
+NEXT: Return metadata → main() → exit
 
 ================================================================================
 
-STEP 32: main.py - main() (final)
+STEP 27: main.py - main() (final)
 --------------------------------------------------------------------------------
 Line 217-223: Final steps
+
+OBJECT STATE:
+- metadata: Dict (from extract_single_file)
 
 EXECUTION:
 - Line 217: metadata = {...} (from extract_single_file)
@@ -871,10 +819,12 @@ FINAL STATE
 
 FILES CREATED:
 - ./results/example.json (contains extracted metadata)
+- ./logs/msa_extractor_2025-01-07.log (contains logs)
 
 OBJECTS DESTROYED:
 - All local objects cleaned up by Python GC
 - File handles closed
+- PDF documents closed (in finally blocks)
 - API connections closed
 
 OUTPUT FILE CONTENT:
@@ -891,7 +841,7 @@ OUTPUT FILE CONTENT:
     "Expense Reimbursement Rules": "Reimbursed as per client travel policy"
   },
   "Risk & Compliance": {
-    "Indemnification Clause Reference": "Section 12 – Indemnification: Each party agrees...",
+    "Indemnification Clause Reference": "Section 12 – Indemnification",
     "Limitation of Liability Cap": "Aggregate liability not to exceed fees paid in previous 12 months",
     "Insurance Requirements": "CGL $2M per occurrence; Workers Comp as per law",
     "Warranties / Disclaimers": "Services to be performed in a professional manner"
@@ -902,457 +852,34 @@ OUTPUT FILE CONTENT:
 ISSUES IDENTIFIED
 ================================================================================
 
-1. PDF TYPE DETECTION DUPLICATION:
-   - _detect_pdf_type() called twice:
-     - Once in StrategyFactory._get_auto_strategy_extractor()
-     - Again in PDFExtractor.extract()
-   - OPTIMIZATION: Cache result or pass as parameter
-
-2. GEMINI CLIENT CREATION:
-   - GeminiClient created in ExtractionCoordinator.__init__()
-   - Also created in GeminiVisionExtractor if None
-   - Multiple instances possible
-   - OPTIMIZATION: Use singleton pattern or pass client through
-
-3. SCHEMA VALIDATOR CREATION:
-   - SchemaValidator created in GeminiClient.__init__()
-   - Also created in main.py extract_single_file()
-   - Multiple instances (not critical, but inefficient)
-   - OPTIMIZATION: Reuse validator instance
-
-4. ERROR HANDLING:
-   - Some error paths return empty schema
-   - Some raise exceptions
-   - Inconsistent error handling strategy
-   - RECOMMENDATION: Standardize error handling
-
-5. MEMORY USAGE:
-   - Full text stored in memory (could be large for big PDFs)
-   - Preprocessed images stored in metadata (for image PDFs)
-   - Could be memory-intensive for large documents
-   - RECOMMENDATION: Consider streaming for very large files
-
-6. OCR INTEGRATION:
-   - OCR handler created in _extract_from_pdf() if needed
-   - But images already preprocessed in PDFExtractor
-   - Good separation, but could be optimized
-
-================================================================================
-ALTERNATIVE FLOW: IMAGE-BASED PDF WITH TESSERACT
-================================================================================
-
-If PDF was image-based (scanned):
-
-STEP 11-18: Same until PDF type detection
-STEP 19: pdf_type = "image"
-STEP 20: result = self._extract_image_based(file_path)
-  - Converts pages to images
-  - Preprocesses with OpenCV
-  - Stores images in result.metadata["preprocessed_images"]
-STEP 21: _extract_from_pdf() detects is_scanned=True
-STEP 22: Creates OCRHandler(ocr_engine="tesseract")
-STEP 23: ocr_texts = ocr_handler.extract_text_from_images(images)
-  - Runs Tesseract OCR on each image
-  - Returns list of text strings
-STEP 24: result.raw_text = "\n\n".join(ocr_texts)
-STEP 25-32: Same LLM processing as text-based
-
-================================================================================
-ALTERNATIVE FLOW: GEMINI VISION STRATEGY
-================================================================================
-
-If strategy="gemini_vision" and PDF is image-based:
-
-STEP 11-13: Same until strategy selection
-STEP 14: pdf_type = "image"
-STEP 15: OCR_ENGINE == "gemini_vision" → True
-STEP 16: return GeminiVisionExtractor(gemini_client)
-STEP 17: gemini_vision_extractor.extract(file_path)
-  - Converts pages to images
-  - Sends each page to Gemini Vision API
-  - Extracts metadata directly from first page
-  - Extracts text from all pages
-STEP 18: result.metadata["extracted_metadata"] = metadata
-STEP 19: extract_metadata() detects gemini_vision strategy
-STEP 20: Returns metadata directly (no LLM processing needed)
-
-================================================================================
-ISSUES IDENTIFIED (DETAILED)
-================================================================================
-
-1. PDF TYPE DETECTION DUPLICATION
-   LOCATION: 
-   - extractors/strategy_factory.py:84 (_get_auto_strategy_extractor)
-   - extractors/pdf_extractor.py:72 (extract)
-   
-   PROBLEM:
-   - _detect_pdf_type() called twice for same file
-   - Opens PDF twice, reads pages twice
-   - Inefficient for large PDFs
-   
-   IMPACT: Medium (performance)
-   FIX: Cache result or pass pdf_type as parameter
-
-2. GEMINI CLIENT INSTANCE CREATION
-   LOCATION:
-   - extractors/extraction_coordinator.py:33 (creates GeminiClient)
-   - extractors/gemini_vision_extractor.py:36 (creates GeminiClient if None)
-   - extractors/pdf_extractor.py:43 (stores reference)
-   - extractors/docx_extractor.py:31 (stores reference)
-   
-   PROBLEM:
-   - Multiple GeminiClient instances possible
-   - Each creates SchemaValidator instance
-   - Memory inefficient
-   
-   IMPACT: Low (memory, but not critical)
-   FIX: Use singleton pattern or dependency injection
-
-3. SCHEMA VALIDATOR MULTIPLE INSTANCES
-   LOCATION:
-   - ai/gemini_client.py:43 (creates SchemaValidator)
-   - main.py:51 (creates SchemaValidator)
-   - ai/schema.py:124 (convenience function creates new instance)
-   
-   PROBLEM:
-   - Multiple SchemaValidator instances
-   - Each builds JSON Schema (redundant)
-   
-   IMPACT: Low (memory, but not critical)
-   FIX: Reuse validator instance or make it a singleton
-
-4. EXTRACTION_COORDINATOR LOGIC ISSUE
-   LOCATION: extractors/extraction_coordinator.py:64
-   
-   PROBLEM:
-   - Line 64: Checks EXTRACTION_STRATEGY (global config)
-   - But strategy parameter might be different
-   - Should check actual strategy used, not config
-   
-   CODE:
-   if extraction_result.metadata.get("is_scanned") and EXTRACTION_STRATEGY == "gemini_vision":
-   
-   SHOULD BE:
-   if extraction_result.metadata.get("is_scanned") and result.metadata.get("extraction_strategy") == "gemini_vision":
-   
-   IMPACT: High (logic bug - might skip LLM processing incorrectly)
-   FIX: Check result.metadata["extraction_strategy"] instead of EXTRACTION_STRATEGY
-
-5. GEMINI VISION EXTRACTOR - METADATA FROM FIRST PAGE ONLY
-   LOCATION: extractors/gemini_vision_extractor.py:84-92
-   
-   PROBLEM:
-   - Only extracts metadata from first page
-   - Multi-page contracts might have metadata on later pages
-   - Text extracted from all pages, but metadata only from page 0
-   
-   IMPACT: Medium (might miss metadata on later pages)
-   FIX: Extract metadata from all pages and merge, or use smarter page selection
-
-6. OCR HANDLER - IMAGE PREPROCESSING FLAG
-   LOCATION: extractors/ocr_handler.py:22
-   
-   PROBLEM:
-   - preprocess parameter exists but not used
-   - Images already preprocessed in PDFExtractor
-   - Flag is misleading
-   
-   IMPACT: Low (confusing but works)
-   FIX: Remove preprocess parameter or document that preprocessing happens earlier
-
-7. ERROR HANDLING INCONSISTENCY
-   LOCATION: Multiple files
-   
-   PROBLEM:
-   - Some methods return empty schema on error
-   - Some methods raise exceptions
-   - Some methods return empty string
-   - Inconsistent error handling strategy
-   
-   IMPACT: Medium (makes error handling difficult)
-   FIX: Standardize error handling - decide on exception vs return pattern
-
-8. MEMORY USAGE - LARGE PDFS
-   LOCATION: extractors/pdf_extractor.py:202
-   
-   PROBLEM:
-   - Full text stored in memory as string
-   - For very large PDFs (100+ pages), this could be large
-   - Preprocessed images also stored in memory
-   
-   IMPACT: Low (for typical contracts, but could be issue for very large files)
-   FIX: Consider streaming for very large files (future enhancement)
-
-9. GEMINI CLIENT - TEXT TRUNCATION
-   LOCATION: ai/gemini_client.py:57-62
-   
-   PROBLEM:
-   - Text truncated if > MAX_TEXT_LENGTH
-   - No warning about what was truncated
-   - Might lose important information
-   
-   IMPACT: Medium (data loss for long contracts)
-   FIX: Implement chunking + aggregation (as noted in PROMPT.md Phase 2)
-
-10. SCHEMA VALIDATION - MISSING FIELDS
-    LOCATION: ai/gemini_client.py:78-80
-    
-    PROBLEM:
-    - Validates after normalization
-    - Normalization fills missing fields with "Not Found"
-    - Validation will always pass (all fields present)
-    - Validation happens too late
-    
-    IMPACT: Low (works but validation is redundant)
-    FIX: Validate before normalization, or remove redundant validation
-
-================================================================================
-ALTERNATIVE SCENARIO: IMAGE-BASED PDF WITH TESSERACT OCR
-================================================================================
-
-Command: python main.py --file ./contracts/scanned.pdf --strategy tesseract
-
-STEP 1-10: Same initialization
-
-STEP 11: _extract_from_pdf() called
-STEP 12: strategy_factory.get_extractor() called
-  - strategy = "tesseract" (explicit)
-  - file_ext = ".pdf"
-  - Returns PDFExtractor (not GeminiVisionExtractor)
-
-STEP 13: pdf_extractor.extract() called
-STEP 14: _detect_pdf_type() → "image"
-STEP 15: _extract_image_based() called
-  - Opens PDF
-  - Converts each page to image (300 DPI)
-  - Preprocesses with OpenCV (deskew, denoise, enhance, binarize)
-  - Stores preprocessed images in result.metadata["preprocessed_images"]
-  - result.raw_text = "" (empty, will be filled by OCR)
-  - result.metadata["is_scanned"] = True
-  - result.metadata["extraction_method"] = "ocr"
-
-STEP 16: _extract_from_pdf() detects is_scanned=True
-STEP 17: Creates OCRHandler(ocr_engine="tesseract")
-  - Initializes Tesseract
-  - Checks if Tesseract available
-  - Sets _tesseract_available = True
-
-STEP 18: ocr_handler.extract_text_from_images(images) called
-  - Loop through preprocessed images
-  - For each image:
-    - Convert numpy array to PIL Image
-    - Run pytesseract.image_to_string()
-    - Returns text string
-  - Returns list of text strings (one per page)
-
-STEP 19: result.raw_text = "\n\n".join(ocr_texts)
-  - Combines all OCR text
-  - result.raw_text now contains full document text
-
-STEP 20: _process_with_llm() called
-  - Sends OCR text to Gemini Flash
-  - Extracts metadata
-  - Returns metadata dict
-
-STEP 21-32: Same as text-based flow
-
-MEMORY STATE:
-- images: List of numpy arrays (preprocessed) [STORED IN RESULT METADATA]
-- ocr_texts: List of strings (one per page)
-- result.raw_text: Combined OCR text (~4000 chars)
-- metadata: Extracted metadata dict
-
-ISSUE: Images stored in metadata dict - could be memory intensive for large PDFs
-
-================================================================================
-ALTERNATIVE SCENARIO: GEMINI VISION STRATEGY
-================================================================================
-
-Command: python main.py --file ./contracts/scanned.pdf --strategy gemini_vision
-
-STEP 1-10: Same initialization
-
-STEP 11: _extract_from_pdf() called
-STEP 12: strategy_factory.get_extractor() called
-  - strategy = "gemini_vision" (explicit)
-  - file_ext = ".pdf"
-  - Returns GeminiVisionExtractor (not PDFExtractor)
-
-STEP 13: gemini_vision_extractor.extract() called
-  - Opens PDF
-  - For each page:
-    - Converts to image (300 DPI)
-    - Converts to PNG bytes
-    - Page 0: Calls gemini_client.extract_metadata_from_image()
-      - Sends image to Gemini Vision API
-      - Returns metadata dict directly
-    - Page 1-4: Calls _extract_text_from_image()
-      - Sends image to Gemini Vision API
-      - Returns text string
-  - Combines text from all pages
-  - Stores metadata in result.metadata["extracted_metadata"]
-
-STEP 14: extract_metadata() checks strategy
-  - Line 64: extraction_result.metadata.get("is_scanned") → True
-  - Line 64: EXTRACTION_STRATEGY == "gemini_vision" → True (if config set)
-  - BUT: strategy parameter was "gemini_vision", not config
-  - BUG: Checks config instead of actual strategy used
-  
-  IF config is "auto" but strategy param is "gemini_vision":
-  - Condition False (EXTRACTION_STRATEGY != "gemini_vision")
-  - Goes to else, calls _process_with_llm()
-  - Processes text with LLM (redundant, metadata already extracted)
-
-STEP 15: Returns metadata from result.metadata["extracted_metadata"]
-
-MEMORY STATE:
-- all_text: List of strings (one per page)
-- all_metadata: List of dicts (only first has metadata, rest empty)
-- combined_metadata: Dict from first page
-- result.raw_text: Combined text from all pages
-- result.metadata["extracted_metadata"]: Metadata dict
-
-ISSUE: Logic bug in line 64 - should check result.metadata["extraction_strategy"]
-
-================================================================================
-ALTERNATIVE SCENARIO: DOCX FILE
-================================================================================
-
-Command: python main.py --file ./contracts/example.docx --out ./results/example.json
-
-STEP 1-10: Same initialization
-
-STEP 11: _extract_text() called
-  - file_ext = ".docx"
-  - Returns _extract_from_docx()
-
-STEP 12: _extract_from_docx() called
-  - Creates DOCXExtractor(gemini_client=gemini_client)
-  - Calls docx_extractor.extract()
-
-STEP 13: docx_extractor.extract() called
-  - Opens DOCX with python-docx
-  - Loops through paragraphs
-  - For each paragraph:
-    - Calls _classify_paragraph()
-    - Checks paragraph.style.name
-    - "Heading 1" → header, level 1
-    - "Heading 2" → header, level 2
-    - "Normal" → body text
-  - Combines text: raw_text = "\n".join(paragraphs)
-  - Extracts headers: headers = [blocks where type in ["header", "title"]]
-
-STEP 14: _process_with_llm() called
-  - Sends DOCX text to Gemini Flash
-  - Extracts metadata
-  - Returns metadata dict
-
-STEP 15-32: Same as text-based PDF flow
-
-MEMORY STATE:
-- text_blocks: List of dicts with style information
-- headers: List of header blocks
-- raw_text: Full document text
-- metadata: Extracted metadata dict
-
-NO ISSUES IDENTIFIED for DOCX flow
-
-================================================================================
-CRITICAL BUGS TO FIX
-================================================================================
-
-BUG #1: Strategy Check Logic Error
-FILE: extractors/extraction_coordinator.py:64
-CURRENT:
-  if extraction_result.metadata.get("is_scanned") and EXTRACTION_STRATEGY == "gemini_vision":
-
-SHOULD BE:
-  if extraction_result.metadata.get("is_scanned") and extraction_result.metadata.get("extraction_strategy") == "gemini_vision":
-
-REASON: Checks global config instead of actual strategy used
-
-BUG #2: PDF Type Detection Duplication
-FILES: 
-- extractors/strategy_factory.py:84
-- extractors/pdf_extractor.py:72
-
-FIX: Pass pdf_type as parameter or cache result
-
-BUG #3: Gemini Vision - Metadata Only from First Page
-FILE: extractors/gemini_vision_extractor.py:84-92
-
-FIX: Extract metadata from all pages and merge, or document limitation
-
-================================================================================
-MEMORY TRACE - TEXT-BASED PDF
-================================================================================
-
-PEAK MEMORY USAGE:
-1. PDF Document: ~500KB (file size)
-2. Text extraction: ~5KB (raw text string)
-3. Text blocks: ~50KB (200+ dicts with metadata)
-4. Prompt: ~8KB (full prompt string)
-5. Gemini response: ~2KB (JSON string)
-6. Metadata dict: ~1KB (final result)
-
-TOTAL: ~566KB (reasonable for 5-page PDF)
-
-FOR 100-PAGE PDF:
-- Text: ~100KB
-- Text blocks: ~500KB
-- Prompt: ~8KB (truncated if > 12KB)
-- Total: ~608KB (still reasonable)
-
-================================================================================
-MEMORY TRACE - IMAGE-BASED PDF WITH OCR
-================================================================================
-
-PEAK MEMORY USAGE:
-1. PDF Document: ~500KB (file size)
-2. Images (5 pages @ 300 DPI): ~5MB (numpy arrays)
-3. Preprocessed images: ~5MB (processed numpy arrays)
-4. OCR text: ~4KB (text strings)
-5. Prompt: ~8KB
-6. Metadata: ~1KB
-
-TOTAL: ~10.5MB (significant, but acceptable)
-
-FOR 100-PAGE PDF:
-- Images: ~100MB (could be problematic)
-- Preprocessed: ~100MB
-- Total: ~200MB (might need optimization)
-
-ISSUE: Images stored in result.metadata - should be cleared after OCR
-
-================================================================================
-EXECUTION TIME ESTIMATE
-================================================================================
-
-TEXT-BASED PDF (5 pages):
-- File validation: <1ms
-- PDF type detection: ~50ms (opens PDF, checks pages)
-- Text extraction: ~100ms (reads all pages)
-- LLM processing: ~2-5 seconds (API call)
-- Schema validation: <1ms
-- File write: <1ms
-TOTAL: ~2-5 seconds
-
-IMAGE-BASED PDF WITH TESSERACT (5 pages):
-- File validation: <1ms
-- PDF type detection: ~50ms
-- Image conversion: ~500ms (5 pages @ 300 DPI)
-- Image preprocessing: ~200ms (OpenCV operations)
-- OCR: ~5-10 seconds (Tesseract on 5 pages)
-- LLM processing: ~2-5 seconds
-TOTAL: ~8-16 seconds
-
-IMAGE-BASED PDF WITH GEMINI VISION (5 pages):
-- File validation: <1ms
-- Image conversion: ~500ms
-- Gemini Vision API (5 calls): ~10-15 seconds
-TOTAL: ~11-16 seconds
+1. VALIDATION ORDER FIXED ✅
+   - Location: ai/gemini_client.py:78-87
+   - Issue: Previously validated after normalization (always passed)
+   - Fix: Now validates BEFORE normalization
+   - Status: ✅ Fixed - Can now detect incomplete LLM responses
+
+2. REDUNDANT VALIDATION IN main.py
+   - Location: main.py:48-54
+   - Issue: Validates already-normalized data (always passes)
+   - Impact: Low - Redundant but harmless
+   - Recommendation: Could remove or keep as safety check
+
+3. RESOURCE MANAGEMENT ✅
+   - Location: extractors/pdf_extractor.py
+   - Issue: Document closing in finally blocks
+   - Status: ✅ Fixed - All documents properly closed
+
+4. PDF TYPE DETECTION CACHING ✅
+   - Location: extractors/strategy_factory.py:84-85
+   - Issue: PDF type detected twice (once in factory, once in extractor)
+   - Fix: Caching implemented
+   - Status: ✅ Fixed - Uses cached value
+
+5. LOGGING AND ERROR HANDLING ✅
+   - Location: All modules
+   - Issue: Inconsistent logging and error handling
+   - Status: ✅ Fixed - Centralized logging and custom exceptions
 
 ================================================================================
 END OF SIMULATION
 ================================================================================
-
