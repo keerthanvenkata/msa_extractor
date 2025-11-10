@@ -5,7 +5,6 @@ Handles both text-based LLM calls and vision model calls for metadata extraction
 """
 
 import json
-import logging
 from typing import Dict, Any, Optional, List
 import google.generativeai as genai
 
@@ -19,8 +18,10 @@ from config import (
     MAX_TEXT_LENGTH
 )
 from .schema import SchemaValidator
+from utils.logger import get_logger
+from utils.exceptions import ConfigurationError, LLMError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GeminiClient:
@@ -35,13 +36,13 @@ class GeminiClient:
         """
         self.api_key = api_key or GEMINI_API_KEY
         if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not set in environment or config")
+            raise ConfigurationError("GEMINI_API_KEY not set in environment or config")
         
         genai.configure(api_key=self.api_key)
         self.text_model = genai.GenerativeModel(GEMINI_TEXT_MODEL)
         self.vision_model = genai.GenerativeModel(GEMINI_VISION_MODEL)
         self.schema_validator = SchemaValidator()
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def extract_metadata_from_text(self, text: str) -> Dict[str, Any]:
         """
@@ -74,21 +75,29 @@ class GeminiClient:
             # Parse JSON response
             metadata = self._parse_json_response(response.text)
             
-            # Normalize to schema
-            metadata = self.schema_validator.normalize(metadata)
-            
-            # Validate
+            # Validate BEFORE normalization to detect incomplete/malformed LLM responses
             is_valid, error = self.schema_validator.validate(metadata)
             if not is_valid:
-                self.logger.warning(f"Schema validation failed: {error}")
-                # Return normalized data anyway (it will have correct structure)
+                self.logger.warning(
+                    f"Schema validation failed for raw LLM response: {error}. "
+                    f"This indicates the LLM returned incomplete or malformed data. "
+                    f"Normalizing to fill missing fields."
+                )
+            
+            # Normalize to schema (fills missing fields with "Not Found")
+            metadata = self.schema_validator.normalize(metadata)
             
             return metadata
             
+        except LLMError:
+            # Re-raise LLM errors
+            raise
         except Exception as e:
-            self.logger.error(f"Error extracting metadata: {e}")
-            # Return empty schema on error
-            return self.schema_validator.get_empty_schema()
+            self.logger.error("Error extracting metadata from text", exc_info=True)
+            raise LLMError(
+                f"Failed to extract metadata from text: {e}",
+                details={"text_length": len(text) if text else 0}
+            ) from e
     
     def extract_metadata_from_image(self, image_bytes: bytes, 
                                     image_mime_type: str = "image/png") -> Dict[str, Any]:
@@ -118,14 +127,29 @@ class GeminiClient:
             # Parse JSON response
             metadata = self._parse_json_response(response.text)
             
-            # Normalize to schema
+            # Validate BEFORE normalization to detect incomplete/malformed LLM responses
+            is_valid, error = self.schema_validator.validate(metadata)
+            if not is_valid:
+                self.logger.warning(
+                    f"Schema validation failed for raw LLM response: {error}. "
+                    f"This indicates the LLM returned incomplete or malformed data. "
+                    f"Normalizing to fill missing fields."
+                )
+            
+            # Normalize to schema (fills missing fields with "Not Found")
             metadata = self.schema_validator.normalize(metadata)
             
             return metadata
             
+        except LLMError:
+            # Re-raise LLM errors
+            raise
         except Exception as e:
-            self.logger.error(f"Error extracting metadata from image: {e}")
-            return self.schema_validator.get_empty_schema()
+            self.logger.error("Error extracting metadata from image", exc_info=True)
+            raise LLMError(
+                f"Failed to extract metadata from image: {e}",
+                details={"image_mime_type": image_mime_type}
+            ) from e
     
     def _build_extraction_prompt(self, text: str) -> str:
         """
@@ -270,8 +294,12 @@ Extract all text from the image and analyze it to fill in the schema above.
         try:
             return json.loads(text)
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse JSON response: {e}")
-            self.logger.debug(f"Response text: {response_text[:500]}")
-            # Return empty schema on parse error
+            self.logger.error(
+                "Failed to parse JSON response from LLM",
+                exc_info=True,
+                extra={"response_preview": response_text[:500]}
+            )
+            # Return empty schema as fallback for parse errors
+            # This is a recoverable error - LLM returned invalid JSON
             return self.schema_validator.get_empty_schema()
 
