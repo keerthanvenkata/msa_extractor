@@ -6,15 +6,16 @@ Extracts text from Microsoft Word documents with style-based header detection.
 
 from pathlib import Path
 from typing import List, Dict, Any
-import logging
 
 from docx import Document
 from docx.shared import Pt
 from docx.enum.style import WD_STYLE_TYPE
 
 from .base_extractor import BaseExtractor, ExtractedTextResult
+from utils.logger import get_logger
+from utils.exceptions import FileError, ExtractionError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DOCXExtractor(BaseExtractor):
@@ -93,9 +94,15 @@ class DOCXExtractor(BaseExtractor):
             self._log_extraction_complete(file_path, result)
             return result
             
+        except (FileError, ExtractionError):
+            # Re-raise custom exceptions
+            raise
         except Exception as e:
             self._log_error(file_path, e)
-            raise
+            raise ExtractionError(
+                f"Failed to extract from DOCX: {e}",
+                details={"file_path": file_path}
+            ) from e
     
     def _classify_paragraph(self, paragraph) -> Dict[str, Any]:
         """
