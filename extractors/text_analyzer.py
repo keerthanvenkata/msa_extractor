@@ -4,11 +4,12 @@ Text analysis module for header detection and structure analysis.
 Provides heuristics-based header detection for PDF text blocks.
 """
 
-import logging
 from typing import List, Dict, Any, Optional
 import statistics
 
-logger = logging.getLogger(__name__)
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TextAnalyzer:
@@ -16,7 +17,7 @@ class TextAnalyzer:
     
     def __init__(self):
         """Initialize text analyzer."""
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def detect_headers(self, text_blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
