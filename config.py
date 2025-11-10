@@ -126,8 +126,32 @@ NOT_FOUND_VALUE = "Not Found"
 # ============================================================================
 
 # Maximum text length for LLM processing (characters)
-# For longer docs, implement chunking + aggregation
+# For longer docs, implement chunking + aggregation (deferred to next iteration)
 MAX_TEXT_LENGTH = 50000
+
+# ============================================================================
+# Retry Configuration
+# ============================================================================
+
+# Maximum number of retry attempts for API calls
+API_MAX_RETRIES = int(os.getenv("API_MAX_RETRIES", "3"))
+
+# Initial retry delay in seconds (exponential backoff)
+API_RETRY_INITIAL_DELAY = float(os.getenv("API_RETRY_INITIAL_DELAY", "1.0"))
+
+# Maximum retry delay in seconds (caps exponential backoff)
+API_RETRY_MAX_DELAY = float(os.getenv("API_RETRY_MAX_DELAY", "30.0"))
+
+# Retry on these HTTP status codes
+API_RETRY_STATUS_CODES = [429, 500, 502, 503, 504]
+
+# Retry on these exception types
+API_RETRY_EXCEPTIONS = [
+    "google.api_core.exceptions.ResourceExhausted",  # Rate limit
+    "google.api_core.exceptions.ServiceUnavailable",  # Service unavailable
+    "google.api_core.exceptions.InternalServerError",  # Internal server error
+    "google.api_core.exceptions.DeadlineExceeded",  # Timeout
+]
 
 # ============================================================================
 # PDF Preprocessing Configuration
