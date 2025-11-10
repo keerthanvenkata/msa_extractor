@@ -232,7 +232,10 @@ class OCRHandler:
         
         response = model.generate_content([
             "Extract all text from this image. Return only the text, no formatting.",
-            img_bytes.getvalue()
+            {
+                "mime_type": "image/png",
+                "data": img_bytes.getvalue()
+            }
         ])
         
         return response.text.strip() if response.text else ""
