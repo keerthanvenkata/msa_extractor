@@ -5,7 +5,8 @@ Handles both text-based LLM calls and vision model calls for metadata extraction
 """
 
 import json
-from typing import Dict, Any, Optional, List
+import time
+from typing import Dict, Any, Optional, List, Callable
 import google.generativeai as genai
 
 from config import (
@@ -15,7 +16,11 @@ from config import (
     METADATA_SCHEMA,
     FIELD_DEFINITIONS,
     NOT_FOUND_VALUE,
-    MAX_TEXT_LENGTH
+    MAX_TEXT_LENGTH,
+    API_MAX_RETRIES,
+    API_RETRY_INITIAL_DELAY,
+    API_RETRY_MAX_DELAY,
+    API_RETRY_EXCEPTIONS
 )
 from .schema import SchemaValidator
 from utils.logger import get_logger
@@ -69,8 +74,11 @@ class GeminiClient:
         prompt = self._build_extraction_prompt(text)
         
         try:
-            # Call Gemini API
-            response = self.text_model.generate_content(prompt)
+            # Call Gemini API with retry logic
+            response = self._call_with_retry(
+                lambda: self.text_model.generate_content(prompt),
+                operation="extract_metadata_from_text"
+            )
             
             # Parse JSON response
             metadata = self._parse_json_response(response.text)
@@ -115,14 +123,17 @@ class GeminiClient:
         prompt = self._build_extraction_prompt("")
         
         try:
-            # Call Gemini Vision API
-            response = self.vision_model.generate_content([
-                prompt,
-                {
-                    "mime_type": image_mime_type,
-                    "data": image_bytes
-                }
-            ])
+            # Call Gemini Vision API with retry logic
+            response = self._call_with_retry(
+                lambda: self.vision_model.generate_content([
+                    prompt,
+                    {
+                        "mime_type": image_mime_type,
+                        "data": image_bytes
+                    }
+                ]),
+                operation="extract_metadata_from_image"
+            )
             
             # Parse JSON response
             metadata = self._parse_json_response(response.text)
@@ -259,6 +270,84 @@ Extract all text from the image and analyze it to fill in the schema above.
             lines.append("")
         
         return "\n".join(lines)
+    
+    def _call_with_retry(self, api_call: Callable, operation: str = "api_call"):
+        """
+        Call API with retry logic and exponential backoff.
+        
+        Args:
+            api_call: Callable that makes the API call
+            operation: Name of operation for logging
+        
+        Returns:
+            API response
+        
+        Raises:
+            LLMError: If all retries fail
+        """
+        last_exception = None
+        
+        for attempt in range(API_MAX_RETRIES + 1):
+            try:
+                return api_call()
+            except Exception as e:
+                last_exception = e
+                exception_type = type(e).__name__
+                exception_module = type(e).__module__
+                full_exception_name = f"{exception_module}.{exception_type}"
+                
+                # Check if this exception should be retried
+                should_retry = False
+                
+                # Check if exception type matches retryable exceptions
+                for retryable_exception in API_RETRY_EXCEPTIONS:
+                    if retryable_exception in full_exception_name or retryable_exception in exception_type:
+                        should_retry = True
+                        break
+                
+                # Also retry on common transient errors
+                if not should_retry:
+                    error_str = str(e).lower()
+                    if any(keyword in error_str for keyword in [
+                        "rate limit", "quota", "429", "503", "502", "500",
+                        "timeout", "deadline", "unavailable", "retry"
+                    ]):
+                        should_retry = True
+                
+                # If this is the last attempt or shouldn't retry, raise
+                if attempt == API_MAX_RETRIES or not should_retry:
+                    if attempt > 0:
+                        self.logger.error(
+                            f"{operation} failed after {attempt + 1} attempts",
+                            exc_info=True
+                        )
+                    raise LLMError(
+                        f"API call failed: {e}",
+                        details={
+                            "operation": operation,
+                            "attempts": attempt + 1,
+                            "exception_type": full_exception_name
+                        }
+                    ) from e
+                
+                # Calculate exponential backoff delay
+                delay = min(
+                    API_RETRY_INITIAL_DELAY * (2 ** attempt),
+                    API_RETRY_MAX_DELAY
+                )
+                
+                self.logger.warning(
+                    f"{operation} failed (attempt {attempt + 1}/{API_MAX_RETRIES + 1}): {e}. "
+                    f"Retrying in {delay:.2f} seconds..."
+                )
+                
+                time.sleep(delay)
+        
+        # Should never reach here, but just in case
+        raise LLMError(
+            f"API call failed after {API_MAX_RETRIES + 1} attempts",
+            details={"operation": operation, "last_exception": str(last_exception)}
+        ) from last_exception
     
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         """
