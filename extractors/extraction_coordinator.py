@@ -4,7 +4,6 @@ Extraction coordinator to orchestrate the full extraction pipeline.
 Coordinates text extraction, OCR, and LLM processing based on document type and strategy.
 """
 
-import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -14,9 +13,11 @@ from .pdf_extractor import PDFExtractor
 from .docx_extractor import DOCXExtractor
 from .ocr_handler import OCRHandler
 from ai.gemini_client import GeminiClient
+from utils.logger import get_logger
+from utils.exceptions import FileError, ExtractionError, LLMError
 from config import EXTRACTION_STRATEGY, OCR_ENGINE
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ExtractionCoordinator:
@@ -35,7 +36,7 @@ class ExtractionCoordinator:
             self.gemini_client = gemini_client
         
         self.strategy_factory = StrategyFactory(gemini_client=self.gemini_client)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def extract_metadata(self, file_path: str, 
                         strategy: str = None) -> Dict[str, Any]:
@@ -91,7 +92,10 @@ class ExtractionCoordinator:
         elif file_ext == ".docx":
             return self._extract_from_docx(file_path)
         else:
-            raise ValueError(f"Unsupported file type: {file_ext}")
+            raise FileError(
+                f"Unsupported file type: {file_ext}",
+                details={"file_path": file_path, "file_extension": file_ext}
+            )
     
     def _extract_from_pdf(self, file_path: str, 
                           strategy: str = None) -> ExtractedTextResult:
@@ -164,10 +168,16 @@ class ExtractionCoordinator:
             validator = SchemaValidator()
             return validator.get_empty_schema()
         
-        # Use Gemini Flash to extract metadata
-        metadata = self.gemini_client.extract_metadata_from_text(
-            extraction_result.raw_text
-        )
-        
-        return metadata
+        try:
+            # Use Gemini Flash to extract metadata
+            metadata = self.gemini_client.extract_metadata_from_text(
+                extraction_result.raw_text
+            )
+            return metadata
+        except LLMError as e:
+            self.logger.error("LLM extraction failed", exc_info=True)
+            raise ExtractionError(
+                f"Failed to extract metadata using LLM: {e}",
+                details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
+            ) from e
 
