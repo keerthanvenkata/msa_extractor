@@ -9,9 +9,9 @@
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GEMINI_API_KEY` | Required for all Gemini calls | `` (must be set) |
-| `GEMINI_TEXT_MODEL` | Text LLM for metadata extraction (`gemini-1.5-flash` recommended) | `gemini-1.5-flash` |
-| `GEMINI_VISION_MODEL` | Vision LLM for direct OCR/understanding | `gemini-1.5-flash` |
-| `GEMINI_MODEL` | Legacy default (kept for backwards compatibility) | `gemini-pro` |
+| `GEMINI_TEXT_MODEL` | Text LLM for metadata extraction | `gemini-2.5-pro` |
+| `GEMINI_VISION_MODEL` | Vision LLM for direct OCR/understanding | `gemini-2.5-pro` |
+| `GEMINI_MODEL` | Legacy default (kept for backwards compatibility, not used) | `gemini-pro` |
 
 ## Extraction Strategies
 
