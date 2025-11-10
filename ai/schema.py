@@ -7,11 +7,12 @@ Defines the canonical schema and provides validation utilities.
 import json
 import jsonschema
 from typing import Dict, Any, Optional
-import logging
 
 from config import METADATA_SCHEMA, NOT_FOUND_VALUE
+from utils.logger import get_logger
+from utils.exceptions import ValidationError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SchemaValidator:
@@ -20,7 +21,7 @@ class SchemaValidator:
     def __init__(self):
         """Initialize schema validator."""
         self.schema = self._build_json_schema()
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def _build_json_schema(self) -> Dict[str, Any]:
         """
