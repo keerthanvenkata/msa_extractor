@@ -81,6 +81,71 @@ When using Gemini Vision strategy, metadata is only extracted from the first pag
 
 ---
 
+### BUG-004: Resource Management - Document Accessed After Close
+**Location:** `extractors/pdf_extractor.py:306-443` (`_extract_mixed`)
+
+**Problem:**
+In `_extract_mixed` method:
+1. Document closed on line 388
+2. Document accessed again on line 411 (`doc.metadata`) after being closed
+3. Document closed again on line 413 (double close)
+4. Exception handler also closes document (could be triple close)
+
+**Impact:** Critical - Resource leak, potential crashes, undefined behavior
+
+**Priority:** P0 - Must fix before production
+
+**Status:** 🟢 Fixed (2025-01-07) - Removed duplicate metadata extraction and close, moved to finally block
+
+---
+
+### BUG-005: Resource Management - Document Not Closed on Exception
+**Location:** 
+- `extractors/pdf_extractor.py:104-160` (`_detect_pdf_type`)
+- `extractors/gemini_vision_extractor.py:61-158` (`extract`)
+
+**Problem:**
+- `_detect_pdf_type`: Document not closed in exception handler
+- `gemini_vision_extractor.extract`: Document closed in try block, not in finally
+
+**Impact:** Medium - Resource leak if exception occurs
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-01-07) - Added finally blocks to ensure document is always closed
+
+---
+
+### BUG-006: Schema Validation After Normalization is Ineffective
+**Location:** 
+- `ai/gemini_client.py:77-86` (`extract_metadata_from_text`)
+- `ai/gemini_client.py:127-133` (`extract_metadata_from_image`)
+
+**Problem:**
+The `normalize()` method fills all missing fields with "Not Found", so `validate()` called after normalization will always pass. This prevents detection of incomplete or malformed responses from the LLM. Validation should occur before normalization to detect what the LLM actually returned versus what fields are being filled in as defaults.
+
+**Current Code:**
+```python
+metadata = self.schema_validator.normalize(metadata)  # Fills all missing fields
+is_valid, error = self.schema_validator.validate(metadata)  # Always passes!
+```
+
+**Should Be:**
+```python
+is_valid, error = self.schema_validator.validate(metadata)  # Check raw LLM response
+if not is_valid:
+    self.logger.warning("LLM returned incomplete data")
+metadata = self.schema_validator.normalize(metadata)  # Then fill missing fields
+```
+
+**Impact:** High - Cannot detect incomplete LLM responses, leading to silent failures
+
+**Priority:** P0 - Must fix before production
+
+**Status:** 🟢 Fixed (2025-01-07) - Validation now occurs before normalization in both methods
+
+---
+
 ## 🟡 Performance Issues
 
 ### PERF-001: Multiple GeminiClient Instances
