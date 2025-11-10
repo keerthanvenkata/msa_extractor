@@ -323,9 +323,11 @@ For documents exceeding `MAX_TEXT_LENGTH`, implement chunking strategy:
 
 **Priority:** P1 - Required for long document support
 
-**Status:** 📋 TODO
+**Status:** 🔵 Deferred to Next Iteration
 
 **Reference:** PROMPT.md Phase 2
+
+**Note:** Deferred to next iteration. Current 50K character limit handles most sample documents. Will implement hybrid approach (full document first, chunking fallback) when needed.
 
 ---
 
