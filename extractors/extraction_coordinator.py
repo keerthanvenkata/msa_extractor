@@ -156,28 +156,84 @@ class ExtractionCoordinator:
         """
         Process extracted text with Gemini LLM to extract metadata.
         
+        Supports different extraction modes:
+        - text_only, text_ocr, image_only: Use text-based extraction
+        - multimodal: Use multimodal extraction (text + images)
+        
         Args:
             extraction_result: Result from text extraction
         
         Returns:
             Dictionary with extracted metadata
         """
-        if not extraction_result.raw_text:
-            self.logger.warning("No text extracted, returning empty schema")
-            from ai.schema import SchemaValidator
-            validator = SchemaValidator()
-            return validator.get_empty_schema()
+        # Check if multimodal mode is enabled
+        extraction_mode = extraction_result.metadata.get("extraction_mode", "text_ocr")
+        extraction_strategy = extraction_result.metadata.get("extraction_strategy", "")
         
-        try:
-            # Use Gemini Flash to extract metadata
-            metadata = self.gemini_client.extract_metadata_from_text(
-                extraction_result.raw_text
-            )
-            return metadata
-        except LLMError as e:
-            self.logger.error("LLM extraction failed", exc_info=True)
-            raise ExtractionError(
-                f"Failed to extract metadata using LLM: {e}",
-                details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
-            ) from e
+        if extraction_mode == "multimodal" and extraction_strategy == "multimodal":
+            # Multimodal extraction: text + images
+            image_pages_bytes = extraction_result.metadata.get("image_pages_bytes")
+            
+            if image_pages_bytes:
+                # Get text and image bytes
+                text_content = extraction_result.raw_text or ""
+                img_bytes_list = [img_bytes for _, img_bytes in image_pages_bytes]
+                
+                self.logger.info(
+                    f"Using multimodal extraction: {len(text_content)} chars text, "
+                    f"{len(img_bytes_list)} image(s)"
+                )
+                
+                try:
+                    # Use multimodal extraction
+                    metadata = self.gemini_client.extract_metadata_multimodal(
+                        text_content,
+                        img_bytes_list
+                    )
+                    return metadata
+                except LLMError as e:
+                    self.logger.error("Multimodal extraction failed", exc_info=True)
+                    raise ExtractionError(
+                        f"Failed to extract metadata using multimodal LLM: {e}",
+                        details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
+                    ) from e
+            else:
+                # No image pages, fall back to text-only
+                self.logger.warning("Multimodal mode but no image pages, using text-only")
+                if not extraction_result.raw_text:
+                    from ai.schema import SchemaValidator
+                    validator = SchemaValidator()
+                    return validator.get_empty_schema()
+                
+                try:
+                    metadata = self.gemini_client.extract_metadata_from_text(
+                        extraction_result.raw_text
+                    )
+                    return metadata
+                except LLMError as e:
+                    self.logger.error("LLM extraction failed", exc_info=True)
+                    raise ExtractionError(
+                        f"Failed to extract metadata using LLM: {e}",
+                        details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
+                    ) from e
+        else:
+            # Standard text-based extraction
+            if not extraction_result.raw_text:
+                self.logger.warning("No text extracted, returning empty schema")
+                from ai.schema import SchemaValidator
+                validator = SchemaValidator()
+                return validator.get_empty_schema()
+            
+            try:
+                # Use Gemini Flash to extract metadata
+                metadata = self.gemini_client.extract_metadata_from_text(
+                    extraction_result.raw_text
+                )
+                return metadata
+            except LLMError as e:
+                self.logger.error("LLM extraction failed", exc_info=True)
+                raise ExtractionError(
+                    f"Failed to extract metadata using LLM: {e}",
+                    details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
+                ) from e
 
