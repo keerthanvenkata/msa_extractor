@@ -162,6 +162,76 @@ class GeminiClient:
                 details={"image_mime_type": image_mime_type}
             ) from e
     
+    def extract_metadata_multimodal(self, text: str, image_bytes_list: List[bytes],
+                                   image_mime_type: str = "image/png") -> Dict[str, Any]:
+        """
+        Extract metadata from text and images using Gemini Vision model (multimodal input).
+        
+        This method sends both text and images together to the vision model, which is
+        particularly useful for mixed PDFs where some pages are text-based and others
+        are image-based (e.g., signature pages).
+        
+        Args:
+            text: Contract text extracted from text-based pages
+            image_bytes_list: List of image data as bytes (one per image page)
+            image_mime_type: MIME type of images (default: image/png)
+        
+        Returns:
+            Dictionary with extracted metadata matching schema
+        """
+        # Build prompt with text
+        prompt = self._build_extraction_prompt(text)
+        
+        # Build content list: prompt + all images
+        content = [prompt]
+        for img_bytes in image_bytes_list:
+            content.append({
+                "mime_type": image_mime_type,
+                "data": img_bytes
+            })
+        
+        try:
+            # Call Gemini Vision API with multimodal input (text + images)
+            response = self._call_with_retry(
+                lambda: self.vision_model.generate_content(content),
+                operation="extract_metadata_multimodal"
+            )
+            
+            # Parse JSON response
+            metadata = self._parse_json_response(response.text)
+            
+            # Validate BEFORE normalization to detect incomplete/malformed LLM responses
+            is_valid, error = self.schema_validator.validate(metadata)
+            if not is_valid:
+                self.logger.warning(
+                    f"Schema validation failed for raw LLM response: {error}. "
+                    f"This indicates the LLM returned incomplete or malformed data. "
+                    f"Normalizing to fill missing fields."
+                )
+            
+            # Normalize to fill missing fields
+            metadata = self.schema_validator.normalize(metadata)
+            
+            self.logger.info(
+                f"Multimodal extraction complete: {len(text)} chars text, "
+                f"{len(image_bytes_list)} image(s)"
+            )
+            
+            return metadata
+            
+        except LLMError:
+            # Re-raise LLM errors
+            raise
+        except Exception as e:
+            self.logger.error("Error extracting metadata from multimodal input", exc_info=True)
+            raise LLMError(
+                f"Failed to extract metadata from multimodal input: {e}",
+                details={
+                    "text_length": len(text) if text else 0,
+                    "image_count": len(image_bytes_list)
+                }
+            ) from e
+    
     def _build_extraction_prompt(self, text: str) -> str:
         """
         Build extraction prompt following docs/REQUIREMENTS.md specifications.
