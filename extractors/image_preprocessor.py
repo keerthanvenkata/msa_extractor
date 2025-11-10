@@ -11,9 +11,10 @@ Provides image preprocessing functions to improve OCR accuracy:
 import cv2
 import numpy as np
 from typing import Optional
-import logging
 
-logger = logging.getLogger(__name__)
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ImagePreprocessor:
@@ -34,7 +35,7 @@ class ImagePreprocessor:
         self.enable_denoise = enable_denoise
         self.enable_enhance = enable_enhance
         self.enable_binarize = enable_binarize
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def preprocess(self, image: np.ndarray) -> np.ndarray:
         """
