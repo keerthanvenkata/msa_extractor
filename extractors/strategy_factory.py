@@ -4,7 +4,6 @@ Strategy factory for selecting and routing extraction strategies.
 Handles strategy selection based on configuration and document type.
 """
 
-import logging
 from typing import Optional, Dict, Any
 from pathlib import Path
 
@@ -17,8 +16,10 @@ from .base_extractor import BaseExtractor, ExtractedTextResult
 from .pdf_extractor import PDFExtractor
 from .docx_extractor import DOCXExtractor
 from .ocr_handler import OCRHandler
+from utils.logger import get_logger
+from utils.exceptions import ConfigurationError, FileError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StrategyFactory:
@@ -32,7 +33,7 @@ class StrategyFactory:
             gemini_client: Optional Gemini client (will be created if needed)
         """
         self.gemini_client = gemini_client
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
     
     def get_extractor(self, file_path: str, strategy: str = None) -> BaseExtractor:
         """
@@ -65,9 +66,15 @@ class StrategyFactory:
                 # Use PDF extractor with OCR handler
                 return PDFExtractor(gemini_client=self.gemini_client)
             else:
-                raise ValueError(f"Unknown extraction strategy: {strategy}")
+                raise ConfigurationError(
+                    f"Unknown extraction strategy: {strategy}",
+                    details={"strategy": strategy, "file_path": file_path}
+                )
         
-        raise ValueError(f"Unsupported file type: {file_ext}")
+        raise FileError(
+            f"Unsupported file type: {file_ext}",
+            details={"file_path": file_path, "file_extension": file_ext}
+        )
     
     def _get_auto_strategy_extractor(self, file_path: str) -> BaseExtractor:
         """
