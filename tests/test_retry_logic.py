@@ -31,7 +31,7 @@ class TestRetryLogic:
         
         call_count = 0
         
-        def mock_api_call():
+        def mock_api_call(*args, **kwargs):
             nonlocal call_count
             call_count += 1
             if call_count < 3:
@@ -56,7 +56,7 @@ class TestRetryLogic:
     def test_retry_exhausted(self, gemini_client):
         """Test that retry gives up after max attempts."""
         # Mock API call that always fails
-        def mock_api_call():
+        def mock_api_call(*args, **kwargs):
             error = Exception("Rate limit exceeded")
             error.__class__.__name__ = "ResourceExhausted"
             raise error
@@ -76,7 +76,7 @@ class TestRetryLogic:
     def test_no_retry_on_non_transient_error(self, gemini_client):
         """Test that non-transient errors are not retried."""
         # Mock API call that fails with non-retryable error
-        def mock_api_call():
+        def mock_api_call(*args, **kwargs):
             raise ValueError("Invalid input")
         
         gemini_client.text_model = Mock()
@@ -98,7 +98,7 @@ class TestRetryLogic:
             delays.append(delay)
         
         # Mock API call that fails
-        def mock_api_call():
+        def mock_api_call(*args, **kwargs):
             error = Exception("Rate limit exceeded")
             error.__class__.__name__ = "ResourceExhausted"
             raise error
