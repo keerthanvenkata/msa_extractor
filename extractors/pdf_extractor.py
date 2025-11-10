@@ -24,7 +24,8 @@ from config import (
     ENABLE_DESKEW,
     ENABLE_DENOISE,
     ENABLE_ENHANCE,
-    ENABLE_BINARIZE
+    ENABLE_BINARIZE,
+    EXTRACTION_MODE
 )
 
 logger = get_logger(__name__)
@@ -305,13 +306,48 @@ class PDFExtractor(BaseExtractor):
         finally:
             doc.close()
     
+    def _is_signature_page(self, page, page_num: int, total_pages: int) -> bool:
+        """
+        Detect if a page is likely a signature page.
+        
+        Heuristics:
+        - Last page or last few pages
+        - Low text content
+        - Keywords like "signature", "sign", "date", "authorized"
+        
+        Args:
+            page: PyMuPDF page object
+            page_num: Page number (0-indexed)
+            total_pages: Total number of pages
+        
+        Returns:
+            True if likely a signature page
+        """
+        # Check if it's one of the last 2 pages
+        is_last_pages = (page_num + 1) >= (total_pages - 1)
+        
+        # Get text and check for signature-related keywords
+        text = page.get_text().lower()
+        signature_keywords = ["signature", "sign", "signed", "date", "authorized", 
+                            "signatory", "witness", "notary"]
+        has_signature_keywords = any(keyword in text for keyword in signature_keywords)
+        
+        # Low text content (less than 100 chars) suggests image-based signature page
+        low_text = len(text.strip()) < 100
+        
+        return is_last_pages and (has_signature_keywords or low_text)
+    
     def _extract_mixed(self, file_path: str) -> ExtractedTextResult:
         """
         Extract text from mixed PDF (some pages text, some images).
         
         Handles documents where most pages are text-based but some pages (typically
-        signature pages at the end) are image-based. Extracts text from text pages
-        and OCRs image pages, then combines both.
+        signature pages at the end) are image-based. Supports different extraction modes:
+        - text_only: Extract text only, ignore image pages
+        - image_only: Extract from images only (OCR or vision)
+        - text_ocr: Extract text + OCR text from image pages (default)
+        - text_image: Extract text + send image pages directly to vision model
+        - multimodal: Send text + images together to vision model (best for signatory pages)
         
         Args:
             file_path: Path to PDF file
@@ -330,7 +366,8 @@ class PDFExtractor(BaseExtractor):
             
             page_count = len(doc)
             text_pages_text = []
-            image_pages = []
+            image_pages = []  # List of (page_num, cv_img) tuples
+            image_pages_bytes = []  # List of (page_num, img_bytes) tuples for multimodal
             text_blocks = []
             min_text_length = 50  # Minimum characters to consider page as text-based
             
@@ -343,37 +380,46 @@ class PDFExtractor(BaseExtractor):
                 
                 if len(text) > min_text_length:
                     # Text-based page: extract text with structure
-                    text_dict = page.get_text("dict")
-                    
-                    for block in text_dict.get("blocks", []):
-                        if "lines" in block:
-                            for line in block.get("lines", []):
-                                for span in line.get("spans", []):
-                                    span_text = span.get("text", "")
-                                    if span_text.strip():
-                                        text_pages_text.append(span_text)
-                                        text_blocks.append({
-                                            "text": span_text,
-                                            "font_size": span.get("size", 0),
-                                            "font_name": span.get("font", ""),
-                                            "is_bold": "bold" in span.get("font", "").lower(),
-                                            "is_italic": "italic" in span.get("font", "").lower(),
-                                            "page_number": page_num + 1,
-                                            "bbox": span.get("bbox", (0, 0, 0, 0))
-                                        })
-                    
-                    # Add line break after page
-                    if text_pages_text:
-                        text_pages_text.append("\n")
+                    if EXTRACTION_MODE != "image_only":
+                        text_dict = page.get_text("dict")
+                        
+                        for block in text_dict.get("blocks", []):
+                            if "lines" in block:
+                                for line in block.get("lines", []):
+                                    for span in line.get("spans", []):
+                                        span_text = span.get("text", "")
+                                        if span_text.strip():
+                                            text_pages_text.append(span_text)
+                                            text_blocks.append({
+                                                "text": span_text,
+                                                "font_size": span.get("size", 0),
+                                                "font_name": span.get("font", ""),
+                                                "is_bold": "bold" in span.get("font", "").lower(),
+                                                "is_italic": "italic" in span.get("font", "").lower(),
+                                                "page_number": page_num + 1,
+                                                "bbox": span.get("bbox", (0, 0, 0, 0))
+                                            })
+                        
+                        # Add line break after page
+                        if text_pages_text:
+                            text_pages_text.append("\n")
                 else:
-                    # Image-based page: convert to image for OCR
-                    self.logger.info(f"Page {page_num + 1} detected as image-based, will OCR")
+                    # Image-based page: convert to image
+                    is_signature = self._is_signature_page(page, page_num, page_count)
+                    page_type = "signature" if is_signature else "image"
+                    self.logger.info(
+                        f"Page {page_num + 1} detected as {page_type}-based page"
+                    )
                     
                     # Convert page to image
                     mat = fitz.Matrix(PDF_PREPROCESSING_DPI / 72, PDF_PREPROCESSING_DPI / 72)
                     pix = page.get_pixmap(matrix=mat)
                     
-                    # Convert to numpy array
+                    # Convert to bytes for multimodal mode
+                    img_bytes = pix.tobytes("png")
+                    image_pages_bytes.append((page_num + 1, img_bytes))
+                    
+                    # Convert to numpy array for OCR mode
                     img_data = pix.tobytes("ppm")
                     pil_img = PILImage.open(io.BytesIO(img_data))
                     cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
@@ -387,28 +433,90 @@ class PDFExtractor(BaseExtractor):
             # Extract metadata before closing
             metadata = doc.metadata if hasattr(doc, 'metadata') else {}
             
-            # OCR image-based pages if any (before closing document)
-            ocr_texts = []
-            if image_pages:
+            # Handle different extraction modes
+            raw_text = ""
+            extraction_strategy = "pymupdf_with_ocr"
+            
+            if EXTRACTION_MODE == "text_only":
+                # Extract text only, ignore image pages
+                raw_text = " ".join(text_pages_text) if text_pages_text else ""
+                extraction_strategy = "pymupdf_text_only"
+                self.logger.info(f"Ignoring {len(image_pages)} image page(s) (text_only mode)")
+                
+            elif EXTRACTION_MODE == "image_only":
+                # Extract from images only (OCR or vision)
                 from .ocr_handler import OCRHandler
                 from config import OCR_ENGINE
                 
-                self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s)")
-                ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
+                if image_pages:
+                    self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s)")
+                    ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
+                    images = [img for _, img in image_pages]
+                    ocr_texts = ocr_handler.extract_text_from_images(images)
+                    raw_text = "\n\n".join(ocr_texts)
+                    extraction_strategy = f"ocr_{OCR_ENGINE}"
+                else:
+                    raw_text = ""
+                    self.logger.warning("No image pages found for image_only mode")
+                    
+            elif EXTRACTION_MODE == "text_ocr":
+                # Extract text + OCR text from image pages (default)
+                raw_text = " ".join(text_pages_text) if text_pages_text else ""
                 
-                # Extract images (just the numpy arrays)
-                images = [img for _, img in image_pages]
-                ocr_texts = ocr_handler.extract_text_from_images(images)
+                if image_pages:
+                    from .ocr_handler import OCRHandler
+                    from config import OCR_ENGINE
+                    
+                    self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s)")
+                    ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
+                    images = [img for _, img in image_pages]
+                    ocr_texts = ocr_handler.extract_text_from_images(images)
+                    
+                    # Add OCR text with page markers
+                    for i, (page_num, _) in enumerate(image_pages):
+                        if i < len(ocr_texts) and ocr_texts[i]:
+                            raw_text += f"\n[Page {page_num} - OCR Text]\n"
+                            raw_text += ocr_texts[i]
+                            raw_text += "\n"
+                    
+                    extraction_strategy = "pymupdf_with_ocr"
+                    
+            elif EXTRACTION_MODE == "multimodal":
+                # Send text + images together to vision model (best for signatory pages)
+                if not self.gemini_client:
+                    raise ExtractionError(
+                        "Gemini client required for multimodal extraction mode",
+                        details={"file_path": file_path}
+                    )
                 
-                # Add OCR text with page markers
-                for i, (page_num, _) in enumerate(image_pages):
-                    if i < len(ocr_texts) and ocr_texts[i]:
-                        text_pages_text.append(f"\n[Page {page_num} - OCR Text]\n")
-                        text_pages_text.append(ocr_texts[i])
-                        text_pages_text.append("\n")
-            
-            # Combine all text
-            raw_text = " ".join(text_pages_text) if text_pages_text else ""
+                # Combine text from text pages
+                text_content = " ".join(text_pages_text) if text_pages_text else ""
+                
+                # Get image bytes for multimodal input
+                img_bytes_list = [img_bytes for _, img_bytes in image_pages_bytes]
+                
+                if img_bytes_list:
+                    self.logger.info(
+                        f"Multimodal extraction: {len(text_content)} chars text, "
+                        f"{len(img_bytes_list)} image(s)"
+                    )
+                    # Store for later use in extraction coordinator
+                    # The actual multimodal extraction will be done in the coordinator
+                    raw_text = text_content
+                    extraction_strategy = "multimodal"
+                else:
+                    # No image pages, just use text
+                    raw_text = text_content
+                    extraction_strategy = "pymupdf_text_only"
+                    self.logger.info("No image pages, using text-only extraction")
+                    
+            else:  # text_image mode (default fallback to text_ocr)
+                # Extract text + send image pages directly to vision model
+                raw_text = " ".join(text_pages_text) if text_pages_text else ""
+                extraction_strategy = "pymupdf_with_ocr"
+                self.logger.warning(
+                    f"Unknown extraction mode '{EXTRACTION_MODE}', using text_ocr"
+                )
             
             result = ExtractedTextResult(
                 raw_text=raw_text,
@@ -421,13 +529,17 @@ class PDFExtractor(BaseExtractor):
                     "image_pages": len(image_pages),
                     "image_page_numbers": [page_num for page_num, _ in image_pages],
                     "extraction_method": "mixed",
-                    "extraction_strategy": "pymupdf_with_ocr",
-                    "pdf_metadata": metadata
+                    "extraction_strategy": extraction_strategy,
+                    "extraction_mode": EXTRACTION_MODE,
+                    "pdf_metadata": metadata,
+                    # Store image bytes for multimodal mode
+                    "image_pages_bytes": image_pages_bytes if EXTRACTION_MODE == "multimodal" else None
                 }
             )
             
             self.logger.info(
-                f"Mixed PDF extraction complete: {page_count - len(image_pages)} text pages, "
+                f"Mixed PDF extraction complete ({EXTRACTION_MODE}): "
+                f"{page_count - len(image_pages)} text pages, "
                 f"{len(image_pages)} image pages (pages {[p for p, _ in image_pages]})"
             )
             
