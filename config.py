@@ -180,6 +180,14 @@ ENABLE_BINARIZE = os.getenv("ENABLE_BINARIZE", "true").lower() == "true"
 EXTRACTION_STRATEGY = os.getenv("EXTRACTION_STRATEGY", "auto")
 # Options: "auto", "text_extraction", "gemini_vision", "tesseract", "gcv"
 
+# Extraction mode for mixed PDFs (text_only, image_only, text_ocr, text_image, multimodal)
+# - text_only: Extract text only, ignore image pages
+# - image_only: Extract from images only (OCR or vision)
+# - text_ocr: Extract text + OCR text from image pages (current default for mixed)
+# - text_image: Extract text + send image pages directly to vision model (multimodal)
+# - multimodal: Send text + images together to vision model (best for signatory pages)
+EXTRACTION_MODE = os.getenv("EXTRACTION_MODE", "text_ocr")
+
 # OCR Engine (for image-based PDFs when not using Gemini Vision)
 OCR_ENGINE = os.getenv("OCR_ENGINE", "tesseract")
 # Options: "tesseract", "gcv"
