@@ -19,7 +19,8 @@ load_dotenv()
 # Gemini API Key (required)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# Gemini Model Selection (default: gemini-pro)
+# Gemini Model Selection (legacy - kept for backwards compatibility, not used)
+# Use GEMINI_TEXT_MODEL and GEMINI_VISION_MODEL instead
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-pro")
 
 # ============================================================================
@@ -185,8 +186,8 @@ OCR_ENGINE = os.getenv("OCR_ENGINE", "tesseract")
 # Note: "gemini_vision" is handled separately (no OCR step needed)
 
 # Gemini Model Configuration
-GEMINI_TEXT_MODEL = os.getenv("GEMINI_TEXT_MODEL", "gemini-1.5-flash")  # For text LLM
-GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", "gemini-1.5-flash")  # For vision LLM
+GEMINI_TEXT_MODEL = os.getenv("GEMINI_TEXT_MODEL", "gemini-2.5-pro")  # For text LLM
+GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", "gemini-2.5-pro")  # For vision LLM
 
 # Google Cloud Vision Configuration (for Strategy 3)
 GCV_CREDENTIALS_PATH = os.getenv("GCV_CREDENTIALS_PATH", "")
