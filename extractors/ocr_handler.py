@@ -7,13 +7,14 @@ Supports:
 - Gemini Vision API (direct vision model)
 """
 
-import logging
 from typing import List, Optional, Dict, Any
 import numpy as np
 
 from config import OCR_ENGINE, GCV_CREDENTIALS_PATH, GEMINI_API_KEY
+from utils.logger import get_logger
+from utils.exceptions import ConfigurationError, OCRError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OCRHandler:
@@ -30,7 +31,7 @@ class OCRHandler:
         """
         self.ocr_engine = ocr_engine or OCR_ENGINE
         self.preprocess = preprocess
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__module__)
         
         # Initialize engine-specific clients
         self._tesseract_available = False
@@ -48,7 +49,10 @@ class OCRHandler:
         elif self.ocr_engine == "gemini_vision":
             self._init_gemini_vision()
         else:
-            raise ValueError(f"Unknown OCR engine: {self.ocr_engine}")
+            raise ConfigurationError(
+                f"Unknown OCR engine: {self.ocr_engine}",
+                details={"ocr_engine": self.ocr_engine}
+            )
     
     def _init_tesseract(self):
         """Initialize Tesseract OCR."""
@@ -59,11 +63,12 @@ class OCRHandler:
             self._tesseract_available = True
             self.logger.info("Tesseract OCR initialized successfully")
         except Exception as e:
-            self.logger.error(f"Tesseract OCR not available: {e}")
-            raise RuntimeError(
+            self.logger.error("Tesseract OCR not available", exc_info=True)
+            raise OCRError(
                 "Tesseract OCR not found. Please install Tesseract and ensure it's in PATH. "
-                "See docs/windows_ocr_setup.md for installation instructions."
-            )
+                "See docs/windows_ocr_setup.md for installation instructions.",
+                details={"ocr_engine": "tesseract", "error": str(e)}
+            ) from e
     
     def _init_gcv(self):
         """Initialize Google Cloud Vision API."""
@@ -78,11 +83,12 @@ class OCRHandler:
             self._gcv_client = vision.ImageAnnotatorClient()
             self.logger.info("Google Cloud Vision API initialized successfully")
         except Exception as e:
-            self.logger.error(f"Google Cloud Vision not available: {e}")
-            raise RuntimeError(
+            self.logger.error("Google Cloud Vision not available", exc_info=True)
+            raise OCRError(
                 "Google Cloud Vision API not configured. "
-                "Please set GCV_CREDENTIALS_PATH or configure application default credentials."
-            )
+                "Please set GCV_CREDENTIALS_PATH or configure application default credentials.",
+                details={"ocr_engine": "gcv", "error": str(e)}
+            ) from e
     
     def _init_gemini_vision(self):
         """Initialize Gemini Vision API."""
@@ -90,16 +96,19 @@ class OCRHandler:
             import google.generativeai as genai
             
             if not GEMINI_API_KEY:
-                raise ValueError("GEMINI_API_KEY not set")
+                raise ConfigurationError("GEMINI_API_KEY not set")
             
             genai.configure(api_key=GEMINI_API_KEY)
             self._gemini_client = genai
             self.logger.info("Gemini Vision API initialized successfully")
+        except ConfigurationError:
+            raise
         except Exception as e:
-            self.logger.error(f"Gemini Vision API not available: {e}")
-            raise RuntimeError(
-                "Gemini Vision API not configured. Please set GEMINI_API_KEY in environment."
-            )
+            self.logger.error("Gemini Vision API not available", exc_info=True)
+            raise OCRError(
+                "Gemini Vision API not configured. Please set GEMINI_API_KEY in environment.",
+                details={"ocr_engine": "gemini_vision", "error": str(e)}
+            ) from e
     
     def extract_text_from_image(self, image: np.ndarray) -> str:
         """
@@ -118,7 +127,10 @@ class OCRHandler:
         elif self.ocr_engine == "gemini_vision":
             return self._extract_with_gemini_vision(image)
         else:
-            raise ValueError(f"Unknown OCR engine: {self.ocr_engine}")
+            raise ConfigurationError(
+                f"Unknown OCR engine: {self.ocr_engine}",
+                details={"ocr_engine": self.ocr_engine}
+            )
     
     def extract_text_from_images(self, images: List[np.ndarray]) -> List[str]:
         """
