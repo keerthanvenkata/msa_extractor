@@ -139,7 +139,19 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     if not root_logger.handlers:
         setup_logging()
     
-    return logging.getLogger(name)
+    # Get logger with msa_extractor prefix to ensure it's a child of root logger
+    if name == "__main__" or name == "main":
+        logger_name = "msa_extractor.main"
+    elif not name.startswith("msa_extractor"):
+        logger_name = f"msa_extractor.{name}"
+    else:
+        logger_name = name
+    
+    logger = logging.getLogger(logger_name)
+    # Ensure child loggers propagate to root
+    logger.propagate = True
+    
+    return logger
 
 
 # Initialize logging on import
