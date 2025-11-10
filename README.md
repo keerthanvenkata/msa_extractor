@@ -75,6 +75,8 @@ GEMINI_API_KEY=your_api_key_here
 Optional environment toggles (full list in [configuration docs](docs/configuration.md)):
 
 ```text
+GEMINI_TEXT_MODEL=gemini-2.5-pro
+GEMINI_VISION_MODEL=gemini-2.5-pro
 PDF_PREPROCESSING_DPI=300
 ENABLE_IMAGE_PREPROCESSING=true
 EXTRACTION_STRATEGY=auto
