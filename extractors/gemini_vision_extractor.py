@@ -8,14 +8,15 @@ import fitz  # PyMuPDF
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-import logging
 from PIL import Image as PILImage
 import io
 
 from .base_extractor import BaseExtractor, ExtractedTextResult
+from utils.logger import get_logger
+from utils.exceptions import FileError, ExtractionError, LLMError
 from config import PDF_PREPROCESSING_DPI, GEMINI_VISION_MODEL
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GeminiVisionExtractor(BaseExtractor):
@@ -61,7 +62,10 @@ class GeminiVisionExtractor(BaseExtractor):
             doc = fitz.open(file_path)
             
             if doc.is_encrypted:
-                raise ValueError("PDF is encrypted/password-protected")
+                raise FileError(
+                    "PDF is encrypted/password-protected",
+                    details={"file_path": file_path}
+                )
             
             page_count = len(doc)
             all_text = []
@@ -101,8 +105,6 @@ class GeminiVisionExtractor(BaseExtractor):
                 text = self._extract_text_from_image(img_data)
                 if text:
                     all_text.append(text)
-            
-            doc.close()
             
             # Combine results - merge metadata from first 3 pages intelligently
             # Prefer non-empty values, with later pages taking precedence for conflicts
@@ -150,6 +152,13 @@ class GeminiVisionExtractor(BaseExtractor):
         except Exception as e:
             self._log_error(file_path, e)
             raise
+        finally:
+            # Ensure document is always closed, even if exception occurs
+            if 'doc' in locals() and doc is not None:
+                try:
+                    doc.close()
+                except Exception:
+                    pass  # Ignore errors when closing already-closed document
     
     def _extract_text_from_image(self, image_bytes: bytes) -> str:
         """
