@@ -58,18 +58,36 @@ Packages include `pymupdf`, `opencv-python`, `pillow`, `numpy`, `pytesseract`, `
 
 ## 5. Configure Tesseract Path (Optional)
 
-If Tesseract lives in a non-standard location, point `pytesseract` to it:
+If Tesseract lives in a non-standard location, configure it via environment variables:
+
+### Option A: Environment Variables (Recommended)
+
+Add to your `.env` file:
+
+```env
+TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+TESSDATA_PREFIX=C:\Program Files\Tesseract-OCR\tessdata
+TESSERACT_LANG=eng
+```
+
+### Option B: System Environment Variables
+
+```powershell
+setx TESSERACT_CMD "C:\Program Files\Tesseract-OCR\tesseract.exe"
+setx TESSDATA_PREFIX "C:\Program Files\Tesseract-OCR\tessdata"
+setx TESSERACT_LANG "eng"
+```
+
+### Option C: Python Code (Not Recommended)
+
+Only use if environment variables don't work:
 
 ```python
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 ```
 
-Or set environment variable:
-
-```powershell
-setx TESSDATA_PREFIX "C:\Program Files\Tesseract-OCR\tessdata"
-```
+**Note:** The system automatically configures Tesseract from environment variables. Use `.env` file for project-specific settings.
 
 ## 6. Google Cloud Vision (Optional)
 
