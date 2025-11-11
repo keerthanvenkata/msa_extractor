@@ -48,5 +48,6 @@ The `docs/` directory contains module-level guides and setup references for the 
 - [Data Masking Plan](DATA_MASKING_PLAN.md) — data masking/encryption strategy for security and compliance (P0 - Critical)
 - [OCR and Signatures](OCR_AND_SIGNATURES.md) — guide to OCR capabilities for signature extraction and handling pure images
 - [Extraction Modes](EXTRACTION_MODES.md) — complete guide to all extraction modes and strategies, including pure vision extraction
+- [Persistence & Storage Plan](PERSISTENCE_PLAN.md) — SQLite database schema, file storage strategy, cleanup policies, and FastAPI integration design (P1 - Planning Complete)
 
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.

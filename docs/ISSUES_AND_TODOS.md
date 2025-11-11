@@ -518,6 +518,49 @@ For pure image pages with no extractable text, document the image presence with 
 
 ---
 
+### TODO-011: Implement Persistence & Storage System
+**Location:** `storage/database.py`, `storage/cleanup.py`, `main.py`
+
+**Description:**
+Implement SQLite-based persistence system for tracking extraction jobs with UUIDs, file management, and cleanup policies. Required for FastAPI backend integration.
+
+**Requirements:**
+1. **Database Schema:**
+   - `extractions` table with UUID primary key
+   - Track job status, file paths, timestamps, extraction config
+   - Indexes on status, created_at, file_name
+
+2. **File Storage:**
+   - Store uploaded PDFs in `uploads/{uuid}.pdf` (temporary)
+   - Store JSON results in `results/{uuid}.json` (permanent)
+   - Store logs in `logs/{uuid}.log` (permanent, file-based)
+
+3. **Cleanup Strategy:**
+   - Time-based: Delete PDFs older than N days (default: 7 days)
+   - Count-based: Delete oldest PDFs when count exceeds threshold (default: 1000)
+   - Always retain JSONs and logs
+   - Never delete pending/processing jobs
+
+4. **FastAPI Integration Points:**
+   - POST `/api/v1/extract/upload` → Upload PDF, return job ID
+   - GET `/api/v1/extract/{job_id}` → Get extraction result by job ID
+
+5. **Implementation Phases:**
+   - Phase 1: Database & Storage Module (`storage/database.py`)
+   - Phase 2: Integration with CLI (`main.py`)
+   - Phase 3: Cleanup Implementation (`storage/cleanup.py`)
+   - Phase 4: FastAPI Backend (future)
+
+**Priority:** P1 - Required for FastAPI backend
+
+**Status:** 📋 TODO (Planning Complete)
+
+**Reference:** See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for detailed implementation plan.
+
+**Note:** This is the immediate next task. Planning is complete, ready for implementation after testing existing pipeline.
+
+---
+
 ## 🚀 Optimizations
 
 ### OPT-001: Cache PDF Type Detection
@@ -576,9 +619,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
-| TODOs | 10 | 1 | 4 | 4 | 1 |
+| TODOs | 11 | 1 | 5 | 4 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **25** | **2** | **10** | **10** | **3** |
+| **Total** | **26** | **2** | **11** | **10** | **3** |
 
 ---
 

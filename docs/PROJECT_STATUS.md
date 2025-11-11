@@ -52,7 +52,12 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Batch processing optimization
 - [ ] Progress indicators for long-running extractions
 - [ ] Output format options (CSV, Excel, etc.)
-- [ ] Database storage option
+- [ ] **Persistence & Storage System** (P1 - Planning complete, ready for implementation) 📋
+  - SQLite database for job tracking with UUIDs
+  - File management (temporary PDFs, permanent JSONs/logs)
+  - Cleanup policies (time-based and count-based)
+  - FastAPI integration points defined
+  - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for details
 
 ### Platform Support
 - ✅ **Cross-platform compatible** (Windows, Linux, macOS)
@@ -103,15 +108,18 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
    - Extraction metadata (which pages contributed to which fields)
 
 ### Priority 3: Infrastructure
-1. **Database integration:**
-   - Store extraction results
-   - Track extraction history
-   - Query and search capabilities
+1. **Database integration:** 📋 **Planning Complete**
+   - SQLite database schema designed
+   - UUID-based job tracking
+   - File management strategy defined
+   - Cleanup policies specified
+   - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for full details
 
 2. **API/Web interface:**
-   - REST API for programmatic access
-   - Web UI for easy access
-   - Batch processing dashboard
+   - REST API endpoints designed (upload, get result)
+   - FastAPI integration points defined
+   - Background task architecture planned
+   - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for API design
 
 3. **Monitoring & Analytics:**
    - Extraction success rates
