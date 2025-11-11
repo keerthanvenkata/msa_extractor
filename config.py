@@ -19,9 +19,6 @@ load_dotenv()
 # Gemini API Key (required)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# Gemini Model Selection (legacy - kept for backwards compatibility, not used)
-# Use GEMINI_TEXT_MODEL and GEMINI_VISION_MODEL instead
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-pro")
 
 # ============================================================================
 # File Paths
@@ -173,25 +170,32 @@ ENABLE_ENHANCE = os.getenv("ENABLE_ENHANCE", "true").lower() == "true"
 ENABLE_BINARIZE = os.getenv("ENABLE_BINARIZE", "true").lower() == "true"
 
 # ============================================================================
-# Extraction Strategy Configuration
+# Extraction Configuration
 # ============================================================================
 
-# Extraction strategy selection
-EXTRACTION_STRATEGY = os.getenv("EXTRACTION_STRATEGY", "auto")
-# Options: "auto", "text_extraction", "gemini_vision", "tesseract", "gcv"
+# Extraction Method: How to extract content from PDF pages
+# Options:
+#   - text_direct: Extract text directly from text pages, ignore image pages
+#   - ocr_all: Convert all pages to images and run OCR on all pages
+#   - ocr_images_only: Extract text from text pages + OCR only image pages (default)
+#   - vision_all: Convert all pages to images (no OCR, for vision LLM)
+#   - hybrid: Extract text from text pages + convert image pages to images (flexible)
+EXTRACTION_METHOD = os.getenv("EXTRACTION_METHOD", "hybrid")
 
-# Extraction mode for mixed PDFs (text_only, image_only, text_ocr, text_image, multimodal)
-# - text_only: Extract text only, ignore image pages
-# - image_only: Extract from images only (OCR or vision)
-# - text_ocr: Extract text + OCR text from image pages (current default for mixed)
-# - text_image: Extract text + send image pages directly to vision model (multimodal)
-# - multimodal: Send text + images together to vision model (best for signatory pages)
-EXTRACTION_MODE = os.getenv("EXTRACTION_MODE", "text_ocr")
+# LLM Processing Mode: How to process extracted content with LLMs
+# Options:
+#   - text_llm: Send all text (direct + OCR) to text LLM (default)
+#   - vision_llm: Send all images to vision LLM
+#   - multimodal: Send text + images together to vision LLM in single call
+#   - dual_llm: Send text to text LLM + images to vision LLM separately, then merge
+LLM_PROCESSING_MODE = os.getenv("LLM_PROCESSING_MODE", "text_llm")
 
-# OCR Engine (for image-based PDFs when not using Gemini Vision)
-OCR_ENGINE = os.getenv("OCR_ENGINE", "tesseract")
+# OCR Engine: Which OCR engine to use when OCR is needed
 # Options: "tesseract", "gcv"
-# Note: "gemini_vision" is handled separately (no OCR step needed)
+# Note: Only used when EXTRACTION_METHOD requires OCR (ocr_all, ocr_images_only)
+# Note: vision_all and multimodal don't use OCR
+OCR_ENGINE = os.getenv("OCR_ENGINE", "tesseract")
+
 
 # ============================================================================
 # Tesseract OCR Configuration
