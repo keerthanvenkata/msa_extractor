@@ -38,6 +38,16 @@
 | `ENABLE_ENHANCE` | Apply CLAHE contrast enhancement | `true` |
 | `ENABLE_BINARIZE` | Adaptive thresholding to black/white | `true` |
 
+## Tesseract OCR Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TESSERACT_CMD` | Path to Tesseract executable (optional, for non-standard installations) | `` (uses PATH) |
+| `TESSERACT_LANG` | Language code(s) for OCR (ISO 639-2, e.g., "eng", "eng+fra") | `eng` |
+| `TESSDATA_PREFIX` | Path to tessdata directory (optional, for custom location) | `` (uses default) |
+
+**Note:** If Tesseract is not in PATH, set `TESSERACT_CMD` to the full path (e.g., `C:\Program Files\Tesseract-OCR\tesseract.exe`).
+
 ## Paths & Storage
 
 | Variable | Description | Default |
