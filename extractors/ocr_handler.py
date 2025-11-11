@@ -10,7 +10,14 @@ Supports:
 from typing import List, Optional, Dict, Any
 import numpy as np
 
-from config import OCR_ENGINE, GCV_CREDENTIALS_PATH, GEMINI_API_KEY
+from config import (
+    OCR_ENGINE, 
+    GCV_CREDENTIALS_PATH, 
+    GEMINI_API_KEY,
+    TESSERACT_CMD,
+    TESSERACT_LANG,
+    TESSDATA_PREFIX
+)
 from utils.logger import get_logger
 from utils.exceptions import ConfigurationError, OCRError
 
@@ -58,15 +65,28 @@ class OCRHandler:
         """Initialize Tesseract OCR."""
         try:
             import pytesseract
+            import os
+            
+            # Configure Tesseract path if provided
+            if TESSERACT_CMD:
+                pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+                self.logger.debug(f"Using custom Tesseract path: {TESSERACT_CMD}")
+            
+            # Configure TESSDATA_PREFIX if provided
+            if TESSDATA_PREFIX:
+                os.environ["TESSDATA_PREFIX"] = TESSDATA_PREFIX
+                self.logger.debug(f"Using custom TESSDATA_PREFIX: {TESSDATA_PREFIX}")
+            
             # Check if Tesseract is available
-            pytesseract.get_tesseract_version()
+            version = pytesseract.get_tesseract_version()
             self._tesseract_available = True
-            self.logger.info("Tesseract OCR initialized successfully")
+            self.logger.info(f"Tesseract OCR initialized successfully (version: {version})")
         except Exception as e:
             self.logger.error("Tesseract OCR not available", exc_info=True)
             raise OCRError(
                 "Tesseract OCR not found. Please install Tesseract and ensure it's in PATH. "
-                "See docs/windows_ocr_setup.md for installation instructions.",
+                "See docs/windows_ocr_setup.md for installation instructions. "
+                "Alternatively, set TESSERACT_CMD in config to point to tesseract executable.",
                 details={"ocr_engine": "tesseract", "error": str(e)}
             ) from e
     
@@ -166,8 +186,8 @@ class OCRHandler:
         else:  # BGR
             pil_image = PILImage.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         
-        # Run OCR
-        text = pytesseract.image_to_string(pil_image, lang='eng')
+        # Run OCR with configured language
+        text = pytesseract.image_to_string(pil_image, lang=TESSERACT_LANG)
         return text.strip()
     
     def _extract_with_gcv(self, image: np.ndarray) -> str:
