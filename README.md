@@ -16,7 +16,9 @@ All outputs follow a fixed JSON schema, ensuring consistency and machine-readabi
 
 - Python 3.10 or higher
 - Virtual environment (recommended)
-- Tesseract OCR (for scanned PDFs) — see [Windows OCR setup](docs/windows_ocr_setup.md)
+- Tesseract OCR (for scanned PDFs) — see setup guides:
+  - [Windows setup](docs/windows_ocr_setup.md)
+  - [Linux & Docker setup](docs/LINUX_AND_DOCKER_SETUP.md)
 - Optional: Google Cloud Vision API credentials (for cloud OCR)
 
 ## Setup
@@ -84,14 +86,17 @@ EXTRACTION_STRATEGY=auto
 OCR_ENGINE=tesseract
 ```
 
-### 4. Install Native OCR Dependencies (Windows)
+### 4. Install Native OCR Dependencies
 
-Follow the step-by-step instructions in [docs/windows_ocr_setup.md](docs/windows_ocr_setup.md) to install:
-
-- Python toolchain
+**Windows:** Follow [Windows OCR setup](docs/windows_ocr_setup.md)
 - Tesseract OCR (UB Mannheim build or Chocolatey)
 - Visual C++ Redistributable
-- Optional Google Cloud SDK for Vision API
+
+**Linux:** Follow [Linux & Docker setup](docs/LINUX_AND_DOCKER_SETUP.md)
+- Tesseract OCR (via package manager)
+- OpenCV dependencies
+
+**Docker:** See [Linux & Docker setup](docs/LINUX_AND_DOCKER_SETUP.md) for Dockerfile and docker-compose examples
 
 ## Project Structure
 
