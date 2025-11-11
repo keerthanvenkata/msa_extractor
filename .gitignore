@@ -47,6 +47,8 @@ wheels/
 htmlcov/
 .tox/
 .hypothesis/
+tests/test_data/*.pdf
+!tests/test_data/.gitkeep
 
 # User Data Directories
 contracts/
