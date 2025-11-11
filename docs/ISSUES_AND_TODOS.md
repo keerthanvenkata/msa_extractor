@@ -494,7 +494,7 @@ Implement data masking/encryption before sending documents to external APIs (Gem
 
 **Status:** 📋 TODO
 
-**Reference:** Security requirements, privacy compliance. See [DATA_MASKING_PLAN.md](DATA_MASKING_PLAN.md) for detailed implementation plan.
+**Reference:** Security requirements, privacy compliance. See [DATA_MASKING_PLAN.md](planning/DATA_MASKING_PLAN.md) for detailed implementation plan.
 
 **Note:** This is essential before processing sensitive documents. Consider implementing before production deployment.
 
@@ -555,7 +555,7 @@ Implement SQLite-based persistence system for tracking extraction jobs with UUID
 
 **Status:** 📋 TODO (Planning Complete)
 
-**Reference:** See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for detailed implementation plan.
+**Reference:** See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for detailed implementation plan.
 
 **Note:** This is the immediate next task. Planning is complete, ready for implementation after testing existing pipeline.
 
