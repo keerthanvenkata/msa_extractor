@@ -17,6 +17,7 @@ from config import (
     FIELD_DEFINITIONS,
     NOT_FOUND_VALUE,
     MAX_TEXT_LENGTH,
+    MAX_FIELD_LENGTH,
     API_MAX_RETRIES,
     API_RETRY_INITIAL_DELAY,
     API_RETRY_MAX_DELAY,
@@ -270,7 +271,8 @@ EXTRACTION RULES:
 5. For fields with multiple values (e.g., multiple signatories):
    - Combine with semicolons
    - Example: "John Doe, VP of Operations; Jane Smith, CFO"
-6. Return no commentary, no extra keys, and no markdown — JSON only.
+6. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
+7. Return no commentary, no extra keys, and no markdown — JSON only.
 
 SEARCH GUIDANCE:
 - Agreements may have different structures and section names. Search the ENTIRE document thoroughly.
@@ -308,7 +310,8 @@ EXTRACTION RULES:
 5. For fields with multiple values (e.g., multiple signatories):
    - Combine with semicolons
    - Example: "John Doe, VP of Operations; Jane Smith, CFO"
-6. Return no commentary, no extra keys, and no markdown — JSON only.
+6. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
+7. Return no commentary, no extra keys, and no markdown — JSON only.
 
 SEARCH GUIDANCE:
 - Agreements may have different structures and section names. Search the ENTIRE document thoroughly.

@@ -127,6 +127,10 @@ NOT_FOUND_VALUE = "Not Found"
 # For longer docs, implement chunking + aggregation (deferred to next iteration)
 MAX_TEXT_LENGTH = 50000
 
+# Maximum length per metadata field (characters)
+# Each field value must not exceed this limit
+MAX_FIELD_LENGTH = 1000
+
 # ============================================================================
 # Retry Configuration
 # ============================================================================

@@ -8,7 +8,7 @@ import json
 import jsonschema
 from typing import Dict, Any, Optional
 
-from config import METADATA_SCHEMA, NOT_FOUND_VALUE
+from config import METADATA_SCHEMA, NOT_FOUND_VALUE, MAX_FIELD_LENGTH
 from utils.logger import get_logger
 from utils.exceptions import ValidationError
 
@@ -56,7 +56,8 @@ class SchemaValidator:
             
             for field_name in fields.keys():
                 schema["properties"][category]["properties"][field_name] = {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": MAX_FIELD_LENGTH
                 }
                 schema["properties"][category]["required"].append(field_name)
         
@@ -106,6 +107,15 @@ class SchemaValidator:
                     value = NOT_FOUND_VALUE
                 elif not isinstance(value, str):
                     value = str(value)
+                
+                # Truncate if exceeds MAX_FIELD_LENGTH (with warning)
+                if value != NOT_FOUND_VALUE and len(value) > MAX_FIELD_LENGTH:
+                    original_length = len(value)
+                    value = value[:MAX_FIELD_LENGTH]
+                    self.logger.warning(
+                        f"Field '{category}.{field_name}' exceeded MAX_FIELD_LENGTH ({MAX_FIELD_LENGTH} chars). "
+                        f"Truncated from {original_length} to {MAX_FIELD_LENGTH} characters."
+                    )
                 
                 normalized[category][field_name] = value
         
