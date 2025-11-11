@@ -1,7 +1,8 @@
 # Persistence & Storage Plan
 
 **Created:** November 11, 2025  
-**Status:** Planning Phase  
+**Last Updated:** November 12, 2025  
+**Status:** Planning Phase (Iteration 1: SQLite + Local Storage)  
 **Priority:** P1 - Required for FastAPI Backend
 
 ---
@@ -15,10 +16,11 @@ This document outlines the persistence and storage strategy for the MSA Metadata
 ## Goals
 
 1. **Track Extractions:** Store metadata about each extraction job with UUID identifiers
-2. **File Management:** Store uploaded PDFs temporarily, retain JSON results and logs
-3. **Cleanup Strategy:** Automatically clean up old PDFs while preserving results
-4. **API Ready:** Design for FastAPI backend integration (upload endpoint → job ID, get endpoint → JSON)
-5. **Log Management:** Decide on log storage strategy (SQLite vs files)
+2. **File Management:** Store uploaded PDFs temporarily (local filesystem, Cloud Run ephemeral storage)
+3. **Data Storage:** Store JSON results and logs in database (not separate files)
+4. **Cleanup Strategy:** Automatically clean up old PDFs while preserving results in database
+5. **API Ready:** Design for FastAPI backend integration (upload endpoint → job ID, get endpoint → JSON from DB)
+6. **GCP Ready:** Iteration 1 uses SQLite + local storage (Cloud Run compatible), future iterations will use Cloud SQL + GCS
 
 ---
 
@@ -39,8 +41,9 @@ Primary table to track all extraction jobs.
 | `started_at` | TIMESTAMP | | When processing started |
 | `completed_at` | TIMESTAMP | | When processing finished |
 | `error_message` | TEXT | | Error details if failed |
-| `result_json_path` | TEXT | | Path to extracted JSON file |
-| `log_path` | TEXT | | Path to log file |
+| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB, not file)** |
+| `pdf_storage_path` | TEXT | | Path to PDF (local: `uploads/{uuid}.pdf`, future: GCS path) |
+| `pdf_storage_type` | TEXT | | `local` (Iteration 1) or `gcs` (future) |
 | `extraction_method` | TEXT | | EXTRACTION_METHOD used |
 | `llm_processing_mode` | TEXT | | LLM_PROCESSING_MODE used |
 | `ocr_engine` | TEXT | | OCR_ENGINE used (if applicable) |
@@ -57,9 +60,10 @@ Primary table to track all extraction jobs.
 - `completed`: Successfully completed
 - `failed`: Processing failed
 
-### Optional Table: `extraction_logs` (Alternative to file-based logs)
+### Table: `extraction_logs` (Monthly Tables for SQLite)
 
-If we decide to store logs in SQLite instead of files:
+**Iteration 1:** Monthly tables (`extraction_logs_YYYY_MM`) for SQLite
+**Future:** Single partitioned table for Cloud SQL PostgreSQL
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -83,65 +87,56 @@ If we decide to store logs in SQLite instead of files:
 
 ---
 
-## File Storage Structure
+## Storage Structure (Iteration 1: SQLite + Local Storage)
 
 ```
-storage/
-├── uploads/          # Temporary PDF storage
-│   ├── {uuid}.pdf    # Uploaded PDFs (temporary)
+project_root/ (or Cloud Run ephemeral storage):
+├── uploads/          # Temporary PDF storage (local filesystem)
+│   ├── {uuid}.pdf    # Uploaded PDFs (temporary, cleaned after N days)
 │   └── ...
-├── results/          # Extracted JSON results (permanent)
-│   ├── {uuid}.json   # Extracted metadata
-│   └── ...
-└── logs/             # Log files (permanent)
-    ├── {uuid}.log    # Per-job log files
-    └── ...
+└── storage/          # Database
+    └── msa_extractor.db  # SQLite database
+        ├── extractions table (with result_json column)
+        └── extraction_logs_YYYY_MM tables (monthly)
 ```
 
-**Alternative Structure (if using existing directories):**
-```
-results/
-├── {uuid}.json       # Extracted metadata
-└── ...
-
-logs/
-├── {uuid}.log        # Per-job log files
-└── ...
-
-uploads/              # New directory for temporary PDFs
-├── {uuid}.pdf
-└── ...
-```
+**Note:**
+- **JSON results:** Stored in `extractions.result_json` column (no separate files)
+- **Logs:** Stored in `extraction_logs` table (no separate files)
+- **PDFs:** Only files stored (local filesystem, Cloud Run ephemeral storage)
+- **Cloud Run:** Ephemeral storage sufficient for Iteration 1
 
 ---
 
-## Log Storage Strategy
+## Log Storage Strategy (Iteration 1: Database Storage)
 
-### Recommendation: **Hybrid Approach**
+### Decision: **Database Storage** ✅
 
-**Store logs as files, metadata in database:**
+**Store logs in database:**
 
-1. **Log Files:** Store full log content in `logs/{uuid}.log` files
-   - Easy to view, grep, tail
-   - No database bloat
-   - Can be archived/compressed
-   - Standard logging practice
+1. **Log Table:** Store all log entries in `extraction_logs` table
+   - **Iteration 1:** Monthly tables for SQLite (`extraction_logs_YYYY_MM`)
+   - **Future:** Single partitioned table for Cloud SQL PostgreSQL
+   - Queryable, searchable, structured
+   - Easy to filter by job_id, level, timestamp
 
-2. **Log Metadata in DB:** Store summary in `extractions.log_path`
-   - Quick lookup of log location
-   - Can query by job ID
-   - No need to parse files for basic info
+2. **Benefits:**
+   - Direct database queries (no file I/O)
+   - Better for API endpoints (GET `/api/v1/extract/{job_id}/logs`)
+   - Easier to manage in Cloud Run (no file system for logs)
+   - Can archive old months by dropping tables (SQLite) or partitions (PostgreSQL)
 
-3. **Error Summary in DB:** Store error details in `extractions.error_message`
-   - Quick error lookup without reading files
-   - Can query failed jobs easily
+3. **Monthly Tables (SQLite):**
+   - Auto-create new month table when needed
+   - Easier to archive/delete old months
+   - Simpler queries per month
 
-**Alternative: SQLite for Logs**
-- **Pros:** Queryable, searchable, structured
-- **Cons:** Database bloat, slower writes, harder to view/tail
-- **Use Case:** Only if you need to query logs frequently
+4. **Future (Cloud SQL PostgreSQL):**
+   - Use table partitioning (partition by month)
+   - Automatic partition management
+   - Better performance for large log volumes
 
-**Decision: Use file-based logs with metadata in DB** ✅
+**Note:** Iteration 1 uses monthly tables for SQLite. Future iterations will use PostgreSQL partitioning.
 
 ---
 
@@ -160,8 +155,8 @@ uploads/              # New directory for temporary PDFs
    - Keep at least the most recent N files (configurable, default: 100)
 
 3. **What to Keep:**
-   - ✅ JSON result files (permanent)
-   - ✅ Log files (permanent)
+   - ✅ JSON results in database (`extractions.result_json` column) - permanent
+   - ✅ Logs in database (`extraction_logs` table) - permanent
    - ✅ Database records (permanent)
    - ❌ PDF files (temporary, deleted after cleanup)
 
@@ -230,9 +225,9 @@ class ExtractionDB:
                          error_message: str = None) -> None:
         """Update job status."""
     
-    def complete_job(self, job_id: str, result_json_path: Path, 
-                    log_path: Path) -> None:
-        """Mark job as completed with result paths."""
+    def complete_job(self, job_id: str, result_json: dict, 
+                    pdf_storage_path: str, pdf_storage_type: str = 'local') -> None:
+        """Mark job as completed, storing result JSON in database."""
     
     def get_jobs_by_status(self, status: str, limit: int = None) -> List[dict]:
         """Get jobs by status."""
@@ -459,14 +454,9 @@ async def process_extraction(job_id: str, file_path: Path):
         coordinator = ExtractionCoordinator()
         metadata = coordinator.extract_metadata(str(file_path))
         
-        # Save result JSON
-        result_path = RESULTS_DIR / f"{job_id}.json"
-        with open(result_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
-        
-        # Update job as completed
-        log_path = LOGS_DIR / f"{job_id}.log"
-        db.complete_job(job_id, result_path, log_path)
+        # Store result JSON in database (not file)
+        pdf_storage_path = str(UPLOADS_DIR / f"{job_id}.pdf")
+        db.complete_job(job_id, metadata, pdf_storage_path, pdf_storage_type='local')
         
     except Exception as e:
         # Update job as failed
@@ -645,13 +635,15 @@ The detailed FastAPI backend plan is above. Key integration points:
 - [ ] Create `storage/database.py` with `ExtractionDB` class
 - [ ] Create database schema (migrations or init script)
 - [ ] Add configuration variables to `config.py`
-- [ ] Create storage directories (`uploads/`, ensure `results/`, `logs/`)
+- [ ] Create storage directories (`uploads/`, `storage/`)
+- [ ] **Note:** No `results/` or `logs/` directories needed (data stored in database)
 
 ### Phase 2: Integration with Current CLI (Before FastAPI)
 - [ ] Update `main.py` to use database
 - [ ] Generate UUIDs for each extraction
 - [ ] Save PDFs to `uploads/{uuid}.pdf`
-- [ ] Update result/log paths to use UUIDs
+- [ ] Store JSON results in `extractions.result_json` column (not files)
+- [ ] Store logs in `extraction_logs` table (not files)
 - [ ] Test with existing pipeline
 
 ### Phase 3: Cleanup Implementation
@@ -674,10 +666,15 @@ The detailed FastAPI backend plan is above. Key integration points:
 
 **UUID Format:** UUID v4 (e.g., `550e8400-e29b-41d4-a716-446655440000`)
 
-**Files:**
-- PDF: `uploads/{uuid}.pdf`
-- JSON: `results/{uuid}.json`
-- Log: `logs/{uuid}.log` (or `logs/msa_extractor_{date}.log` with UUID in log content)
+**Files (Iteration 1):**
+- PDF: `uploads/{uuid}.pdf` (local filesystem, Cloud Run ephemeral storage)
+- JSON: Stored in `extractions.result_json` column (database, not files)
+- Log: Stored in `extraction_logs` table (database, not files)
+
+**Future Iterations:**
+- PDF: `gs://{bucket}/pdfs/{uuid}.pdf` (GCS)
+- JSON: Stored in `extractions.result_json` column (Cloud SQL)
+- Log: Stored in `extraction_logs` table (Cloud SQL, partitioned)
 
 **Database:**
 - Primary key: `id` (UUID as TEXT)
@@ -770,11 +767,12 @@ The detailed FastAPI backend plan is above. Key integration points:
 
 ## Questions to Resolve
 
-1. **Log Storage:** ✅ **Decided: File-based with metadata in DB**
-2. **UUID Generation:** Use Python's `uuid.uuid4()` ✅
-3. **Cleanup Frequency:** Daily at 2 AM (configurable) ✅
-4. **PDF Storage:** Local filesystem for MVP, object storage later ✅
-5. **Database:** SQLite for MVP, PostgreSQL later if needed ✅
+1. **Log Storage:** ✅ **Decided: Database storage (monthly tables for SQLite, partitioned for Cloud SQL)**
+2. **JSON Storage:** ✅ **Decided: Database storage (`extractions.result_json` column)**
+3. **UUID Generation:** Use Python's `uuid.uuid4()` ✅
+4. **Cleanup Frequency:** Daily at 2 AM (configurable) ✅
+5. **PDF Storage:** Local filesystem for Iteration 1 (Cloud Run ephemeral storage), GCS for future iterations ✅
+6. **Database:** SQLite for Iteration 1 (Cloud Run compatible), Cloud SQL PostgreSQL for future iterations ✅
 
 ---
 
