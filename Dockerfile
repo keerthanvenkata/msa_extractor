@@ -23,12 +23,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p /app/results /app/logs /app/contracts
+RUN mkdir -p /app/results /app/logs /app/contracts /app/uploads /app/storage
 
 # Set environment variables (can be overridden)
 ENV PYTHONUNBUFFERED=1
 ENV TESSERACT_LANG=eng
+ENV API_HOST=0.0.0.0
+ENV API_PORT=8000
 
-# Default command
+# Expose API port
+EXPOSE 8000
+
+# Default command (can be overridden)
+# For CLI: CMD ["python", "main.py", "--help"]
+# For API: CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 CMD ["python", "main.py", "--help"]
 

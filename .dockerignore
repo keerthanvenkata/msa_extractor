@@ -22,6 +22,8 @@ build/
 # Project specific
 results/
 logs/
+uploads/
+storage/
 *.db
 scratch/
 .env.local
