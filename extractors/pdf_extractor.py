@@ -81,7 +81,15 @@ class PDFExtractor(BaseExtractor):
             
             if pdf_type == "text":
                 # Text-based PDF: extract text directly
-                result = self._extract_text_based(file_path)
+                # However, if multimodal mode is enabled, check for image pages
+                # (especially signature pages at the end that might be missed)
+                if EXTRACTION_MODE == "multimodal" and self._has_image_pages(file_path):
+                    self.logger.info(
+                        "PDF detected as text but has image pages. Using mixed extraction for multimodal mode."
+                    )
+                    result = self._extract_mixed(file_path)
+                else:
+                    result = self._extract_text_based(file_path)
             elif pdf_type == "image":
                 # Image-based PDF: convert to images and preprocess
                 result = self._extract_image_based(file_path)
@@ -305,6 +313,50 @@ class PDFExtractor(BaseExtractor):
             
         finally:
             doc.close()
+    
+    def _has_image_pages(self, file_path: str) -> bool:
+        """
+        Check if PDF has any image-based pages (especially useful for detecting
+        signature pages at the end that might be missed by type detection).
+        
+        Args:
+            file_path: Path to PDF file
+        
+        Returns:
+            True if any image pages are found
+        """
+        doc = None
+        try:
+            doc = fitz.open(file_path)
+            total_pages = len(doc)
+            min_text_length = 50
+            
+            # Check last 2 pages (where signatures typically are)
+            pages_to_check = []
+            if total_pages >= 2:
+                pages_to_check = [total_pages - 2, total_pages - 1]
+            elif total_pages == 1:
+                pages_to_check = [0]
+            
+            for page_num in pages_to_check:
+                try:
+                    page = doc.load_page(page_num)
+                    text = page.get_text().strip()
+                    
+                    # If page has very little text, it's likely an image page
+                    if len(text) < min_text_length:
+                        return True
+                except Exception:
+                    # If we can't read the page, assume it might be an image
+                    return True
+            
+            return False
+        except Exception as e:
+            self.logger.warning(f"Error checking for image pages: {e}")
+            return False
+        finally:
+            if doc is not None:
+                doc.close()
     
     def _is_signature_page(self, page, page_num: int, total_pages: int) -> bool:
         """
