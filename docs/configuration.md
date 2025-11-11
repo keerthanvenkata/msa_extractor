@@ -46,7 +46,10 @@
 | `TESSERACT_LANG` | Language code(s) for OCR (ISO 639-2, e.g., "eng", "eng+fra") | `eng` |
 | `TESSDATA_PREFIX` | Path to tessdata directory (optional, for custom location) | `` (uses default) |
 
-**Note:** If Tesseract is not in PATH, set `TESSERACT_CMD` to the full path (e.g., `C:\Program Files\Tesseract-OCR\tesseract.exe`).
+**Note:** 
+- **Windows:** If Tesseract is not in PATH, set `TESSERACT_CMD` to the full path (e.g., `C:\Program Files\Tesseract-OCR\tesseract.exe`)
+- **Linux:** Usually in PATH (`/usr/bin/tesseract`), no configuration needed
+- **Docker:** Usually in PATH, no configuration needed
 
 ## Paths & Storage
 
