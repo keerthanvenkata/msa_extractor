@@ -444,6 +444,62 @@ Add performance metrics collection:
 
 ---
 
+### TODO-009: Implement Data Masking/Encryption
+**Location:** `ai/gemini_client.py`, `extractors/`, `utils/data_masking.py` (new)
+
+**Description:**
+Implement data masking/encryption before sending documents to external APIs (Gemini). This is critical for security and privacy compliance.
+
+**Requirements:**
+1. **Masking Strategy:**
+   - Identify sensitive data (PII, financial info, company names, etc.)
+   - Replace with placeholders or encrypted values
+   - Maintain structure for LLM extraction
+   - Re-map extracted values back to original data
+
+2. **What to Mask:**
+   - Personal Identifiable Information (PII): Names, emails, phone numbers, addresses
+   - Financial Information: Account numbers, amounts, payment details
+   - Company Names: Client/vendor names (if required)
+   - Dates: Execution dates, effective dates (if required)
+   - Signatory Information: Names and titles (if required)
+
+3. **Implementation Approach:**
+   - Create `utils/data_masking.py` module
+   - Mask text before sending to LLM
+   - Store mapping dictionary (original → masked)
+   - Re-map extracted metadata back to original values
+   - Support configurable masking rules
+
+4. **Configuration:**
+   - `ENABLE_DATA_MASKING=true/false` - Enable/disable masking
+   - `MASK_PII=true/false` - Mask PII
+   - `MASK_FINANCIAL=true/false` - Mask financial data
+   - `MASK_COMPANY_NAMES=true/false` - Mask company names
+   - `MASK_DATES=true/false` - Mask dates
+   - `MASK_SIGNATORIES=true/false` - Mask signatory information
+
+5. **Masking Methods:**
+   - **Placeholder replacement:** "John Doe" → "[SIGNATORY_1]"
+   - **Pattern-based:** Email addresses → "[EMAIL_1]", Phone → "[PHONE_1]"
+   - **Encryption:** Encrypt sensitive values (requires decryption key)
+   - **Redaction:** Remove sensitive sections entirely
+
+6. **Re-mapping:**
+   - Store mapping: `{"[SIGNATORY_1]": "John Doe", "[EMAIL_1]": "john@example.com"}`
+   - After extraction, replace masked values with originals
+   - Handle cases where LLM returns masked values
+
+**Priority:** P0 - Critical for security and compliance
+
+**Status:** 📋 TODO
+
+**Reference:** Security requirements, privacy compliance. See [DATA_MASKING_PLAN.md](DATA_MASKING_PLAN.md) for detailed implementation plan.
+
+**Note:** This is essential before processing sensitive documents. Consider implementing before production deployment.
+
+---
+
 ## 🚀 Optimizations
 
 ### OPT-001: Cache PDF Type Detection
@@ -502,9 +558,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
-| TODOs | 8 | 0 | 4 | 3 | 1 |
+| TODOs | 9 | 1 | 4 | 3 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **23** | **1** | **10** | **9** | **3** |
+| **Total** | **24** | **2** | **10** | **9** | **3** |
 
 ---
 
