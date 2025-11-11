@@ -1,0 +1,435 @@
+# Implementation Roadmap - Job Handling, Persistence & API
+
+**Date:** November 12, 2025  
+**Status:** Active Development  
+**Priority:** P1 - Core Features
+
+---
+
+## Architecture Decision: Database-First (Iteration 1: SQLite + Local Storage)
+
+### Iteration 1 (Current): SQLite + Local Storage
+- **Database (SQLite)**: 
+  - Job metadata, status, timestamps, extraction config
+  - **JSON results stored in `result_json` column** (TEXT) - files are small (~1-5KB)
+  - **Logs stored in `extraction_logs` table** (monthly tables: `extraction_logs_YYYY_MM`)
+- **PDF Files**: Temporary storage in `uploads/{uuid}.pdf` (local filesystem)
+  - Cleared after N days (configurable, default: 7 days)
+  - Cloud Run provides ephemeral storage (enough for first run)
+- **No separate JSON or log files** - everything in database
+
+### Future Iterations (TODO)
+- **GCS Integration**: Migrate PDF storage to Cloud Storage bucket
+- **Cloud SQL**: Migrate from SQLite to Cloud SQL PostgreSQL
+- **Partitioned Logs**: Use PostgreSQL table partitioning for logs
+
+**Why Database-First?**
+- JSON files are small (~1-5KB) - no performance impact storing in DB
+- Logs in DB: Queryable, searchable, easier to manage
+- Simpler deployment: No file system management for results/logs
+- Better for API: Direct DB queries, no file I/O overhead for results
+- Cloud Run compatible: Ephemeral storage for PDFs, SQLite for database
+
+---
+
+## Task Breakdown
+
+### Phase 1: Database & Storage Module ⏳ (Current)
+
+#### 1.1 Create Database Module
+- [ ] Create `storage/database.py` with `ExtractionDB` class
+- [ ] Implement database initialization (`__init__`, `_init_db()`)
+- [ ] Create `extractions` table schema (see schema below)
+- [ ] Add indexes: `idx_extractions_status`, `idx_extractions_created_at`, `idx_extractions_file_name`
+- [ ] Add database migration/versioning (optional, for future schema changes)
+
+#### 1.2 Database Methods
+- [ ] `create_job(file_name, file_path, file_size, extraction_method, llm_processing_mode, ocr_engine)` → returns UUID
+- [ ] `get_job(job_id)` → returns job dict with `result_json` parsed
+- [ ] `update_job_status(job_id, status, started_at=None, completed_at=None, error_message=None)`
+- [ ] `complete_job(job_id, result_json_dict, pdf_storage_path, pdf_storage_type='local')` → stores JSON in DB
+- [ ] `add_log_entry(job_id, level, message, module=None, details=None)` → adds to logs table
+- [ ] `get_logs(job_id, limit=1000)` → returns log entries for job
+- [ ] `list_jobs(status=None, limit=50, offset=0, sort='created_at DESC')`
+- [ ] `delete_job(job_id)` (soft delete or hard delete)
+- [ ] `get_jobs_for_cleanup(days_old, max_count)` → returns list of job IDs
+
+#### 1.3 Configuration
+- [ ] Add to `config.py`:
+  - `DB_PATH` (already exists, verify default)
+  - `UPLOADS_DIR` (new: `BASE_DIR / "uploads"`)
+  - `CLEANUP_PDF_DAYS` (new: default 7)
+  - `CLEANUP_PDF_MAX_COUNT` (new: default 1000)
+  - `CLEANUP_PDF_MIN_COUNT` (new: default 500)
+  - **GCP Configuration (for future iterations - TODO):**
+    - `GCP_PROJECT_ID` (optional)
+    - `GCP_STORAGE_BUCKET` (optional, for PDF storage)
+    - `GCP_CLOUD_SQL_INSTANCE` (optional, for Cloud SQL)
+    - `USE_GCS` (default: False, use GCS for PDF storage if True)
+    - `USE_CLOUD_SQL` (default: False, use Cloud SQL if True)
+    - **Note:** Iteration 1 uses SQLite + local storage only
+- [ ] Create storage directories on startup:
+  - `uploads/` (for temporary PDFs - local only)
+  - `storage/` (for database)
+- [ ] **Remove `results/` and `logs/` directory creation** (no longer needed)
+
+#### 1.4 Testing
+- [ ] Unit tests for `ExtractionDB` class
+- [ ] Test database creation and schema
+- [ ] Test all CRUD operations
+- [ ] Test query methods (list, filter, sort)
+
+---
+
+### Phase 2: CLI Integration 🔄 (After Phase 1)
+
+#### 2.1 Update Main CLI
+- [ ] Modify `extract_single_file()` in `main.py`:
+  - Generate UUID for each extraction
+  - Create database job record (status: "pending")
+  - Copy PDF to `uploads/{uuid}.pdf` (local) or upload to GCS (if configured)
+  - Update job status to "processing"
+  - Run extraction
+  - **Store JSON result in `extractions.result_json` column** (not separate file)
+  - **Store logs in `extraction_logs` table** (not separate files)
+  - Update job status to "completed" with PDF storage path
+  - Handle errors: update status to "failed" with error message, log to DB
+- [ ] Modify `extract_batch()` in `main.py`:
+  - Generate UUID for each file
+  - Create job records for all files
+  - Process files (same as single file)
+  - Return list of job IDs
+
+#### 2.2 CLI Commands
+- [ ] Add `--job-id` flag to `extract_single_file` (optional, for re-running failed jobs)
+- [ ] Add `python main.py list-jobs [--status STATUS] [--limit N]` command
+- [ ] Add `python main.py get-job <job_id>` command
+- [ ] Update help text and documentation
+
+#### 2.3 Logging Integration
+- [ ] Create custom log handler that writes to `extraction_logs` table
+- [ ] Update logger to accept `job_id` context
+- [ ] Store all log entries in database (with job_id, level, message, timestamp)
+- [ ] Use monthly log tables (`extraction_logs_YYYY_MM`) for SQLite
+- [ ] For GCP: Use partitioned table or monthly tables based on Cloud SQL type
+- [ ] Ensure UUID is in all log messages for traceability
+
+#### 2.4 Testing
+- [ ] Test single file extraction with UUID
+- [ ] Test batch extraction with UUIDs
+- [ ] Test job status updates
+- [ ] Test error handling and failed job tracking
+- [ ] Verify files are saved with UUID names
+
+---
+
+### Phase 3: Cleanup Implementation 🧹 (After Phase 2)
+
+#### 3.1 Cleanup Module
+- [ ] Create `storage/cleanup.py` with `CleanupService` class
+- [ ] Implement `cleanup_old_pdfs(days_old, max_count)`:
+  - Query database for PDFs older than N days
+  - Query database for PDFs exceeding max count
+  - Never delete PDFs for pending/processing jobs
+  - Delete PDF files from `uploads/`
+  - Update database (mark as cleaned or delete record)
+  - Return cleanup statistics
+- [ ] Implement `cleanup_failed_jobs(days_old)` (optional):
+  - Clean up failed jobs older than N days
+  - Delete associated files
+
+#### 3.2 CLI Command
+- [ ] Add `python main.py cleanup [--days N] [--max-count N]` command
+- [ ] Add `--dry-run` flag to preview what would be deleted
+- [ ] Print cleanup statistics (files deleted, space freed)
+
+#### 3.3 Background Cleanup (Optional)
+- [ ] Add scheduled cleanup task (cron-like or background thread)
+- [ ] Run cleanup daily/weekly based on config
+- [ ] Log cleanup operations
+
+#### 3.4 Testing
+- [ ] Test cleanup logic (time-based)
+- [ ] Test cleanup logic (count-based)
+- [ ] Test that pending/processing jobs are never deleted
+- [ ] Test dry-run mode
+- [ ] Test cleanup statistics
+
+---
+
+### Phase 4: FastAPI Backend 🚀 (After Phase 3)
+
+#### 4.1 FastAPI Structure
+- [ ] Create `api/` directory structure:
+  ```
+  api/
+  ├── __init__.py
+  ├── main.py          # FastAPI app
+  ├── routes/
+  │   ├── __init__.py
+  │   ├── extract.py    # Extraction endpoints
+  │   └── health.py     # Health check
+  ├── models/
+  │   ├── __init__.py
+  │   ├── requests.py   # Pydantic request models
+  │   └── responses.py  # Pydantic response models
+  ├── services/
+  │   ├── __init__.py
+  │   ├── extraction_service.py
+  │   └── cleanup_service.py
+  └── middleware/
+      ├── __init__.py
+      └── logging.py
+  ```
+
+#### 4.2 Dependencies
+- [ ] Add to `requirements.txt`:
+  - `fastapi>=0.104.0`
+  - `uvicorn[standard]>=0.24.0`
+  - `python-multipart>=0.0.6` (for file uploads)
+  - `pydantic>=2.0.0` (for request/response models)
+
+#### 4.3 API Endpoints
+- [ ] **POST `/api/v1/extract/upload`**:
+  - Accept PDF file upload
+  - Validate file type (PDF only)
+  - Validate file size (max limit)
+  - Generate UUID
+  - Save PDF to `uploads/{uuid}.pdf` (local) or upload to GCS (if configured)
+  - Create database job record
+  - Start background extraction task
+  - Return job ID and status
+- [ ] **GET `/api/v1/extract/{job_id}`**:
+  - Validate UUID format
+  - Query database for job
+  - If completed: **Return `result_json` from database** (no file I/O)
+  - If processing/pending: Return status only
+  - If failed: Return error message
+  - Handle 404 (job not found)
+- [ ] **GET `/api/v1/extract/jobs`** (optional):
+  - Query parameters: `status`, `limit`, `offset`, `sort`
+  - Return list of jobs with metadata
+- [ ] **GET `/api/v1/extract/{job_id}/logs`** (optional):
+  - Query `extraction_logs` table for job
+  - Return log entries (with pagination: limit, offset)
+  - Support filtering by level (DEBUG, INFO, WARNING, ERROR)
+  - Return log entries as JSON array
+- [ ] **GET `/health`**:
+  - Return API health status
+  - Check database connection
+  - Return version info
+
+#### 4.4 Background Tasks
+- [ ] Implement `process_extraction(job_id, file_path)` background task:
+  - Update job status to "processing"
+  - Run extraction using `ExtractionCoordinator`
+  - **Store JSON result in `extractions.result_json` column** (not file)
+  - **Store logs in `extraction_logs` table** (not files)
+  - Update job status to "completed"
+  - Handle errors: update status to "failed", log to DB
+- [ ] Implement background cleanup task (optional):
+  - Run cleanup on schedule
+  - Log cleanup operations
+
+#### 4.5 Request/Response Models
+- [ ] Create Pydantic models:
+  - `UploadRequest` (file, extraction_method, llm_processing_mode, ocr_engine)
+  - `UploadResponse` (job_id, status, created_at, file_name, file_size)
+  - `JobResponse` (job_id, status, timestamps, file_name, result_json, error)
+  - `JobListResponse` (jobs, total, limit, offset)
+  - `LogEntryResponse` (timestamp, level, message, module, details)
+  - `JobLogsResponse` (job_id, logs, total)
+  - `HealthResponse` (status, version, database, storage_type, timestamp)
+
+#### 4.6 Error Handling
+- [ ] Handle file upload errors (size, type, etc.)
+- [ ] Handle invalid UUID format
+- [ ] Handle job not found (404)
+- [ ] Handle extraction errors (500 with error details)
+- [ ] Add proper HTTP status codes
+
+#### 4.7 Configuration
+- [ ] Add to `config.py`:
+  - `API_HOST` (default: "0.0.0.0")
+  - `API_PORT` (default: 8000)
+  - `API_WORKERS` (default: 1)
+  - `API_RELOAD` (default: False, for development)
+  - `MAX_UPLOAD_SIZE_MB` (default: 100)
+
+#### 4.8 Startup/Shutdown
+- [ ] Initialize database on startup
+- [ ] Create storage directories on startup
+- [ ] Register background tasks
+- [ ] Graceful shutdown handling
+
+#### 4.9 Testing
+- [ ] Unit tests for API endpoints
+- [ ] Integration tests with test database
+- [ ] Test file upload (local and GCS)
+- [ ] Test job status retrieval
+- [ ] Test JSON result retrieval from database
+- [ ] Test log retrieval from database
+- [ ] Test error cases
+- [ ] Test background task execution
+- [ ] Test Cloud Run deployment (Iteration 1: SQLite + local storage)
+
+#### 4.10 GCP Cloud Run Deployment (Iteration 1)
+- [ ] Update `Dockerfile` for GCP Cloud Run deployment
+- [ ] Configure SQLite database path for Cloud Run ephemeral storage
+- [ ] Configure `uploads/` directory for Cloud Run ephemeral storage
+- [ ] Add environment variable configuration
+- [ ] Document Cloud Run deployment steps
+- [ ] Test deployment on Cloud Run
+- [ ] **Note:** Iteration 1 uses SQLite + local storage (Cloud Run ephemeral storage is sufficient)
+
+#### 4.11 GCP Advanced Features (Future Iterations - TODO)
+- [ ] Add GCP configuration options (Cloud SQL, GCS)
+- [ ] Create GCS storage adapter for PDF uploads
+- [ ] Add Cloud SQL connection support (PostgreSQL)
+- [ ] Migrate from SQLite to Cloud SQL
+- [ ] Migrate PDF storage from local to GCS
+- [ ] Update log tables to use PostgreSQL partitioning
+- [ ] Test local SQLite → Cloud SQL migration path
+- [ ] Document GCS and Cloud SQL setup
+
+#### 4.12 Docker Integration
+- [ ] Update `Dockerfile` for API mode
+- [ ] Update `docker-compose.yml` for API service
+- [ ] Add health check endpoint to docker-compose
+- [ ] Test Docker deployment
+
+---
+
+## Database Schema
+
+### Table: `extractions`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | UUID v4 job identifier |
+| `file_name` | TEXT | NOT NULL | Original filename |
+| `file_size` | INTEGER | | File size in bytes |
+| `status` | TEXT | NOT NULL | `pending`, `processing`, `completed`, `failed` |
+| `created_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Job creation time |
+| `started_at` | TIMESTAMP | | When processing started |
+| `completed_at` | TIMESTAMP | | When processing finished |
+| `error_message` | TEXT | | Error details if failed |
+| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB)** |
+| `pdf_storage_path` | TEXT | | Path to PDF (local: `uploads/{uuid}.pdf`, GCP: GCS path) |
+| `pdf_storage_type` | TEXT | | `local` or `gcs` |
+| `extraction_method` | TEXT | | EXTRACTION_METHOD used |
+| `llm_processing_mode` | TEXT | | LLM_PROCESSING_MODE used |
+| `ocr_engine` | TEXT | | OCR_ENGINE used (if applicable) |
+| `metadata` | TEXT | | Additional metadata (JSON string) |
+
+**Indexes:**
+- `idx_extractions_status` on `status`
+- `idx_extractions_created_at` on `created_at`
+- `idx_extractions_file_name` on `file_name`
+
+### Table: `extraction_logs` (Monthly Tables or Single Partitioned Table)
+
+**Option 1: Monthly Tables** (Recommended for SQLite)
+- `extraction_logs_2025_11`, `extraction_logs_2025_12`, etc.
+- Easier to archive/delete old months
+- Simpler queries per month
+- Auto-create new month table when needed
+
+**Option 2: Single Table with Partitioning** (For Cloud SQL PostgreSQL)
+- Single `extraction_logs` table
+- Partition by month using `timestamp` column
+- Better for Cloud SQL PostgreSQL
+- Automatic partition management
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Log entry ID |
+| `extraction_id` | TEXT (UUID) | NOT NULL, FOREIGN KEY | References `extractions.id` |
+| `timestamp` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Log entry time |
+| `level` | TEXT | NOT NULL | `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+| `message` | TEXT | NOT NULL | Log message |
+| `module` | TEXT | | Module/logger name |
+| `details` | TEXT (JSON) | | Additional structured data (JSON string) |
+
+**Indexes:**
+- `idx_extraction_logs_extraction_id` on `extraction_id`
+- `idx_extraction_logs_timestamp` on `timestamp`
+- `idx_extraction_logs_level` on `level`
+
+**Note:** For monthly tables, indexes are per table. For partitioned table, indexes are global.
+
+---
+
+## Storage Structure
+
+### Iteration 1: Local Development & Cloud Run (SQLite + Local Storage)
+```
+project_root/ (or Cloud Run ephemeral storage):
+├── uploads/              # Temporary PDFs (cleaned up after N days)
+│   ├── {uuid1}.pdf
+│   ├── {uuid2}.pdf
+│   └── ...
+└── storage/              # Database
+    └── msa_extractor.db  # SQLite database
+        ├── extractions table (with result_json column)
+        └── extraction_logs_YYYY_MM tables (monthly)
+```
+
+**Cloud Run Deployment:**
+- Uses ephemeral storage for `uploads/` and `storage/` directories
+- SQLite database stored in ephemeral storage
+- PDFs cleared after N days (configurable)
+- Sufficient for Iteration 1
+
+### Future Iterations: GCP Production (Cloud SQL + Cloud Storage)
+```
+Cloud SQL (PostgreSQL):
+├── extractions table (with result_json JSONB column)
+└── extraction_logs table (partitioned by month)
+
+Cloud Storage (GCS):
+└── gs://{bucket-name}/pdfs/
+    ├── {uuid1}.pdf
+    ├── {uuid2}.pdf
+    └── ...
+```
+
+**Note:** 
+- **Iteration 1:** JSON results stored in `extractions.result_json` column (no separate files)
+- **Iteration 1:** Logs stored in `extraction_logs` table (no separate files)
+- **Iteration 1:** Only PDFs stored as files (local filesystem, Cloud Run ephemeral storage)
+- **Future:** PDFs migrated to GCS, database migrated to Cloud SQL
+
+---
+
+## Implementation Order
+
+1. **Phase 1** (Database & Storage) → Foundation
+2. **Phase 2** (CLI Integration) → Test with existing pipeline
+3. **Phase 3** (Cleanup) → Maintenance
+4. **Phase 4** (FastAPI) → API service
+
+---
+
+## Notes
+
+- **Data Masking/Encryption**: Deferred to v2 (after API is live)
+- **Chunking**: Deferred to next iteration (current docs fit within limits)
+- **Testing**: Each phase should be tested before moving to next
+- **Documentation**: Update docs as we implement each phase
+
+---
+
+## Questions to Resolve
+
+1. **Log Storage**: Per-job log files (`logs/{uuid}.log`) or daily logs with UUID in content?
+   - **Decision**: Per-job log files for easier debugging and API access
+2. **Cleanup Frequency**: Manual (CLI command) or automatic (background task)?
+   - **Decision**: Both - CLI command for manual, optional background task
+3. **Job Deletion**: Soft delete (mark as deleted) or hard delete (remove from DB)?
+   - **Decision**: Hard delete for simplicity (can add soft delete later if needed)
+
+---
+
+**Last Updated:** November 12, 2025
+
