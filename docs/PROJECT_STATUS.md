@@ -54,6 +54,11 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Output format options (CSV, Excel, etc.)
 - [ ] Database storage option
 
+### Platform Support
+- ✅ **Cross-platform compatible** (Windows, Linux, macOS)
+- ✅ **Docker support** (Dockerfile and docker-compose provided)
+- ✅ **Environment-based configuration** (no hardcoded paths)
+
 ## 🚀 What Could Be Next
 
 ### Priority 0: Security & Compliance
