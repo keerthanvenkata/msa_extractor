@@ -9,19 +9,19 @@
 
 ### What We're Doing Now
 
-**We are sending the ENTIRE document text to the LLM** (with a 12,000 character limit).
+**We are sending the ENTIRE document text to the LLM** (with a 50,000 character limit, configurable via `MAX_TEXT_LENGTH`).
 
 #### For Text-Based PDFs:
 1. Extract ALL text from ALL pages using PyMuPDF
 2. Combine all text into a single `raw_text` string
 3. Send entire `raw_text` to Gemini Flash (text LLM) with extraction prompt
-4. If text exceeds 12,000 chars, truncate from the end (with warning)
+4. If text exceeds 50,000 chars (configurable), truncate from the end (with warning)
 
 #### For Image-Based PDFs (OCR):
 1. OCR ALL pages using Tesseract/Google Cloud Vision
 2. Combine all OCR text into a single `raw_text` string
 3. Send entire `raw_text` to Gemini Flash (text LLM) with extraction prompt
-4. If text exceeds 12,000 chars, truncate from the end (with warning)
+4. If text exceeds 50,000 chars (configurable), truncate from the end (with warning)
 
 #### For Gemini Vision Strategy:
 1. Send first 3 pages as images to Gemini Vision API
