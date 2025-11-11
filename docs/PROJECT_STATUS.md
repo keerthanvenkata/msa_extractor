@@ -115,11 +115,12 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
    - Cleanup policies specified
    - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for full details
 
-2. **API/Web interface:**
-   - REST API endpoints designed (upload, get result)
-   - FastAPI integration points defined
-   - Background task architecture planned
-   - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for API design
+2. **API/Web interface:** 📋 **Planning Complete**
+   - FastAPI backend architecture designed
+   - REST API endpoints specified (upload, get result, list jobs, health check)
+   - Background task architecture planned (extraction and cleanup)
+   - Docker configuration for API service
+   - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for complete FastAPI backend plan
 
 3. **Monitoring & Analytics:**
    - Extraction success rates
