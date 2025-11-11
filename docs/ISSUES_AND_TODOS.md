@@ -531,9 +531,11 @@ Implement SQLite-based persistence system for tracking extraction jobs with UUID
    - Indexes on status, created_at, file_name
 
 2. **File Storage:**
-   - Store uploaded PDFs in `uploads/{uuid}.pdf` (temporary)
-   - Store JSON results in `results/{uuid}.json` (permanent)
-   - Store logs in `logs/{uuid}.log` (permanent, file-based)
+   - Store uploaded PDFs in `uploads/{uuid}.pdf` (temporary, local filesystem)
+   - **Store JSON results in `extractions.result_json` column** (database, not files)
+   - **Store logs in `extraction_logs` table** (database, monthly tables for SQLite)
+   - PDFs cleared after N days (configurable, default: 7 days)
+   - Cloud Run ephemeral storage sufficient for Iteration 1
 
 3. **Cleanup Strategy:**
    - Time-based: Delete PDFs older than N days (default: 7 days)
@@ -558,6 +560,89 @@ Implement SQLite-based persistence system for tracking extraction jobs with UUID
 **Reference:** See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for detailed implementation plan.
 
 **Note:** This is the immediate next task. Planning is complete, ready for implementation after testing existing pipeline.
+
+**Iteration 1 Scope:**
+- SQLite database (local)
+- Local filesystem for PDFs (Cloud Run ephemeral storage)
+- JSON results and logs stored in database (not separate files)
+
+---
+
+### TODO-012: GCS Integration for PDF Storage (Future Iteration)
+**Location:** `storage/gcs_adapter.py`, `config.py`
+
+**Description:**
+Migrate PDF storage from local filesystem to Google Cloud Storage (GCS) for production deployment.
+
+**Requirements:**
+1. **GCS Storage Adapter:**
+   - Create `storage/gcs_adapter.py` with GCS upload/download methods
+   - Support for GCS bucket configuration
+   - Handle GCS authentication (service account, default credentials)
+   - Store GCS paths in `extractions.pdf_storage_path` (format: `gs://bucket/path/{uuid}.pdf`)
+   - Update `pdf_storage_type` to `gcs` when using GCS
+
+2. **Configuration:**
+   - `GCP_PROJECT_ID`: GCP project ID
+   - `GCP_STORAGE_BUCKET`: GCS bucket name for PDF storage
+   - `USE_GCS`: Enable GCS storage (default: False)
+   - `GCP_SERVICE_ACCOUNT_KEY`: Path to service account JSON (optional, uses default credentials if not set)
+
+3. **Migration:**
+   - Support both local and GCS storage (configurable)
+   - Migration script to move existing PDFs to GCS
+   - Update cleanup logic to handle GCS deletion
+
+**Priority:** P2 - Future enhancement (after Iteration 1)
+
+**Status:** 📋 TODO (Future Iteration)
+
+**Reference:** See [IMPLEMENTATION_ROADMAP.md](planning/IMPLEMENTATION_ROADMAP.md) for architecture details.
+
+---
+
+### TODO-013: Cloud SQL Migration (Future Iteration)
+**Location:** `storage/database.py`, `config.py`
+
+**Description:**
+Migrate from SQLite to Cloud SQL PostgreSQL for production deployment with better scalability and reliability.
+
+**Requirements:**
+1. **Cloud SQL Support:**
+   - Add PostgreSQL connection support to `ExtractionDB` class
+   - Support both SQLite (local) and PostgreSQL (Cloud SQL)
+   - Connection pooling for Cloud SQL
+   - Handle Cloud SQL authentication (Cloud SQL Proxy, private IP)
+
+2. **Database Schema:**
+   - Migrate SQLite schema to PostgreSQL
+   - Use PostgreSQL-specific features (JSONB for `result_json`, table partitioning for logs)
+   - Create migration scripts for schema changes
+
+3. **Log Table Strategy:**
+   - Use PostgreSQL table partitioning for `extraction_logs` (partition by month)
+   - Or continue with monthly tables if preferred
+   - Automatic partition management
+
+4. **Configuration:**
+   - `GCP_CLOUD_SQL_INSTANCE`: Cloud SQL instance connection name
+   - `USE_CLOUD_SQL`: Enable Cloud SQL (default: False)
+   - `CLOUD_SQL_DATABASE`: Database name
+   - `CLOUD_SQL_USER`: Database user
+   - `CLOUD_SQL_PASSWORD`: Database password (or use Secret Manager)
+   - `CLOUD_SQL_CONNECTION_NAME`: Instance connection name
+
+5. **Migration Path:**
+   - Export data from SQLite
+   - Import to Cloud SQL PostgreSQL
+   - Test migration process
+   - Document migration steps
+
+**Priority:** P2 - Future enhancement (after Iteration 1)
+
+**Status:** 📋 TODO (Future Iteration)
+
+**Reference:** See [IMPLEMENTATION_ROADMAP.md](planning/IMPLEMENTATION_ROADMAP.md) for architecture details.
 
 ---
 
@@ -619,9 +704,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
-| TODOs | 11 | 1 | 5 | 4 | 1 |
+| TODOs | 13 | 1 | 5 | 6 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **26** | **2** | **11** | **10** | **3** |
+| **Total** | **28** | **2** | **11** | **12** | **3** |
 
 ---
 
