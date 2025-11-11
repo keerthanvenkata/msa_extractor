@@ -1,5 +1,8 @@
 # Gemini Vision Extractor
 
+**Module:** `extractors.gemini_vision_extractor`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `GeminiVisionExtractor` class provides direct integration with Gemini Vision API for image-based PDFs. Unlike the OCR + text LLM pipeline, this extractor uses Gemini Vision to:

@@ -1,5 +1,8 @@
 # Main CLI
 
+**Module:** `main`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `main.py` module provides a command-line interface for:

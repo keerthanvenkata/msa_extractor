@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Last Updated:** January 7, 2025
+**Last Updated:** November 11, 2025
 
 The `docs/` directory contains comprehensive documentation for the MSA Metadata Extractor project, organized into logical sections for easy navigation.
 

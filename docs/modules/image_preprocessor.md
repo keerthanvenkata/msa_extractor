@@ -1,5 +1,8 @@
 # Image Preprocessor
 
+**Module:** `extractors.image_preprocessor`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `ImagePreprocessor` class applies OpenCV-based enhancements to scanned PDF pages before OCR. These operations increase text legibility and drastically improve recognition accuracy for Tesseract or Google Cloud Vision.

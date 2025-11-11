@@ -1,5 +1,8 @@
 # Schema Validator
 
+**Module:** `ai.schema`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `SchemaValidator` class provides JSON schema validation and normalization for extracted metadata.

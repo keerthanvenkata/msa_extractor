@@ -1,6 +1,6 @@
 # System Architecture
 
-**Last Updated:** January 7, 2025
+**Last Updated:** November 11, 2025
 
 ## Overview
 

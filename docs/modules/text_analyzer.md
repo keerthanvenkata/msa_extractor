@@ -1,5 +1,8 @@
 # Text Analyzer
 
+**Module:** `extractors.text_analyzer`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `TextAnalyzer` class provides heuristics-based header detection and text structure analysis for extracted text blocks.

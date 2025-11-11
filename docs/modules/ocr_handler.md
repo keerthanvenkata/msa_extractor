@@ -1,5 +1,8 @@
 # OCR Handler
 
+**Module:** `extractors.ocr_handler`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `OCRHandler` class provides a unified interface for multiple OCR engines:

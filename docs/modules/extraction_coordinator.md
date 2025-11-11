@@ -1,7 +1,7 @@
 # Extraction Coordinator
 
 **Module:** `extractors.extraction_coordinator`  
-**Last Updated:** January 7, 2025
+**Last Updated:** November 11, 2025
 
 ## Purpose
 

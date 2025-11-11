@@ -1,5 +1,8 @@
 # PDF Preprocessing
 
+**Module:** `extractors.pdf_extractor` (preprocessing methods)  
+**Last Updated:** November 11, 2025
+
 ## Overview
 
 PDF preprocessing adapts to two primary document types:

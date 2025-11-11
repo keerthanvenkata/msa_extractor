@@ -2,7 +2,7 @@
 
 This document tracks all identified issues, bugs, TODOs, and optimization opportunities in the MSA Metadata Extractor codebase.
 
-**Last Updated:** 2025-01-07  
+**Last Updated:** November 11, 2025  
 **Status:** Pre-fix review
 
 ---

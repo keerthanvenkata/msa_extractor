@@ -1,5 +1,7 @@
 # Extraction Architecture - Redesign
 
+**Last Updated:** November 11, 2025
+
 ## Overview
 
 The extraction system has been redesigned to provide clear separation between:

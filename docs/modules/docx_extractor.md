@@ -1,5 +1,8 @@
 # DOCX Extractor
 
+**Module:** `extractors.docx_extractor`  
+**Last Updated:** November 11, 2025
+
 ## Purpose
 
 The `DOCXExtractor` class extracts text from Microsoft Word documents with style-based header detection.
