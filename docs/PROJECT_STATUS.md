@@ -1,6 +1,6 @@
 # Project Status & Roadmap
 
-**Last Updated:** November 11, 2025
+**Last Updated:** November 11, 2024
 
 ## Current Version Status: ✅ Production Ready
 
@@ -57,7 +57,7 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
   - File management (temporary PDFs, permanent JSONs/logs)
   - Cleanup policies (time-based and count-based)
   - FastAPI integration points defined
-  - See [PERSISTENCE_PLAN.md](PERSISTENCE_PLAN.md) for details
+  - See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for details
 
 ### Platform Support
 - ✅ **Cross-platform compatible** (Windows, Linux, macOS)
@@ -156,10 +156,12 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 
 - **Test Coverage:** 16 tests passing (basic smoke tests + unit tests)
 - **Supported Formats:** PDF (text, image, mixed), DOCX
-- **Extraction Modes:** 5 modes (text_only, image_only, text_ocr, multimodal, text_image)
-- **OCR Engines:** 3 engines (Tesseract, Google Cloud Vision, Gemini Vision)
+- **Extraction Methods:** 5 methods (`text_direct`, `ocr_all`, `ocr_images_only`, `vision_all`, `hybrid`)
+- **LLM Processing Modes:** 4 modes (`text_llm`, `vision_llm`, `multimodal`, `dual_llm`)
+- **OCR Engines:** 2 engines (Tesseract, Google Cloud Vision)
 - **Max Text Length:** 50,000 characters (configurable)
 - **Retry Logic:** 3 attempts with exponential backoff
+- **Architecture:** Redesigned with clear separation between content extraction and LLM processing
 
 ## 🎯 Recommended Next Steps
 
@@ -189,5 +191,5 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - **Multimodal mode:** Successfully extracts signatory information from signature pages
 - **Logging:** Fully functional with file rotation and multiple formats
 - **Error handling:** Comprehensive with custom exceptions and retry logic
-- **Data Masking:** ⚠️ **Critical** - Must implement before processing sensitive documents. See [DATA_MASKING_PLAN.md](DATA_MASKING_PLAN.md) for details.
+- **Data Masking:** ⚠️ **Critical** - Must implement before processing sensitive documents. See [DATA_MASKING_PLAN.md](planning/DATA_MASKING_PLAN.md) for details.
 
