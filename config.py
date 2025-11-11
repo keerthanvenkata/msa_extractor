@@ -199,8 +199,11 @@ OCR_ENGINE = os.getenv("OCR_ENGINE", "tesseract")
 
 # Tesseract executable path (optional, for non-standard installations)
 # If not set, pytesseract will look for tesseract in PATH
+# Cross-platform: Use forward slashes or raw strings, pathlib will handle it
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "")
-# Example: r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Windows example: C:\Program Files\Tesseract-OCR\tesseract.exe
+# Linux example: /usr/bin/tesseract
+# Docker example: /usr/bin/tesseract (usually in PATH)
 
 # Tesseract language(s) for OCR
 # Use ISO 639-2 language codes (e.g., "eng", "eng+fra" for multiple languages)
@@ -209,8 +212,11 @@ TESSERACT_LANG = os.getenv("TESSERACT_LANG", "eng")
 
 # Tesseract data directory (optional, for custom tessdata location)
 # If not set, uses default tessdata location
+# Cross-platform: Use forward slashes or raw strings, pathlib will handle it
 TESSDATA_PREFIX = os.getenv("TESSDATA_PREFIX", "")
-# Example: r"C:\Program Files\Tesseract-OCR\tessdata"
+# Windows example: C:\Program Files\Tesseract-OCR\tessdata
+# Linux example: /usr/share/tesseract-ocr/5/tessdata
+# Docker example: /usr/share/tesseract-ocr/5/tessdata (usually default)
 
 # Gemini Model Configuration
 GEMINI_TEXT_MODEL = os.getenv("GEMINI_TEXT_MODEL", "gemini-2.5-pro")  # For text LLM
