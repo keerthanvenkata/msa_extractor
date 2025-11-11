@@ -85,7 +85,7 @@ class OCRHandler:
             self.logger.error("Tesseract OCR not available", exc_info=True)
             raise OCRError(
                 "Tesseract OCR not found. Please install Tesseract and ensure it's in PATH. "
-                "See docs/windows_ocr_setup.md (Windows) or docs/LINUX_AND_DOCKER_SETUP.md (Linux/Docker) for installation instructions. "
+                "See docs/setup/windows_ocr_setup.md (Windows) or docs/setup/LINUX_AND_DOCKER_SETUP.md (Linux/Docker) for installation instructions. "
                 "Alternatively, set TESSERACT_CMD in config to point to tesseract executable.",
                 details={"ocr_engine": "tesseract", "error": str(e)}
             ) from e
