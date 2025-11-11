@@ -1,15 +1,36 @@
 # Documentation Index
 
-The `docs/` directory contains module-level guides and setup references for the MSA Metadata Extractor project.
+The `docs/` directory contains module-level guides, setup references, and planning documents for the MSA Metadata Extractor project.
 
-## Requirements & Schema
+---
+
+## 📋 Planning & Design Documents
+
+**Status:** Planning phase - these documents outline future implementations.
+
+- **[Persistence & Storage Plan](PERSISTENCE_PLAN.md)** — SQLite database schema, file storage strategy, cleanup policies, and FastAPI backend design (P1 - Planning Complete)
+  - Database schema and file storage structure
+  - Cleanup strategies (time-based and count-based)
+  - FastAPI backend architecture and endpoints
+  - Docker configuration for API deployment
+
+- **[Data Masking Plan](DATA_MASKING_PLAN.md)** — Data masking/encryption strategy for security and compliance (P0 - Critical)
+  - Security goals and requirements
+  - Masking methods and re-mapping strategy
+  - Configuration options
+
+---
+
+## 📊 Project Management
+
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** — Current project status, completed features, what's missing, and recommended next steps
+- **[ISSUES_AND_TODOS.md](ISSUES_AND_TODOS.md)** — Tracked bugs, TODOs, optimizations, and issues categorized by priority and type. Updated during code reviews and paper-based testing
+
+---
+
+## 📐 Requirements & Schema
 
 - **[REQUIREMENTS.md](REQUIREMENTS.md)** — **Canonical source** for field definitions, examples, extraction rules, and update checklist. **Always reference this when modifying the schema.**
-
-## Project Management
-
-- **[ISSUES_AND_TODOS.md](ISSUES_AND_TODOS.md)** — Tracked bugs, TODOs, optimizations, and issues categorized by priority and type. Updated during code reviews and paper-based testing.
-- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** — Current project status, completed features, what's missing, and recommended next steps.
 
 ## Module Guides
 
@@ -44,10 +65,9 @@ The `docs/` directory contains module-level guides and setup references for the 
 
 - [Logging and Error Handling](LOGGING_AND_ERROR_HANDLING.md) — centralized logging configuration, custom exceptions, and error handling patterns
 - [Prompting Strategy Analysis](PROMPTING_STRATEGY_ANALYSIS.md) — analysis of current prompting approach and recommendations
+- [Extraction Architecture](EXTRACTION_ARCHITECTURE.md) — redesigned extraction system with clear separation between content extraction methods and LLM processing modes
+- [Extraction Modes](EXTRACTION_MODES.md) — complete guide to all extraction modes and strategies (legacy - see EXTRACTION_ARCHITECTURE.md for new system)
 - [Multimodal Extraction](MULTIMODAL_EXTRACTION.md) — guide to multimodal extraction mode for signature pages and mixed PDFs
-- [Data Masking Plan](DATA_MASKING_PLAN.md) — data masking/encryption strategy for security and compliance (P0 - Critical)
 - [OCR and Signatures](OCR_AND_SIGNATURES.md) — guide to OCR capabilities for signature extraction and handling pure images
-- [Extraction Modes](EXTRACTION_MODES.md) — complete guide to all extraction modes and strategies, including pure vision extraction
-- [Persistence & Storage Plan](PERSISTENCE_PLAN.md) — SQLite database schema, file storage strategy, cleanup policies, and FastAPI integration design (P1 - Planning Complete)
 
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.
