@@ -16,7 +16,7 @@ TEST_DATA_DIR = Path(__file__).parent / "test_data"
 # Representative PDFs
 ORBIT_PDF = TEST_DATA_DIR / "Adaequare Inc._Orbit Inc._MSA.pdf"  # Mixed: text + image
 DGS_PDF = TEST_DATA_DIR / "DGS_Adaequare Agreement_CounterSigned.pdf"  # Image-only
-INTRAEDGE_PDF = TEST_DATA_DIR / "Executed_MSA_Adaequare Inc._IntraEdge.pdf"  # Text-only
+MINDLANCE_PDF = TEST_DATA_DIR / "Executed Master Service Agreement_Adaequare,Inc_Mindlance_05192016.pdf"  # Text-only
 
 
 class TestRepresentativePDFs:
@@ -94,13 +94,13 @@ class TestRepresentativePDFs:
             pytest.skip(f"Extraction failed (may need API key or file issue): {e}")
     
     @pytest.mark.slow
-    def test_intraedge_text_only_pdf(self):
+    def test_mindlance_text_only_pdf(self):
         """Test extraction from text-only PDF."""
-        if not INTRAEDGE_PDF.exists():
-            pytest.skip(f"Test PDF not found: {INTRAEDGE_PDF}")
+        if not MINDLANCE_PDF.exists():
+            pytest.skip(f"Test PDF not found: {MINDLANCE_PDF}")
         
         try:
-            metadata = self.coordinator.extract_metadata(str(INTRAEDGE_PDF))
+            metadata = self.coordinator.extract_metadata(str(MINDLANCE_PDF))
             
             # Validate structure
             self._validate_metadata_structure(metadata)
@@ -108,7 +108,7 @@ class TestRepresentativePDFs:
             # Log extracted values for manual review
             lifecycle = metadata.get("Contract Lifecycle", {})
             commercial = metadata.get("Commercial Operations", {})
-            print(f"\n[IntraEdge PDF] Extracted:")
+            print(f"\n[Mindlance PDF] Extracted:")
             print(f"  Execution Date: {lifecycle.get('Execution Date', 'Not Found')}")
             print(f"  Effective Date: {lifecycle.get('Effective Date', 'Not Found')}")
             print(f"  Expiration Date: {lifecycle.get('Expiration / Termination Date', 'Not Found')}")
@@ -125,7 +125,7 @@ class TestRepresentativePDFs:
         pdfs = [
             ("Orbit (Mixed)", ORBIT_PDF),
             ("DGS (Image-only)", DGS_PDF),
-            ("IntraEdge (Text-only)", INTRAEDGE_PDF),
+            ("Mindlance (Text-only)", MINDLANCE_PDF),
         ]
         
         results = []

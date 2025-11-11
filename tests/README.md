@@ -29,6 +29,13 @@ pytest tests/test_schema.py
 pytest tests/test_schema.py::TestSchemaValidator::test_validate_complete_metadata
 ```
 
+### Run representative PDFs and save results:
+```bash
+python tests/run_representative_tests.py
+```
+
+This script extracts metadata from the three representative PDFs and saves results as JSON files in the `results/` directory with timestamps.
+
 ## Test Structure
 
 - `conftest.py` - Pytest configuration and fixtures
@@ -55,7 +62,7 @@ pytest tests/test_schema.py::TestSchemaValidator::test_validate_complete_metadat
 Test PDFs are stored in `tests/test_data/`:
 - `Adaequare Inc._Orbit Inc._MSA.pdf` - Mixed PDF (text + image page)
 - `DGS_Adaequare Agreement_CounterSigned.pdf` - Image-only PDF
-- `Executed_MSA_Adaequare Inc._IntraEdge.pdf` - Text-only PDF
+- `Executed Master Service Agreement_Adaequare,Inc_Mindlance_05192016.pdf` - Text-only PDF
 
 **Note:** These PDFs are not committed to git. Copy them from `scratch/` directory for local testing.
 
