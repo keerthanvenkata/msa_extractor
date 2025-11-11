@@ -143,31 +143,48 @@ CMD ["python", "main.py", "--help"]
 
 ### Docker Compose
 
-Create `docker-compose.yml`:
+The `docker-compose.yml` provides two services:
+
+1. **CLI Service** (`msa-extractor-cli`): For batch processing via command line
+2. **API Service** (`msa-extractor-api`): FastAPI backend server (port 8000)
+
+**Example `docker-compose.yml`:**
 
 ```yaml
 version: '3.8'
 
 services:
-  msa-extractor:
+  # CLI Service (for batch processing)
+  msa-extractor-cli:
     build: .
     volumes:
-      # Mount input contracts
       - ./contracts:/app/contracts:ro
-      # Mount output directory
       - ./results:/app/results
-      # Mount logs directory
       - ./logs:/app/logs
-      # Mount .env file (or use environment section)
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
       - ./.env:/app/.env:ro
-    environment:
-      # Override if needed
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_TEXT_MODEL=${GEMINI_TEXT_MODEL:-gemini-2.5-pro}
-      - GEMINI_VISION_MODEL=${GEMINI_VISION_MODEL:-gemini-2.5-pro}
-      - EXTRACTION_MODE=${EXTRACTION_MODE:-multimodal}
     command: python main.py --dir /app/contracts --out-dir /app/results
+
+  # API Service (FastAPI backend)
+  msa-extractor-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
+      - ./.env:/app/.env:ro
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
+
+**Usage:**
+- Run CLI: `docker-compose run --rm msa-extractor-cli`
+- Run API: `docker-compose up msa-extractor-api`
+- Access API: `http://localhost:8000`
+- API Docs: `http://localhost:8000/docs`
 
 ### .dockerignore
 
@@ -193,6 +210,8 @@ ENV/
 # Project specific
 results/
 logs/
+uploads/
+storage/
 *.db
 scratch/
 .env.local
