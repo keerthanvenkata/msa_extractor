@@ -500,6 +500,24 @@ Implement data masking/encryption before sending documents to external APIs (Gem
 
 ---
 
+### TODO-010: Document Pure Images (No Text)
+**Location:** `extractors/pdf_extractor.py`
+
+**Description:**
+For pure image pages with no extractable text, document the image presence with metadata:
+- Image dimensions (width x height)
+- Image format
+- Image size
+- Page number
+
+**Priority:** P3 - Future enhancement
+
+**Status:** 📋 TODO
+
+**Note:** Currently, pure images are documented as "[Page X - Image Page (No extractable text found)]". Future enhancement will add image dimensions and metadata.
+
+---
+
 ## 🚀 Optimizations
 
 ### OPT-001: Cache PDF Type Detection
@@ -558,9 +576,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
-| TODOs | 9 | 1 | 4 | 3 | 1 |
+| TODOs | 10 | 1 | 4 | 4 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **24** | **2** | **10** | **9** | **3** |
+| **Total** | **25** | **2** | **10** | **10** | **3** |
 
 ---
 
