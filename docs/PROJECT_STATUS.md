@@ -47,6 +47,7 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Edge case testing (encrypted PDFs, corrupted files, etc.)
 
 ### Features
+- [ ] **Data masking/encryption** (P0 - Critical for security) ⚠️
 - [ ] Chunking for documents > 50K characters (deferred to next iteration)
 - [ ] Batch processing optimization
 - [ ] Progress indicators for long-running extractions
@@ -54,6 +55,14 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Database storage option
 
 ## 🚀 What Could Be Next
+
+### Priority 0: Security & Compliance
+1. **Data Masking/Encryption:**
+   - Implement data masking before sending to external APIs
+   - Mask PII, financial data, company names as needed
+   - Support configurable masking rules
+   - Re-map extracted values back to original data
+   - **Critical:** Must implement before processing sensitive documents
 
 ### Priority 1: Testing & Validation
 1. **Test with diverse PDFs:**
@@ -166,4 +175,5 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - **Multimodal mode:** Successfully extracts signatory information from signature pages
 - **Logging:** Fully functional with file rotation and multiple formats
 - **Error handling:** Comprehensive with custom exceptions and retry logic
+- **Data Masking:** ⚠️ **Critical** - Must implement before processing sensitive documents. See [DATA_MASKING_PLAN.md](DATA_MASKING_PLAN.md) for details.
 
