@@ -255,96 +255,364 @@ class ExtractionDB:
 
 ---
 
-## FastAPI Integration Points
+## FastAPI Backend Plan
 
-### Endpoint 1: Upload PDF → Job ID
+### Application Structure
+
+```
+api/
+├── __init__.py
+├── main.py              # FastAPI app entry point
+├── dependencies.py      # Shared dependencies (DB, config)
+├── routers/
+│   ├── __init__.py
+│   ├── extract.py       # Extraction endpoints
+│   └── jobs.py          # Job management endpoints
+├── models/
+│   ├── __init__.py
+│   ├── requests.py      # Request models (Pydantic)
+│   └── responses.py     # Response models (Pydantic)
+├── services/
+│   ├── __init__.py
+│   ├── extraction_service.py  # Extraction orchestration
+│   └── cleanup_service.py      # Cleanup orchestration
+└── middleware/
+    ├── __init__.py
+    └── logging.py       # Request logging middleware
+```
+
+### Dependencies
+
+Add to `requirements.txt`:
+```
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6  # For file uploads
+```
+
+### API Endpoints
+
+#### 1. Upload PDF → Job ID
 
 **POST `/api/v1/extract/upload`**
 
 **Request:**
-- `multipart/form-data` with PDF file
-- Optional: `extraction_method`, `llm_processing_mode`, `ocr_engine`
+- Content-Type: `multipart/form-data`
+- Fields:
+  - `file`: PDF file (required)
+  - `extraction_method`: Optional (defaults to config)
+  - `llm_processing_mode`: Optional (defaults to config)
+  - `ocr_engine`: Optional (defaults to config)
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "pending",
   "created_at": "2025-01-07T10:30:00Z",
-  "file_name": "contract.pdf"
+  "file_name": "contract.pdf",
+  "file_size": 1234567
 }
 ```
 
-**Flow:**
-1. Receive uploaded file
-2. Generate UUID
-3. Save PDF to `uploads/{uuid}.pdf`
-4. Create database record with status `pending`
-5. Return job ID
-6. (Async) Start extraction in background
+**Error Responses:**
+- `400 Bad Request`: Invalid file type, file too large, missing file
+- `413 Payload Too Large`: File exceeds size limit
+- `500 Internal Server Error`: Server error during upload
 
-### Endpoint 2: Get Result by Job ID
+**Implementation:**
+```python
+@router.post("/upload", response_model=UploadResponse)
+async def upload_pdf(
+    file: UploadFile = File(...),
+    extraction_method: Optional[str] = None,
+    llm_processing_mode: Optional[str] = None,
+    ocr_engine: Optional[str] = None,
+    db: ExtractionDB = Depends(get_db)
+):
+    # Validate file type (PDF only)
+    # Validate file size
+    # Generate UUID
+    # Save to uploads/{uuid}.pdf
+    # Create DB record
+    # Start background extraction task
+    # Return job ID
+```
+
+#### 2. Get Result by Job ID
 
 **GET `/api/v1/extract/{job_id}`**
 
-**Response (Completed):**
+**Path Parameters:**
+- `job_id`: UUID string
+
+**Response (200 OK - Completed):**
 ```json
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "completed",
   "created_at": "2025-01-07T10:30:00Z",
+  "started_at": "2025-01-07T10:30:05Z",
   "completed_at": "2025-01-07T10:32:15Z",
+  "file_name": "contract.pdf",
   "result": {
     // Full extracted metadata JSON
   }
 }
 ```
 
-**Response (Processing):**
+**Response (200 OK - Processing):**
 ```json
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "processing",
   "created_at": "2025-01-07T10:30:00Z",
-  "started_at": "2025-01-07T10:30:05Z"
+  "started_at": "2025-01-07T10:30:05Z",
+  "file_name": "contract.pdf"
 }
 ```
 
-**Response (Failed):**
+**Response (200 OK - Failed):**
 ```json
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "failed",
   "created_at": "2025-01-07T10:30:00Z",
+  "started_at": "2025-01-07T10:30:05Z",
   "failed_at": "2025-01-07T10:31:20Z",
-  "error": "Extraction failed: ..."
+  "file_name": "contract.pdf",
+  "error": "Extraction failed: Invalid PDF format"
 }
 ```
 
-**Flow:**
-1. Query database for job_id
-2. If completed, read JSON from `results/{uuid}.json`
-3. Return status and result
+**Error Responses:**
+- `404 Not Found`: Job ID not found
+- `400 Bad Request`: Invalid UUID format
 
-### Optional Endpoint 3: List Jobs
+#### 3. List Jobs (Optional)
 
-**GET `/api/v1/extract/jobs?status=completed&limit=10`**
+**GET `/api/v1/extract/jobs`**
 
-**Response:**
+**Query Parameters:**
+- `status`: Filter by status (`pending`, `processing`, `completed`, `failed`)
+- `limit`: Max results (default: 50, max: 100)
+- `offset`: Pagination offset (default: 0)
+- `sort`: Sort order (`created_at` desc/asc, default: desc)
+
+**Response (200 OK):**
 ```json
 {
   "jobs": [
     {
-      "job_id": "...",
-      "file_name": "...",
+      "job_id": "550e8400-e29b-41d4-a716-446655440000",
+      "file_name": "contract.pdf",
       "status": "completed",
-      "created_at": "...",
-      "completed_at": "..."
+      "created_at": "2025-01-07T10:30:00Z",
+      "completed_at": "2025-01-07T10:32:15Z"
     }
   ],
-  "total": 42
+  "total": 42,
+  "limit": 50,
+  "offset": 0
 }
 ```
+
+#### 4. Health Check
+
+**GET `/health`**
+
+**Response (200 OK):**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "database": "connected",
+  "timestamp": "2025-01-07T10:30:00Z"
+}
+```
+
+#### 5. Get Logs (Optional)
+
+**GET `/api/v1/extract/{job_id}/logs`**
+
+**Response (200 OK):**
+- Content-Type: `text/plain`
+- Body: Log file content
+
+**Error Responses:**
+- `404 Not Found`: Job ID not found or log file missing
+
+### Background Tasks
+
+#### Extraction Task
+
+```python
+async def process_extraction(job_id: str, file_path: Path):
+    """Background task to process extraction."""
+    db = ExtractionDB(DB_PATH)
+    
+    try:
+        # Update status to processing
+        db.update_job_status(job_id, "processing")
+        
+        # Run extraction using ExtractionCoordinator
+        coordinator = ExtractionCoordinator()
+        metadata = coordinator.extract_metadata(str(file_path))
+        
+        # Save result JSON
+        result_path = RESULTS_DIR / f"{job_id}.json"
+        with open(result_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        
+        # Update job as completed
+        log_path = LOGS_DIR / f"{job_id}.log"
+        db.complete_job(job_id, result_path, log_path)
+        
+    except Exception as e:
+        # Update job as failed
+        db.update_job_status(job_id, "failed", error_message=str(e))
+        logger.error(f"Extraction failed for job {job_id}: {e}", exc_info=True)
+```
+
+#### Cleanup Task
+
+```python
+async def run_cleanup():
+    """Periodic cleanup task."""
+    db = ExtractionDB(DB_PATH)
+    cleanup_service = CleanupService(db)
+    
+    # Time-based cleanup
+    deleted_count = cleanup_service.cleanup_old_pdfs(CLEANUP_PDF_DAYS)
+    logger.info(f"Deleted {deleted_count} old PDFs")
+    
+    # Count-based cleanup
+    deleted_count = cleanup_service.cleanup_excess_pdfs(
+        CLEANUP_PDF_MAX_COUNT, 
+        CLEANUP_PDF_MIN_COUNT
+    )
+    logger.info(f"Deleted {deleted_count} excess PDFs")
+```
+
+### Configuration
+
+Add to `config.py`:
+```python
+# FastAPI Configuration
+API_HOST = os.getenv("API_HOST", "0.0.0.0")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+API_WORKERS = int(os.getenv("API_WORKERS", "1"))
+API_RELOAD = os.getenv("API_RELOAD", "false").lower() == "true"
+
+# File Upload Limits
+MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "50"))  # 50MB default
+MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024  # Convert to bytes
+```
+
+### Startup Events
+
+```python
+@app.on_event("startup")
+async def startup_event():
+    """Initialize on startup."""
+    # Initialize database
+    db = ExtractionDB(DB_PATH)
+    db.init_schema()  # Create tables if not exist
+    
+    # Start cleanup scheduler (if using APScheduler)
+    # scheduler.start()
+    
+    logger.info("FastAPI application started")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown."""
+    logger.info("FastAPI application shutting down")
+```
+
+### Error Handling
+
+```python
+from fastapi import HTTPException
+
+@app.exception_handler(FileError)
+async def file_error_handler(request: Request, exc: FileError):
+    return JSONResponse(
+        status_code=400,
+        content={"error": str(exc), "type": "FileError"}
+    )
+
+@app.exception_handler(ExtractionError)
+async def extraction_error_handler(request: Request, exc: ExtractionError):
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "type": "ExtractionError"}
+    )
+```
+
+### CORS Configuration
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### Deployment Considerations
+
+1. **Production Server:**
+   - Use `uvicorn` with multiple workers
+   - Use reverse proxy (nginx) for SSL termination
+   - Configure proper CORS origins
+
+2. **GCP Deployment:**
+   - Use Cloud Run for serverless deployment
+   - Use Cloud Storage for file storage (optional)
+   - Use Cloud SQL for database (if migrating from SQLite)
+
+3. **Environment Variables:**
+   - Set `API_HOST`, `API_PORT` for production
+   - Configure `MAX_UPLOAD_SIZE_MB` based on needs
+   - Set proper CORS origins
+
+### Testing
+
+```python
+# tests/test_api.py
+from fastapi.testclient import TestClient
+
+def test_upload_pdf():
+    client = TestClient(app)
+    with open("test.pdf", "rb") as f:
+        response = client.post(
+            "/api/v1/extract/upload",
+            files={"file": ("test.pdf", f, "application/pdf")}
+        )
+    assert response.status_code == 200
+    assert "job_id" in response.json()
+
+def test_get_result():
+    client = TestClient(app)
+    response = client.get("/api/v1/extract/{job_id}")
+    assert response.status_code == 200
+```
+
+---
+
+## FastAPI Integration Points (Legacy Section - See Above for Full Plan)
+
+The detailed FastAPI backend plan is above. Key integration points:
+
+1. **Upload Endpoint:** POST `/api/v1/extract/upload` → Returns job ID
+2. **Get Result Endpoint:** GET `/api/v1/extract/{job_id}` → Returns extraction result
+3. **List Jobs Endpoint:** GET `/api/v1/extract/jobs` → Returns job list
+4. **Background Tasks:** Async extraction processing and cleanup
 
 ---
 
