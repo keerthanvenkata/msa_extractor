@@ -8,7 +8,8 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 from config import (
-    EXTRACTION_STRATEGY,
+    EXTRACTION_METHOD,
+    LLM_PROCESSING_MODE,
     OCR_ENGINE,
     GEMINI_API_KEY
 )
@@ -37,16 +38,15 @@ class StrategyFactory:
     
     def get_extractor(self, file_path: str, strategy: str = None) -> BaseExtractor:
         """
-        Get appropriate extractor for file based on strategy.
+        Get appropriate extractor for file based on EXTRACTION_METHOD.
         
         Args:
             file_path: Path to document file
-            strategy: Extraction strategy (defaults to config value)
+            strategy: Legacy parameter (ignored, use EXTRACTION_METHOD instead)
         
         Returns:
             Appropriate extractor instance
         """
-        strategy = strategy or EXTRACTION_STRATEGY
         file_ext = Path(file_path).suffix.lower()
         
         # Handle DOCX files (always use DOCX extractor)
@@ -55,59 +55,19 @@ class StrategyFactory:
         
         # Handle PDF files
         if file_ext == ".pdf":
-            if strategy == "auto":
-                return self._get_auto_strategy_extractor(file_path)
-            elif strategy == "text_extraction":
-                return PDFExtractor(gemini_client=self.gemini_client)
-            elif strategy == "gemini_vision":
+            # New architecture: EXTRACTION_METHOD determines approach
+            if EXTRACTION_METHOD == "vision_all":
+                # Pure vision: use GeminiVisionExtractor
                 from .gemini_vision_extractor import GeminiVisionExtractor
                 return GeminiVisionExtractor(gemini_client=self.gemini_client)
-            elif strategy in ["tesseract", "gcv"]:
-                # Use PDF extractor with OCR handler
-                return PDFExtractor(gemini_client=self.gemini_client)
             else:
-                raise ConfigurationError(
-                    f"Unknown extraction strategy: {strategy}",
-                    details={"strategy": strategy, "file_path": file_path}
-                )
+                # All other methods use PDFExtractor
+                return PDFExtractor(gemini_client=self.gemini_client)
         
         raise FileError(
             f"Unsupported file type: {file_ext}",
             details={"file_path": file_path, "file_extension": file_ext}
         )
-    
-    def _get_auto_strategy_extractor(self, file_path: str) -> BaseExtractor:
-        """
-        Get extractor using auto strategy (detects document type).
-        
-        Args:
-            file_path: Path to PDF file
-        
-        Returns:
-            Appropriate extractor instance
-        """
-        # Detect PDF type and cache it in extractor to avoid re-detection
-        pdf_extractor = PDFExtractor(gemini_client=self.gemini_client)
-        pdf_type = pdf_extractor._detect_pdf_type(file_path)
-        pdf_extractor._cached_pdf_type = pdf_type  # Cache to avoid re-detection
-        
-        self.logger.info(f"Auto strategy: Detected PDF type: {pdf_type}")
-        
-        if pdf_type == "text":
-            # Text-based: Use text extraction + Gemini Flash
-            return pdf_extractor
-        elif pdf_type == "image":
-            # Image-based: Use configured OCR strategy
-            if OCR_ENGINE == "gemini_vision":
-                from .gemini_vision_extractor import GeminiVisionExtractor
-                return GeminiVisionExtractor(gemini_client=self.gemini_client)
-            else:
-                # Use PDF extractor with OCR handler
-                return pdf_extractor
-        else:  # mixed
-            # For mixed, default to text extraction
-            self.logger.warning("Mixed PDF detected, using text extraction strategy")
-            return pdf_extractor
     
     def extract_with_strategy(self, file_path: str, 
                              strategy: str = None) -> ExtractedTextResult:
