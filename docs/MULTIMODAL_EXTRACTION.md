@@ -4,6 +4,14 @@
 
 The MSA Metadata Extractor supports multimodal extraction, allowing text and images to be sent together to the Gemini Vision API. This is particularly useful for mixed PDFs where most pages are text-based but some pages (typically signature pages at the end) are image-based.
 
+## Extraction Modes vs Strategies
+
+The system supports:
+- **5 Extraction Modes** (`EXTRACTION_MODE`): Control how mixed PDFs are processed
+- **5 Extraction Strategies** (`EXTRACTION_STRATEGY`): Control overall extraction approach
+
+For a complete guide to all modes and strategies, including pure vision extraction, see [EXTRACTION_MODES.md](EXTRACTION_MODES.md).
+
 ## Extraction Modes
 
 The system supports five extraction modes, configurable via `EXTRACTION_MODE` environment variable:

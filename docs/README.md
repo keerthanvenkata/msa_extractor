@@ -46,5 +46,6 @@ The `docs/` directory contains module-level guides and setup references for the 
 - [Multimodal Extraction](MULTIMODAL_EXTRACTION.md) — guide to multimodal extraction mode for signature pages and mixed PDFs
 - [Data Masking Plan](DATA_MASKING_PLAN.md) — data masking/encryption strategy for security and compliance (P0 - Critical)
 - [OCR and Signatures](OCR_AND_SIGNATURES.md) — guide to OCR capabilities for signature extraction and handling pure images
+- [Extraction Modes](EXTRACTION_MODES.md) — complete guide to all extraction modes and strategies, including pure vision extraction
 
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.
