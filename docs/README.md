@@ -45,5 +45,6 @@ The `docs/` directory contains module-level guides and setup references for the 
 - [Prompting Strategy Analysis](PROMPTING_STRATEGY_ANALYSIS.md) — analysis of current prompting approach and recommendations
 - [Multimodal Extraction](MULTIMODAL_EXTRACTION.md) — guide to multimodal extraction mode for signature pages and mixed PDFs
 - [Data Masking Plan](DATA_MASKING_PLAN.md) — data masking/encryption strategy for security and compliance (P0 - Critical)
+- [OCR and Signatures](OCR_AND_SIGNATURES.md) — guide to OCR capabilities for signature extraction and handling pure images
 
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.
