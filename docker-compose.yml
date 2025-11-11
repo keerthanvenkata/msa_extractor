@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  msa-extractor:
+    build: .
+    volumes:
+      # Mount input contracts (read-only)
+      - ./contracts:/app/contracts:ro
+      # Mount output directory
+      - ./results:/app/results
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Mount .env file (or use environment section below)
+      - ./.env:/app/.env:ro
+    environment:
+      # These can be set in .env file or here
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # - GEMINI_TEXT_MODEL=${GEMINI_TEXT_MODEL:-gemini-2.5-pro}
+      # - GEMINI_VISION_MODEL=${GEMINI_VISION_MODEL:-gemini-2.5-pro}
+      # - EXTRACTION_MODE=${EXTRACTION_MODE:-multimodal}
+    # Default command (override when running)
+    # command: python main.py --dir /app/contracts --out-dir /app/results
+
