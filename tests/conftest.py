@@ -7,8 +7,9 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, MagicMock
 
-# Test data directory
-TEST_DATA_DIR = Path(__file__).parent.parent / "scratch"
+# Test data directory (preferred: tests/test_data, fallback: scratch)
+TEST_DATA_DIR = Path(__file__).parent / "test_data"
+SCRATCH_DIR = Path(__file__).parent.parent / "scratch"
 
 
 @pytest.fixture
@@ -20,12 +21,16 @@ def sample_pdf_path():
         "Executed Subcontracting Agreement_Adaequare Inc_DISYS_07222020.pdf_R1407[5-24-2021]",
     ]
     
+    # Try test_data first, then scratch
     for pdf_file in pdf_files:
         pdf_path = TEST_DATA_DIR / pdf_file
         if pdf_path.exists():
             return str(pdf_path)
+        pdf_path = SCRATCH_DIR / pdf_file
+        if pdf_path.exists():
+            return str(pdf_path)
     
-    pytest.skip("No sample PDF files found in scratch directory")
+    pytest.skip("No sample PDF files found in test_data or scratch directory")
 
 
 @pytest.fixture
