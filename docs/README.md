@@ -9,6 +9,7 @@ The `docs/` directory contains module-level guides and setup references for the 
 ## Project Management
 
 - **[ISSUES_AND_TODOS.md](ISSUES_AND_TODOS.md)** — Tracked bugs, TODOs, optimizations, and issues categorized by priority and type. Updated during code reviews and paper-based testing.
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** — Current project status, completed features, what's missing, and recommended next steps.
 
 ## Module Guides
 
@@ -42,5 +43,6 @@ The `docs/` directory contains module-level guides and setup references for the 
 
 - [Logging and Error Handling](LOGGING_AND_ERROR_HANDLING.md) — centralized logging configuration, custom exceptions, and error handling patterns
 - [Prompting Strategy Analysis](PROMPTING_STRATEGY_ANALYSIS.md) — analysis of current prompting approach and recommendations
+- [Multimodal Extraction](MULTIMODAL_EXTRACTION.md) — guide to multimodal extraction mode for signature pages and mixed PDFs
 
 Each guide includes module responsibilities, configuration toggles, and extension points to keep the codebase modular and easy to extend.
