@@ -81,12 +81,20 @@ class PDFExtractor(BaseExtractor):
             
             if pdf_type == "text":
                 # Text-based PDF: extract text directly
-                # However, if multimodal mode is enabled, check for image pages
+                # However, check for image pages if:
+                # 1. Multimodal mode is enabled, OR
+                # 2. Text_ocr mode is enabled (to run OCR on image pages before sending to text LLM)
                 # (especially signature pages at the end that might be missed)
-                if EXTRACTION_MODE == "multimodal" and self._has_image_pages(file_path):
-                    self.logger.info(
-                        "PDF detected as text but has image pages. Using mixed extraction for multimodal mode."
-                    )
+                has_image_pages = self._has_image_pages(file_path)
+                if has_image_pages and (EXTRACTION_MODE == "multimodal" or EXTRACTION_MODE == "text_ocr"):
+                    if EXTRACTION_MODE == "multimodal":
+                        self.logger.info(
+                            "PDF detected as text but has image pages. Using mixed extraction for multimodal mode."
+                        )
+                    else:  # text_ocr
+                        self.logger.info(
+                            "PDF detected as text but has image pages. Using mixed extraction to run OCR on image pages."
+                        )
                     result = self._extract_mixed(file_path)
                 else:
                     result = self._extract_text_based(file_path)
@@ -513,13 +521,14 @@ class PDFExtractor(BaseExtractor):
                     
             elif EXTRACTION_MODE == "text_ocr":
                 # Extract text + OCR text from image pages (default)
+                # This ensures that when sending text to text LLM, image pages are OCR'd first
                 raw_text = " ".join(text_pages_text) if text_pages_text else ""
                 
                 if image_pages:
                     from .ocr_handler import OCRHandler
                     from config import OCR_ENGINE
                     
-                    self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s)")
+                    self.logger.info(f"OCR'ing {len(image_pages)} image-based page(s) before sending to text LLM")
                     ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
                     images = [img for _, img in image_pages]
                     ocr_texts = ocr_handler.extract_text_from_images(images)
@@ -527,11 +536,19 @@ class PDFExtractor(BaseExtractor):
                     # Add OCR text with page markers
                     for i, (page_num, _) in enumerate(image_pages):
                         if i < len(ocr_texts) and ocr_texts[i]:
-                            raw_text += f"\n[Page {page_num} - OCR Text]\n"
-                            raw_text += ocr_texts[i]
-                            raw_text += "\n"
+                            # Check if OCR returned any text
+                            if ocr_texts[i].strip():
+                                raw_text += f"\n[Page {page_num} - OCR Text]\n"
+                                raw_text += ocr_texts[i]
+                                raw_text += "\n"
+                            else:
+                                # Pure image with no extractable text - document it
+                                raw_text += f"\n[Page {page_num} - Image Page (No extractable text found)]\n"
+                                self.logger.debug(f"Page {page_num} appears to be a pure image with no extractable text")
                     
                     extraction_strategy = "pymupdf_with_ocr"
+                else:
+                    extraction_strategy = "pymupdf_text_only"
                     
             elif EXTRACTION_MODE == "multimodal":
                 # Send text + images together to vision model (best for signatory pages)
