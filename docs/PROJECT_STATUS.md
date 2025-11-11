@@ -1,6 +1,6 @@
 # Project Status & Roadmap
 
-**Last Updated:** November 11, 2025
+**Last Updated:** November 12, 2025
 
 ## Current Version Status: ✅ Production Ready
 
@@ -47,17 +47,23 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Edge case testing (encrypted PDFs, corrupted files, etc.)
 
 ### Features
-- [ ] **Data masking/encryption** (P0 - Critical for security) ⚠️
+- [ ] **Persistence & Storage System** (P1 - In Progress)
+  - SQLite database for job tracking
+  - UUID-based job IDs
+  - JSON results and logs stored in database
+  - PDF cleanup after N days
+  - FastAPI backend integration
+- [ ] **GCS Integration** (P2 - Future Iteration)
+  - Migrate PDF storage to Cloud Storage
+  - GCS adapter for file operations
+- [ ] **Cloud SQL Migration** (P2 - Future Iteration)
+  - Migrate from SQLite to Cloud SQL PostgreSQL
+  - Table partitioning for logs
+- [ ] **Data masking/encryption** (P0 - Deferred to v2, after API is live) ⚠️
 - [ ] Chunking for documents > 50K characters (deferred to next iteration)
 - [ ] Batch processing optimization
 - [ ] Progress indicators for long-running extractions
 - [ ] Output format options (CSV, Excel, etc.)
-- [ ] **Persistence & Storage System** (P1 - Planning complete, ready for implementation) 📋
-  - SQLite database for job tracking with UUIDs
-  - File management (temporary PDFs, permanent JSONs/logs)
-  - Cleanup policies (time-based and count-based)
-  - FastAPI integration points defined
-  - See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for details
 
 ### Platform Support
 - ✅ **Cross-platform compatible** (Windows, Linux, macOS)
