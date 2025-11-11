@@ -37,7 +37,8 @@ The `docs/` directory contains module-level guides and setup references for the 
 
 ## Setup Guides
 
-- [Windows OCR & Dependency Setup](windows_ocr_setup.md) — installing Tesseract, VC++ runtime, and optional Google Cloud Vision tooling
+- [Windows OCR & Dependency Setup](windows_ocr_setup.md) — installing Tesseract, VC++ runtime, and optional Google Cloud Vision tooling on Windows
+- [Linux & Docker Setup](LINUX_AND_DOCKER_SETUP.md) — setting up on Linux and Docker, including Dockerfile and docker-compose examples
 
 ## System & Infrastructure
 
