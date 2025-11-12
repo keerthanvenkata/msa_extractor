@@ -86,15 +86,24 @@ Log entries stored in monthly tables for efficient management.
 from storage.database import ExtractionDB
 
 # Use default database path (from config.DB_PATH)
-db = ExtractionDB()
-
-# Or specify custom path
-db = ExtractionDB(db_path=Path("custom/path.db"))
-
-# Context manager support
+# Recommended: Use context manager for automatic cleanup
 with ExtractionDB() as db:
     # Use database
+    job_id = db.create_job(...)
+    # Connection automatically closed when exiting context
+
+# Or specify custom path
+with ExtractionDB(db_path=Path("custom/path.db")) as db:
+    # Use database
     pass
+
+# Manual management (not recommended)
+db = ExtractionDB()
+try:
+    # Use database
+    pass
+finally:
+    db.close()
 ```
 
 **Behavior:**
@@ -301,46 +310,37 @@ db.close()
 from storage.database import ExtractionDB
 from datetime import datetime
 
-db = ExtractionDB()
-
-# Create job
-job_id = db.create_job(
-    file_name="contract.pdf",
-    pdf_storage_path="uploads/abc-123.pdf",
-    file_size=1024000
-)
-
-# Update status
-db.update_job_status(job_id, "processing", started_at=datetime.now())
-
-# Add log entry
-db.add_log_entry(job_id, "INFO", "Starting extraction")
-
-# Complete job
-db.complete_job(
-    job_id=job_id,
-    result_json_dict={"Contract Lifecycle": {"Effective Date": "2025-01-01"}},
-    pdf_storage_path="uploads/abc-123.pdf"
-)
-
-# Get job
-job = db.get_job(job_id)
-print(f"Status: {job['status']}")
-print(f"Result: {job['result_json']}")
-
-# Get logs
-logs = db.get_logs(job_id)
-for log in logs:
-    print(f"{log['timestamp']} [{log['level']}] {log['message']}")
-
-db.close()
-```
-
-### Context Manager Usage
-
-```python
+# Recommended: Use context manager for automatic cleanup
 with ExtractionDB() as db:
-    job_id = db.create_job(...)
+    # Create job
+    job_id = db.create_job(
+        file_name="contract.pdf",
+        pdf_storage_path="uploads/abc-123.pdf",
+        file_size=1024000
+    )
+    
+    # Update status
+    db.update_job_status(job_id, "processing", started_at=datetime.now())
+    
+    # Add log entry
+    db.add_log_entry(job_id, "INFO", "Starting extraction")
+    
+    # Complete job
+    db.complete_job(
+        job_id=job_id,
+        result_json_dict={"Contract Lifecycle": {"Effective Date": "2025-01-01"}},
+        pdf_storage_path="uploads/abc-123.pdf"
+    )
+    
+    # Get job
+    job = db.get_job(job_id)
+    print(f"Status: {job['status']}")
+    print(f"Result: {job['result_json']}")
+    
+    # Get logs
+    logs = db.get_logs(job_id)
+    for log in logs:
+        print(f"{log['timestamp']} [{log['level']}] {log['message']}")
     # Database automatically closed when exiting context
 ```
 

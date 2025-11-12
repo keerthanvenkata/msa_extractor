@@ -146,6 +146,36 @@ metadata = self.schema_validator.normalize(metadata)  # Then fill missing fields
 
 ---
 
+## 🟠 High Priority Issues
+
+### BUG-017: Error Handling - job_id May Be Undefined
+**Location:** `main.py` - `extract_single_file()` error handlers
+
+**Problem:**
+If job creation fails before `job_id` is set, error handler will fail when trying to update job status.
+
+**Impact:** Medium - Unhandled exception in error handler
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-11-12) - Initialize `job_id = None` at start, check before using in error handlers
+
+---
+
+### BUG-018: Batch Processing - Database Connection Reuse
+**Location:** `main.py` - `extract_batch()`
+
+**Problem:**
+Creates new `ExtractionDB()` for batch, but each file could create another if not passed. However, this is now handled correctly by passing `db` instance.
+
+**Impact:** Low - Was inefficient, now fixed
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-11-12) - Database instance is now passed to `extract_single_file()` for reuse
+
+---
+
 ## 🟡 Performance Issues
 
 ### PERF-001: Multiple GeminiClient Instances
@@ -263,6 +293,50 @@ Schema validation happens after normalization. Since normalization fills missing
 - Or remove redundant validation (normalization already ensures structure)
 
 **Status:** 🟢 Fixed (2025-01-07)
+
+---
+
+## 🟡 Medium Priority Issues
+
+### BUG-019: Legacy Mode - Logs Still in Database
+**Location:** `main.py` - legacy mode handling
+
+**Problem:**
+Comment indicates logs still written to DB in legacy mode, which is inconsistent with legacy mode concept (file-based storage).
+
+**Impact:** Low - Inconsistent behavior, but logs in DB are actually useful
+
+**Priority:** P2 - Nice to have
+
+**Status:** 🔵 Open - Documented behavior: logs remain in database for queryability even in legacy mode
+
+---
+
+### BUG-020: No Cleanup of Failed Job Files
+**Location:** `main.py` - error handlers
+
+**Problem:**
+If job fails, PDF file remains in `uploads/` directory, wasting disk space.
+
+**Impact:** Medium - Disk space waste for failed jobs
+
+**Priority:** P2 - Nice to have
+
+**Status:** 🔵 Open - Will be addressed in Phase 3 (cleanup implementation)
+
+---
+
+### BUG-021: Database Connection Efficiency in list_jobs() and get_job()
+**Location:** `main.py` - `list_jobs()`, `get_job()`
+
+**Problem:**
+Creates new connection for each call, which is inefficient for multiple calls.
+
+**Impact:** Low - Minor inefficiency, but acceptable for CLI usage
+
+**Priority:** P2 - Nice to have
+
+**Status:** 🟢 Fixed (2025-11-12) - Now using context manager for automatic cleanup
 
 ---
 
@@ -660,6 +734,52 @@ Migrate from SQLite to Cloud SQL PostgreSQL for production deployment with bette
 
 ---
 
+## 🔵 Low Priority / Optimizations
+
+### BUG-022: Index Creation Error Handling
+**Location:** `storage/database.py` line ~107-109
+
+**Problem:**
+Silent failure on index creation errors (uses `pass`), which may hide real issues.
+
+**Impact:** Low - May hide real issues
+
+**Priority:** P3 - Future enhancement
+
+**Status:** 🔵 Open
+
+---
+
+### BUG-023: JSON Parsing Error Handling
+**Location:** `storage/database.py` lines ~227-229, 234-236
+
+**Problem:**
+Sets `result_json` to `None` on parse error, but doesn't log details, making it hard to debug corrupted JSON.
+
+**Impact:** Low - Hard to debug corrupted JSON
+
+**Priority:** P3 - Future enhancement
+
+**Status:** 🔵 Open
+
+---
+
+### BUG-024: Monthly Log Table Query Efficiency
+**Location:** `storage/database.py` - `get_logs()`
+
+**Problem:**
+Queries all monthly tables, then sorts in memory, which is inefficient for many months.
+
+**Impact:** Low - Inefficient for many months
+
+**Priority:** P3 - Future enhancement
+
+**Proposed Fix:** Use UNION ALL with ORDER BY in SQL
+
+**Status:** 🔵 Open
+
+---
+
 ## 🚀 Optimizations
 
 ### OPT-001: Cache PDF Type Detection
@@ -714,13 +834,16 @@ Implement streaming for very large PDFs to reduce memory usage.
 
 | Category | Count | P0 | P1 | P2 | P3 |
 |----------|-------|----|----|----|----|
-| Critical Bugs | 3 | 1 | 2 | 0 | 0 |
+| Critical Bugs | 6 | 2 | 3 | 0 | 0 |
+| High Priority | 2 | 0 | 2 | 0 | 0 |
+| Medium Priority | 3 | 0 | 0 | 3 | 0 |
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
+| Low Priority | 3 | 0 | 0 | 0 | 3 |
 | TODOs | 13 | 1 | 5 | 6 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **28** | **2** | **11** | **12** | **3** |
+| **Total** | **39** | **3** | **13** | **15** | **6** |
 
 ---
 

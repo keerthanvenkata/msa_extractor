@@ -83,7 +83,13 @@ The MSA Metadata Extractor is a modular system designed to extract structured me
 - **GeminiClient**: Handles both text and vision LLM calls
 - **SchemaValidator**: Validates and normalizes extracted metadata
 
-### 4. Utilities
+### 4. Persistence & Storage
+- **ExtractionDB**: SQLite database for job tracking, result storage, and logging
+- **File Storage**: Temporary PDF storage in `uploads/{uuid}.{ext}` directory
+- **Database Storage**: JSON results and logs stored in database (default mode)
+- **Legacy Mode**: File-based storage support for backward compatibility
+
+### 5. Utilities
 - **Logger**: Centralized logging system
 - **Exceptions**: Custom exception hierarchy
 
@@ -104,11 +110,13 @@ See [EXTRACTION_ARCHITECTURE.md](EXTRACTION_ARCHITECTURE.md) for detailed inform
 ## Data Flow
 
 1. **Input**: PDF or DOCX file
-2. **Detection**: File type and PDF characteristics (text/image/mixed)
-3. **Extraction**: Content extraction based on `EXTRACTION_METHOD`
-4. **Processing**: LLM processing based on `LLM_PROCESSING_MODE`
-5. **Validation**: Schema validation and normalization
-6. **Output**: Structured JSON metadata
+2. **Job Creation**: Create database job with UUID, copy file to `uploads/{uuid}.{ext}`
+3. **Detection**: File type and PDF characteristics (text/image/mixed)
+4. **Extraction**: Content extraction based on `EXTRACTION_METHOD`
+5. **Processing**: LLM processing based on `LLM_PROCESSING_MODE`
+6. **Validation**: Schema validation and normalization
+7. **Storage**: Store results in database (`extractions.result_json`) or files (legacy mode)
+8. **Output**: Structured JSON metadata with job ID
 
 ## Configuration
 
@@ -119,14 +127,24 @@ All configuration is environment-based:
 
 See [configuration.md](../setup/configuration.md) for all configuration options.
 
-## Future Architecture
+## Persistence Architecture
 
-### Planned Components
-- **Storage Layer**: SQLite database for job tracking
+### Current Implementation (Phase 1 & 2 Complete)
+- **Database Layer**: SQLite database (`storage/msa_extractor.db`)
+  - `extractions` table: Job tracking with UUID primary keys
+  - `extraction_logs_YYYY_MM` tables: Monthly log tables
+  - JSON results stored in `result_json` column (default mode)
+- **File Storage**: PDFs stored in `uploads/{uuid}.{ext}` directory
+- **CLI Integration**: Database tracking in all extraction commands
+- **Legacy Mode**: File-based storage support (`--legacy` flag)
+
+### Future Components (Phase 3 & 4 Pending)
+- **Cleanup Service**: Automated PDF cleanup after N days
 - **API Layer**: FastAPI backend for web service
-- **Cleanup Service**: Automated file cleanup
+- **GCS Integration**: Migrate PDF storage to Google Cloud Storage
+- **Cloud SQL**: Migrate from SQLite to Cloud SQL PostgreSQL
 
-See [PERSISTENCE_PLAN.md](../planning/PERSISTENCE_PLAN.md) for details.
+See [PERSISTENCE_PLAN.md](../planning/PERSISTENCE_PLAN.md) and [IMPLEMENTATION_ROADMAP.md](../planning/IMPLEMENTATION_ROADMAP.md) for details.
 
 ## Related Documentation
 
