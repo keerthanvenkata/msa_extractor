@@ -26,6 +26,13 @@
 | `API_ENABLE_AUTH` | Enable API key authentication | `false` |
 | `API_KEY` | API key for authentication (if enabled) | `` (must be set if auth enabled) |
 
+**Authentication Setup:**
+- Set `API_ENABLE_AUTH=true` to enable authentication
+- Set `API_KEY=<your-secret-key>` (use a strong, random key)
+- Pass API key in request header: `X-API-Key: <your-secret-key>`
+- Or use query parameter: `?api_key=<your-secret-key>` (less secure, for testing only)
+- See [API Design Specification](../planning/API_DESIGN.md) for details
+
 ## Extraction Configuration
 
 | Variable | Description | Options | Default |
