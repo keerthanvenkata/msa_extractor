@@ -71,10 +71,10 @@ def extract_single_file(
                 raise ValueError(f"Job not found: {job_id}")
             pdf_storage_path = job.get("pdf_storage_path")
             if not pdf_storage_path or not Path(pdf_storage_path).exists():
-                raise FileError(f"PDF file not found for job {job_id}: {pdf_storage_path}")
+                raise FileError(f"File not found for job {job_id}: {pdf_storage_path}")
         else:
             # Create new job
-            # Copy PDF to uploads directory with UUID
+            # Copy file to uploads directory with UUID (preserve original extension)
             job_id = db.create_job(
                 file_name=file_name,
                 pdf_storage_path="",  # Will be set after copy
@@ -84,8 +84,9 @@ def extract_single_file(
                 ocr_engine=OCR_ENGINE if EXTRACTION_METHOD in ["ocr_all", "ocr_images_only"] else None
             )
             
-            # Copy file to uploads directory
-            pdf_storage_path = UPLOADS_DIR / f"{job_id}.pdf"
+            # Copy file to uploads directory with UUID and preserve original extension
+            file_extension = input_file.suffix.lower()  # .pdf or .docx
+            pdf_storage_path = UPLOADS_DIR / f"{job_id}{file_extension}"
             shutil.copy2(input_file, pdf_storage_path)
             
             # Update job with storage path
