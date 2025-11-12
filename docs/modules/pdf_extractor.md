@@ -1,7 +1,7 @@
 # PDF Extractor
 
 **Module:** `extractors.pdf_extractor`  
-**Last Updated:** November 11, 2025
+**Last Updated:** November 12, 2025
 
 ## Purpose
 

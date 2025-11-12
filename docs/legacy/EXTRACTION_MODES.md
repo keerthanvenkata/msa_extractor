@@ -2,7 +2,7 @@
 
 > **⚠️ DEPRECATED:** This document describes the legacy extraction system.  
 > **👉 See [EXTRACTION_ARCHITECTURE.md](../architecture/EXTRACTION_ARCHITECTURE.md) for the current architecture.**  
-> **Last Updated:** November 11, 2025 (Marked as deprecated)
+> **Last Updated:** November 12, 2025 (Marked as deprecated)
 
 ## Overview
 

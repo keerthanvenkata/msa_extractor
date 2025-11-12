@@ -1,7 +1,7 @@
 # OCR Handler
 
 **Module:** `extractors.ocr_handler`  
-**Last Updated:** November 11, 2025
+**Last Updated:** November 12, 2025
 
 ## Purpose
 

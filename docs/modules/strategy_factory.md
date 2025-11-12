@@ -1,7 +1,7 @@
 # Strategy Factory
 
 **Module:** `extractors.strategy_factory`  
-**Last Updated:** November 11, 2025
+**Last Updated:** November 12, 2025
 
 ## Purpose
 
