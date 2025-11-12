@@ -31,8 +31,41 @@ BASE_DIR = Path(__file__).parent
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", BASE_DIR / "results"))
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Database path
-DB_PATH = Path(os.getenv("DB_PATH", BASE_DIR / "msa_extractor.db"))
+# ============================================================================
+# Persistence & Storage Configuration
+# ============================================================================
+
+# Storage directory (for database)
+STORAGE_DIR = BASE_DIR / "storage"
+STORAGE_DIR.mkdir(exist_ok=True)
+
+# Database path (SQLite)
+DB_PATH = Path(os.getenv("DB_PATH", STORAGE_DIR / "msa_extractor.db"))
+
+# Uploads directory (for temporary PDFs)
+UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", BASE_DIR / "uploads"))
+UPLOADS_DIR.mkdir(exist_ok=True)
+
+# Results directory (for legacy mode - file-based JSON storage)
+RESULTS_DIR = Path(os.getenv("RESULTS_DIR", BASE_DIR / "results"))
+RESULTS_DIR.mkdir(exist_ok=True)
+
+# Logs directory (for legacy mode - file-based log storage)
+LOGS_DIR = Path(os.getenv("LOGS_DIR", BASE_DIR / "logs"))
+LOGS_DIR.mkdir(exist_ok=True)
+
+# Cleanup configuration
+CLEANUP_PDF_DAYS = int(os.getenv("CLEANUP_PDF_DAYS", "7"))  # Delete PDFs older than N days
+CLEANUP_PDF_MAX_COUNT = int(os.getenv("CLEANUP_PDF_MAX_COUNT", "1000"))  # Max PDFs to keep
+CLEANUP_PDF_MIN_COUNT = int(os.getenv("CLEANUP_PDF_MIN_COUNT", "500"))  # Min PDFs to keep before cleanup
+
+# GCP Configuration (for future iterations - TODO)
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
+GCP_STORAGE_BUCKET = os.getenv("GCP_STORAGE_BUCKET", "")
+GCP_CLOUD_SQL_INSTANCE = os.getenv("GCP_CLOUD_SQL_INSTANCE", "")
+USE_GCS = os.getenv("USE_GCS", "false").lower() == "true"
+USE_CLOUD_SQL = os.getenv("USE_CLOUD_SQL", "false").lower() == "true"
+# Note: Iteration 1 uses SQLite + local storage only
 
 # Contracts directory (for batch processing)
 CONTRACTS_DIR = BASE_DIR / "contracts"
