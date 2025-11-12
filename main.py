@@ -180,6 +180,10 @@ def extract_single_file(
             db.add_log_entry(job_id, "ERROR", f"Unexpected error: {e}", module=__name__)
         logger.error(f"Unexpected error extracting metadata: {e}", exc_info=True)
         raise ExtractionError(f"Unexpected error: {e}") from e
+    finally:
+        # Close database connection if we created it
+        if db_created and db is not None:
+            db.close()
 
 
 def extract_batch(
