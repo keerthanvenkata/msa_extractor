@@ -2,8 +2,8 @@
 
 This document tracks all identified issues, bugs, TODOs, and optimization opportunities in the MSA Metadata Extractor codebase.
 
-**Last Updated:** November 11, 2025  
-**Status:** Pre-fix review
+**Last Updated:** November 12, 2025  
+**Status:** Active tracking
 
 ---
 
@@ -521,54 +521,64 @@ For pure image pages with no extractable text, document the image presence with 
 ### TODO-011: Implement Persistence & Storage System
 **Location:** `storage/database.py`, `storage/cleanup.py`, `main.py`
 
-**Description:**
-Implement SQLite-based persistence system for tracking extraction jobs with UUIDs, file management, and cleanup policies. Required for FastAPI backend integration.
+**Status:** ✅ **Phase 1 & 2 Complete** (Database module and CLI integration done)
 
-**Requirements:**
-1. **Database Schema:**
+**Description:**
+SQLite-based persistence system for tracking extraction jobs with UUIDs, file management, and cleanup policies. Required for FastAPI backend integration.
+
+**Completed:**
+1. ✅ **Database Schema:**
    - `extractions` table with UUID primary key
    - Track job status, file paths, timestamps, extraction config
    - Indexes on status, created_at, file_name
+   - Monthly log tables (`extraction_logs_YYYY_MM`)
 
-2. **File Storage:**
-   - Store uploaded PDFs in `uploads/{uuid}.pdf` (temporary, local filesystem)
+2. ✅ **File Storage:**
+   - Store uploaded files in `uploads/{uuid}.{ext}` (preserves extension)
    - **Default:** Store JSON results in `extractions.result_json` column (database)
-   - **Default:** Store logs in `extraction_logs` table (database, monthly tables for SQLite)
-   - **Legacy mode:** CLI `--legacy` flag allows file-based storage (`results/`, `logs/` directories)
-   - **API:** Always uses database (no legacy mode)
-   - PDFs cleared after N days (configurable, default: 7 days)
-   - Cloud Run ephemeral storage sufficient for Iteration 1
+   - **Default:** Store logs in `extraction_logs` table (database, monthly tables)
+   - **Legacy mode:** CLI `--legacy` flag allows file-based storage (`results/` directory)
+   - **API:** Will always use database (no legacy mode)
+   - PDF cleanup pending (Phase 3)
 
-3. **Cleanup Strategy:**
+3. ✅ **CLI Integration:**
+   - Database tracking in `extract_single_file()` and `extract_batch()`
+   - Job management commands (`list-jobs`, `get-job`)
+   - Legacy mode support (`--legacy` flag)
+   - Re-run failed jobs (`--job-id` flag)
+
+**Remaining:**
+4. **Cleanup Strategy:** (Phase 3 - Pending)
    - Time-based: Delete PDFs older than N days (default: 7 days)
    - Count-based: Delete oldest PDFs when count exceeds threshold (default: 1000)
    - Always retain JSONs and logs
    - Never delete pending/processing jobs
 
-4. **FastAPI Integration Points:**
+5. **FastAPI Integration Points:** (Phase 4 - Pending)
    - POST `/api/v1/extract/upload` → Upload PDF, return job ID
    - GET `/api/v1/extract/{job_id}` → Get extraction result by job ID
 
-5. **Implementation Phases:**
-   - Phase 1: Database & Storage Module (`storage/database.py`)
-   - Phase 2: Integration with CLI (`main.py`)
-   - Phase 3: Cleanup Implementation (`storage/cleanup.py`)
-   - Phase 4: FastAPI Backend (future)
+6. **Implementation Phases:**
+   - ✅ Phase 1: Database & Storage Module (`storage/database.py`) - **Complete**
+   - ✅ Phase 2: Integration with CLI (`main.py`) - **Complete**
+   - 📋 Phase 3: Cleanup Implementation (`storage/cleanup.py`) - **Pending**
+   - 📋 Phase 4: FastAPI Backend - **Pending**
 
 **Priority:** P1 - Required for FastAPI backend
 
-**Status:** 📋 TODO (Planning Complete)
+**Status:** ✅ **Phase 1 & 2 Complete**, 📋 Phase 3 & 4 Pending
 
-**Reference:** See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for detailed implementation plan.
-
-**Note:** This is the immediate next task. Planning is complete, ready for implementation after testing existing pipeline.
+**Reference:** 
+- See [PERSISTENCE_PLAN.md](planning/PERSISTENCE_PLAN.md) for detailed implementation plan
+- See [IMPLEMENTATION_ROADMAP.md](planning/IMPLEMENTATION_ROADMAP.md) for phase breakdown
+- See [Storage Database Module](modules/storage_database.md) for API reference
 
 **Iteration 1 Scope:**
-- SQLite database (local)
-- Local filesystem for PDFs (Cloud Run ephemeral storage)
-- **Default:** JSON results and logs stored in database
-- **Legacy mode:** CLI `--legacy` flag for file-based storage (backward compatibility)
-- **API:** Always uses database (no legacy mode)
+- ✅ SQLite database (local) - **Implemented**
+- ✅ Local filesystem for PDFs (Cloud Run ephemeral storage) - **Implemented**
+- ✅ **Default:** JSON results and logs stored in database - **Implemented**
+- ✅ **Legacy mode:** CLI `--legacy` flag for file-based storage - **Implemented**
+- 📋 **API:** Always uses database (no legacy mode) - **Phase 4 pending**
 
 ---
 

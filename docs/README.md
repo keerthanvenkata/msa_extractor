@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Last Updated:** November 11, 2025
+**Last Updated:** November 12, 2025
 
 The `docs/` directory contains comprehensive documentation for the MSA Metadata Extractor project, organized into logical sections for easy navigation.
 
@@ -21,10 +21,10 @@ The `docs/` directory contains comprehensive documentation for the MSA Metadata 
 
 Located in [`planning/`](planning/):
 
-- **[Persistence & Storage Plan](planning/PERSISTENCE_PLAN.md)** — SQLite database schema, file storage strategy, cleanup policies, and FastAPI backend design (P1 - Planning Complete)
+- **[Persistence & Storage Plan](planning/PERSISTENCE_PLAN.md)** — SQLite database schema, file storage strategy, cleanup policies, and FastAPI backend design (P1 - Phase 1 & 2 Complete)
   - Database schema and file storage structure
-  - Cleanup strategies (time-based and count-based)
-  - FastAPI backend architecture and endpoints
+  - Cleanup strategies (time-based and count-based) - Phase 3 pending
+  - FastAPI backend architecture and endpoints - Phase 4 pending
   - Docker configuration for API deployment
 
 - **[Data Masking Plan](planning/DATA_MASKING_PLAN.md)** — Data masking/encryption strategy for security and compliance (P0 - Critical)
@@ -94,11 +94,14 @@ Located in [`modules/`](modules/):
 - **[Strategy Factory](modules/strategy_factory.md)** — Extraction strategy selection and routing
 - **[Gemini Vision Extractor](modules/gemini_vision_extractor.md)** — Direct Gemini Vision API integration
 - **[Extraction Coordinator](modules/extraction_coordinator.md)** — Full pipeline orchestration
-- **[Main CLI](modules/main_cli.md)** — Command-line interface
+- **[Main CLI](modules/main_cli.md)** — Command-line interface with database tracking
 
 ### AI & Processing
 - **[Gemini Client](modules/gemini_client.md)** — Gemini API integration for text, vision, and multimodal processing
 - **[Schema Validator](modules/schema_validator.md)** — JSON schema validation and normalization
+
+### Persistence & Storage
+- **[Storage Database](modules/storage_database.md)** — SQLite database for job tracking, result storage, and logging
 
 ---
 
@@ -148,7 +151,8 @@ docs/
 │   ├── extraction_coordinator.md
 │   ├── main_cli.md
 │   ├── gemini_client.md
-│   └── schema_validator.md
+│   ├── schema_validator.md
+│   └── storage_database.md
 │
 ├── features/              # Feature Guides
 │   ├── MULTIMODAL_EXTRACTION.md

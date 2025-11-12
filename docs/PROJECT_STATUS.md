@@ -47,12 +47,16 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - [ ] Edge case testing (encrypted PDFs, corrupted files, etc.)
 
 ### Features
-- [ ] **Persistence & Storage System** (P1 - In Progress)
+- ✅ **Persistence & Storage System** (P1 - Completed)
   - SQLite database for job tracking
   - UUID-based job IDs
-  - JSON results and logs stored in database
-  - PDF cleanup after N days
-  - FastAPI backend integration
+  - JSON results and logs stored in database (default mode)
+  - Legacy mode support (file-based storage)
+  - CLI integration with database tracking
+  - Job management commands (list, get, re-run)
+  - PDF storage in `uploads/{uuid}.{ext}` directory
+  - Monthly log tables for efficient management
+  - FastAPI backend integration (ready for Phase 4)
 - [ ] **GCS Integration** (P2 - Future Iteration)
   - Migrate PDF storage to Cloud Storage
   - GCS adapter for file operations
