@@ -139,7 +139,7 @@ See [configuration.md](../setup/configuration.md) for all configuration options.
 - **Legacy Mode**: File-based storage support (`--legacy` flag)
 
 ### Future Components (Phase 3 & 4 Pending)
-- **Cleanup Service**: Automated PDF cleanup after N days
+- **Cleanup Service**: Automated PDF cleanup after N days (deferred to next iteration)
 - **API Layer**: FastAPI backend for web service
 - **GCS Integration**: Migrate PDF storage to Google Cloud Storage
 - **Cloud SQL**: Migrate from SQLite to Cloud SQL PostgreSQL

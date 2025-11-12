@@ -165,9 +165,11 @@ project_root/ (or Cloud Run ephemeral storage):
 
 ---
 
-## Cleanup Strategy
+## Cleanup Strategy (Deferred to Next Iteration)
 
-### PDF Cleanup Rules
+**Status:** Cleanup service implementation is deferred to next iteration after FastAPI backend is complete. Manual cleanup can be performed via database queries if needed.
+
+### PDF Cleanup Rules (Future Implementation)
 
 1. **Time-based Cleanup:**
    - Delete PDFs older than N days (configurable, default: 7 days)
@@ -187,22 +189,24 @@ project_root/ (or Cloud Run ephemeral storage):
 
 ### Cleanup Implementation
 
-**Option 1: Background Task (Recommended for FastAPI)**
-- Run cleanup as a background task (e.g., Celery, APScheduler, or FastAPI background task)
-- Schedule: Daily at 2 AM (configurable)
-- Check both time-based and count-based rules
+**Deferred to Next Iteration:** Cleanup service will be implemented after FastAPI backend is stable.
 
-**Option 2: CLI Command**
-- Add `python main.py cleanup` command
-- Can be run manually or via cron/scheduled task
-- Useful for CLI-only usage
+**Planned Options:**
+1. **Scheduled Background Task (Recommended)**
+   - Run cleanup as a background task (e.g., Celery, APScheduler, or FastAPI background task)
+   - Schedule daily/weekly cleanup
+   - Log cleanup operations
 
-**Option 3: On-Demand Cleanup**
-- Trigger cleanup when count threshold is reached
-- Run cleanup after each extraction completes
-- Simple but may impact performance
+2. **CLI Command**
+   - Add `python main.py cleanup` command
+   - Run cleanup manually when needed
+   - Useful for testing and manual maintenance
 
-**Recommendation: Option 1 (Background Task) for FastAPI, Option 2 (CLI) for standalone**
+3. **On-Demand Cleanup**
+   - Trigger cleanup when count threshold is reached
+   - Run cleanup after each extraction completes
+
+**Note:** Database method `get_jobs_for_cleanup()` is already implemented and ready for use.
 
 ---
 
@@ -492,21 +496,22 @@ async def process_extraction(job_id: str, file_path: Path):
 #### Cleanup Task
 
 ```python
+# Future implementation (deferred to next iteration):
 async def run_cleanup():
     """Periodic cleanup task."""
-    db = ExtractionDB(DB_PATH)
-    cleanup_service = CleanupService(db)
-    
-    # Time-based cleanup
-    deleted_count = cleanup_service.cleanup_old_pdfs(CLEANUP_PDF_DAYS)
-    logger.info(f"Deleted {deleted_count} old PDFs")
-    
-    # Count-based cleanup
-    deleted_count = cleanup_service.cleanup_excess_pdfs(
-        CLEANUP_PDF_MAX_COUNT, 
-        CLEANUP_PDF_MIN_COUNT
-    )
-    logger.info(f"Deleted {deleted_count} excess PDFs")
+    with ExtractionDB() as db:
+        cleanup_service = CleanupService(db)
+        
+        # Time-based cleanup
+        deleted_count = cleanup_service.cleanup_old_pdfs(CLEANUP_PDF_DAYS)
+        logger.info(f"Cleaned up {deleted_count} old PDFs")
+        
+        # Count-based cleanup
+        deleted_count = cleanup_service.cleanup_excess_pdfs(
+            CLEANUP_PDF_MAX_COUNT, 
+            CLEANUP_PDF_MIN_COUNT
+        )
+        logger.info(f"Cleaned up {deleted_count} excess PDFs")
 ```
 
 ### Configuration
@@ -534,7 +539,7 @@ async def startup_event():
     db = ExtractionDB(DB_PATH)
     db.init_schema()  # Create tables if not exist
     
-    # Start cleanup scheduler (if using APScheduler)
+    # Start cleanup scheduler (if using APScheduler) - Deferred to next iteration
     # scheduler.start()
     
     logger.info("FastAPI application started")
@@ -680,17 +685,18 @@ The detailed FastAPI backend plan is above. Key integration points:
 - [ ] **Legacy mode:** Save logs to `logs/{uuid}.log` files
 - [ ] Test with existing pipeline (both default and legacy modes)
 
-### Phase 3: Cleanup Implementation
+### Phase 3: Cleanup Implementation (Deferred to Next Iteration)
+- [ ] **Status:** Deferred to next iteration after FastAPI backend is complete
 - [ ] Create `storage/cleanup.py` with cleanup functions
 - [ ] Add `python main.py cleanup` CLI command
 - [ ] Test cleanup logic (time-based and count-based)
 
-### Phase 4: FastAPI Backend (Future)
+### Phase 3: FastAPI Backend (Current Priority)
 - [ ] Create FastAPI app structure
 - [ ] Implement upload endpoint (POST `/api/v1/extract/upload`)
 - [ ] Implement get result endpoint (GET `/api/v1/extract/{job_id}`)
 - [ ] Implement background task for extraction
-- [ ] Implement background task for cleanup
+- [ ] **Note:** Background task for cleanup deferred to Phase 4
 - [ ] Add authentication/authorization (if needed)
 - [ ] Add rate limiting (if needed)
 
@@ -746,7 +752,7 @@ The detailed FastAPI backend plan is above. Key integration points:
    - Test file deletion during cleanup
    - Test path handling (cross-platform)
 
-3. **Cleanup Tests:**
+3. **Cleanup Tests:** (Deferred to Next Iteration)
    - Test time-based cleanup
    - Test count-based cleanup
    - Test edge cases (no files, all files too new, etc.)
@@ -769,7 +775,7 @@ The detailed FastAPI backend plan is above. Key integration points:
    - Consider using object storage (S3, GCS) for production
    - Local filesystem is fine for MVP
 
-3. **Cleanup:**
+3. **Cleanup:** (Deferred to Next Iteration)
    - Run cleanup as background task (don't block API)
    - Batch delete operations
    - Consider soft deletes (mark as deleted, delete later)
@@ -804,7 +810,7 @@ The detailed FastAPI backend plan is above. Key integration points:
 1. **Log Storage:** ✅ **Decided: Database storage (monthly tables for SQLite, partitioned for Cloud SQL)**
 2. **JSON Storage:** ✅ **Decided: Database storage (`extractions.result_json` column)**
 3. **UUID Generation:** Use Python's `uuid.uuid4()` ✅
-4. **Cleanup Frequency:** Daily at 2 AM (configurable) ✅
+4. **Cleanup Frequency:** Deferred to next iteration (manual cleanup via database queries available)
 5. **PDF Storage:** Local filesystem for Iteration 1 (Cloud Run ephemeral storage), GCS for future iterations ✅
 6. **Database:** SQLite for Iteration 1 (Cloud Run compatible), Cloud SQL PostgreSQL for future iterations ✅
 

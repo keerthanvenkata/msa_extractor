@@ -56,7 +56,13 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
   - Job management commands (list, get, re-run)
   - PDF storage in `uploads/{uuid}.{ext}` directory
   - Monthly log tables for efficient management
-  - FastAPI backend integration (ready for Phase 4)
+  - FastAPI backend integration (ready for Phase 3)
+- [ ] **Cleanup Service** (P2 - Deferred to Next Iteration)
+  - Automated PDF cleanup after N days
+  - Count-based cleanup policies
+  - CLI cleanup command
+  - Background scheduled cleanup
+  - **Note:** Manual cleanup available via database queries if needed
 - [ ] **GCS Integration** (P2 - Future Iteration)
   - Migrate PDF storage to Cloud Storage
   - GCS adapter for file operations

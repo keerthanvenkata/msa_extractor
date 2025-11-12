@@ -23,7 +23,7 @@ Located in [`planning/`](planning/):
 
 - **[Persistence & Storage Plan](planning/PERSISTENCE_PLAN.md)** — SQLite database schema, file storage strategy, cleanup policies, and FastAPI backend design (P1 - Phase 1 & 2 Complete)
   - Database schema and file storage structure
-  - Cleanup strategies (time-based and count-based) - Phase 3 pending
+  - Cleanup strategies (time-based and count-based) - Deferred to next iteration
   - FastAPI backend architecture and endpoints - Phase 4 pending
   - Docker configuration for API deployment
 

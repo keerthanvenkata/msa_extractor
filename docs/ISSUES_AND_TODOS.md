@@ -322,7 +322,7 @@ If job fails, PDF file remains in `uploads/` directory, wasting disk space.
 
 **Priority:** P2 - Nice to have
 
-**Status:** 🔵 Open - Will be addressed in Phase 3 (cleanup implementation)
+**Status:** 🔵 Open - Deferred to next iteration (cleanup service implementation)
 
 ---
 
@@ -613,7 +613,7 @@ SQLite-based persistence system for tracking extraction jobs with UUIDs, file ma
    - **Default:** Store logs in `extraction_logs` table (database, monthly tables)
    - **Legacy mode:** CLI `--legacy` flag allows file-based storage (`results/` directory)
    - **API:** Will always use database (no legacy mode)
-   - PDF cleanup pending (Phase 3)
+   - PDF cleanup deferred to next iteration
 
 3. ✅ **CLI Integration:**
    - Database tracking in `extract_single_file()` and `extract_batch()`
@@ -622,7 +622,7 @@ SQLite-based persistence system for tracking extraction jobs with UUIDs, file ma
    - Re-run failed jobs (`--job-id` flag)
 
 **Remaining:**
-4. **Cleanup Strategy:** (Phase 3 - Pending)
+4. **Cleanup Strategy:** (Deferred to Next Iteration)
    - Time-based: Delete PDFs older than N days (default: 7 days)
    - Count-based: Delete oldest PDFs when count exceeds threshold (default: 1000)
    - Always retain JSONs and logs
@@ -635,7 +635,7 @@ SQLite-based persistence system for tracking extraction jobs with UUIDs, file ma
 6. **Implementation Phases:**
    - ✅ Phase 1: Database & Storage Module (`storage/database.py`) - **Complete**
    - ✅ Phase 2: Integration with CLI (`main.py`) - **Complete**
-   - 📋 Phase 3: Cleanup Implementation (`storage/cleanup.py`) - **Pending**
+   - 📋 Phase 3: Cleanup Implementation (`storage/cleanup.py`) - **Deferred to Next Iteration**
    - 📋 Phase 4: FastAPI Backend - **Pending**
 
 **Priority:** P1 - Required for FastAPI backend

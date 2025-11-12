@@ -1,8 +1,11 @@
 # Implementation Roadmap - Job Handling, Persistence & API
 
 **Date:** November 12, 2025  
+**Last Updated:** November 12, 2025  
 **Status:** Active Development  
 **Priority:** P1 - Core Features
+
+**Note:** Cleanup service (Phase 3) has been deferred to next iteration. FastAPI backend (now Phase 3) is the current priority.
 
 ---
 
@@ -146,43 +149,34 @@
 
 ---
 
-### Phase 3: Cleanup Implementation 🧹 (After Phase 2)
+### Phase 3: Cleanup Implementation 🧹 (Deferred to Next Iteration)
 
-#### 3.1 Cleanup Module
+**Status:** Deferred to next iteration after FastAPI backend is complete.
+
+**Rationale:** Cleanup service is not critical for initial API deployment. Manual cleanup can be performed via database queries if needed. Automated cleanup can be added after API is stable.
+
+**Future Implementation:**
 - [ ] Create `storage/cleanup.py` with `CleanupService` class
 - [ ] Implement `cleanup_old_pdfs(days_old, max_count)`:
-  - Query database for PDFs older than N days
-  - Query database for PDFs exceeding max count
-  - Never delete PDFs for pending/processing jobs
-  - Delete PDF files from `uploads/`
-  - Update database (mark as cleaned or delete record)
+  - Query database for jobs older than N days
+  - Delete PDF files from `uploads/` directory
+  - Update database records (mark as cleaned)
   - Return cleanup statistics
 - [ ] Implement `cleanup_failed_jobs(days_old)` (optional):
   - Clean up failed jobs older than N days
   - Delete associated files
-
-#### 3.2 CLI Command
 - [ ] Add `python main.py cleanup [--days N] [--max-count N]` command
 - [ ] Add `--dry-run` flag to preview what would be deleted
-- [ ] Print cleanup statistics (files deleted, space freed)
-
-#### 3.3 Background Cleanup (Optional)
 - [ ] Add scheduled cleanup task (cron-like or background thread)
-- [ ] Run cleanup daily/weekly based on config
-- [ ] Log cleanup operations
+- [ ] Test cleanup logic (time-based and count-based)
 
-#### 3.4 Testing
-- [ ] Test cleanup logic (time-based)
-- [ ] Test cleanup logic (count-based)
-- [ ] Test that pending/processing jobs are never deleted
-- [ ] Test dry-run mode
-- [ ] Test cleanup statistics
+**Note:** Database method `get_jobs_for_cleanup()` is already implemented and ready for use when cleanup service is built.
 
 ---
 
-### Phase 4: FastAPI Backend 🚀 (After Phase 3)
+### Phase 3: FastAPI Backend 🚀 (After Phase 2)
 
-#### 4.1 FastAPI Structure
+#### 3.1 FastAPI Structure
 - [ ] Create `api/` directory structure:
   ```
   api/
@@ -205,14 +199,14 @@
       └── logging.py
   ```
 
-#### 4.2 Dependencies
+#### 3.2 Dependencies
 - [ ] Add to `requirements.txt`:
   - `fastapi>=0.104.0`
   - `uvicorn[standard]>=0.24.0`
   - `python-multipart>=0.0.6` (for file uploads)
   - `pydantic>=2.0.0` (for request/response models)
 
-#### 4.3 API Endpoints
+#### 3.3 API Endpoints
 
 ##### POST `/api/v1/extract/upload`
 **Purpose:** Upload PDF/DOCX file and start extraction job
@@ -415,7 +409,7 @@
 - Returns API version and status
 - Used by load balancers and monitoring
 
-#### 4.4 Background Tasks
+#### 3.4 Background Tasks
 - [ ] Implement `process_extraction(job_id, file_path)` background task:
   - Update job status to "processing"
   - Run extraction using `ExtractionCoordinator`
@@ -424,11 +418,9 @@
   - Update job status to "completed"
   - Handle errors: update status to "failed", log to DB
   - **Note:** API background tasks always use database (no legacy mode)
-- [ ] Implement background cleanup task (optional):
-  - Run cleanup on schedule
-  - Log cleanup operations
+- [ ] **Note:** Background cleanup task deferred to next iteration
 
-#### 4.5 Request/Response Models
+#### 3.5 Request/Response Models
 - [ ] Create Pydantic models:
   - `UploadRequest` (file, extraction_method, llm_processing_mode, ocr_engine)
   - `UploadResponse` (job_id, status, created_at, file_name, file_size)
@@ -438,14 +430,14 @@
   - `JobLogsResponse` (job_id, logs, total)
   - `HealthResponse` (status, version, database, storage_type, timestamp)
 
-#### 4.6 Error Handling
+#### 3.6 Error Handling
 - [ ] Handle file upload errors (size, type, etc.)
 - [ ] Handle invalid UUID format
 - [ ] Handle job not found (404)
 - [ ] Handle extraction errors (500 with error details)
 - [ ] Add proper HTTP status codes
 
-#### 4.7 Configuration
+#### 3.7 Configuration
 - [ ] Add to `config.py`:
   - `API_HOST` (default: "0.0.0.0")
   - `API_PORT` (default: 8000)
@@ -462,7 +454,7 @@
 - [ ] Register background tasks
 - [ ] Graceful shutdown handling
 
-#### 4.10 Testing
+#### 3.10 Testing
 - [ ] Unit tests for API endpoints
 - [ ] Integration tests with test database
 - [ ] Test file upload (local and GCS)
@@ -473,7 +465,7 @@
 - [ ] Test background task execution
 - [ ] Test Cloud Run deployment (Iteration 1: SQLite + local storage)
 
-#### 4.11 GCP Cloud Run Deployment (Iteration 1)
+#### 3.11 GCP Cloud Run Deployment (Iteration 1)
 - [ ] Update `Dockerfile` for GCP Cloud Run deployment
 - [ ] Configure SQLite database path for Cloud Run ephemeral storage
 - [ ] Configure `uploads/` directory for Cloud Run ephemeral storage
@@ -482,7 +474,7 @@
 - [ ] Test deployment on Cloud Run
 - [ ] **Note:** Iteration 1 uses SQLite + local storage (Cloud Run ephemeral storage is sufficient)
 
-#### 4.12 GCP Advanced Features (Future Iterations - TODO)
+#### 3.12 GCP Advanced Features (Future Iterations - TODO)
 - [ ] Add GCP configuration options (Cloud SQL, GCS)
 - [ ] Create GCS storage adapter for PDF uploads
 - [ ] Add Cloud SQL connection support (PostgreSQL)
@@ -492,7 +484,7 @@
 - [ ] Test local SQLite → Cloud SQL migration path
 - [ ] Document GCS and Cloud SQL setup
 
-#### 4.13 Docker Integration
+#### 3.13 Docker Integration
 - [ ] Update `Dockerfile` for API mode
 - [ ] Update `docker-compose.yml` for API service
 - [ ] Add health check endpoint to docker-compose
@@ -626,13 +618,16 @@ Cloud Storage (GCS):
 
 ## Implementation Order
 
-1. **Phase 1** (Database & Storage) → Foundation
-2. **Phase 2** (CLI Integration) → Test with existing pipeline
+1. **Phase 1** (Database & Storage) → Foundation ✅
+2. **Phase 2** (CLI Integration) → Test with existing pipeline ✅
    - Default mode: Database storage
    - Legacy mode: File-based storage (`--legacy` flag)
-3. **Phase 3** (Cleanup) → Maintenance
-4. **Phase 4** (FastAPI) → API service
+3. **Phase 3** (FastAPI Backend) → API service (Current Priority)
    - Always uses database (no legacy mode)
+4. **Phase 4** (Cleanup Service) → Deferred to Next Iteration
+   - Automated PDF cleanup after N days
+   - CLI cleanup command
+   - Background scheduled cleanup
 
 ---
 
@@ -649,7 +644,7 @@ Cloud Storage (GCS):
 
 1. **Log Storage**: Per-job log files (`logs/{uuid}.log`) or daily logs with UUID in content?
    - **Decision**: Per-job log files for easier debugging and API access
-2. **Cleanup Frequency**: Manual (CLI command) or automatic (background task)?
+2. **Cleanup Frequency**: Deferred to next iteration (manual cleanup via database queries available if needed)
    - **Decision**: Both - CLI command for manual, optional background task
 3. **Job Deletion**: Soft delete (mark as deleted) or hard delete (remove from DB)?
    - **Decision**: Hard delete for simplicity (can add soft delete later if needed)
