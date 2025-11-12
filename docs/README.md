@@ -27,6 +27,13 @@ Located in [`planning/`](planning/):
   - FastAPI backend architecture and endpoints - Phase 4 pending
   - Docker configuration for API deployment
 
+- **[API Design Specification](planning/API_DESIGN.md)** — Complete REST API endpoint specifications (P1 - Design Complete)
+  - Endpoint definitions with request/response examples
+  - Authentication strategy (API key for v1)
+  - Client usage flow and polling strategy
+  - Background task architecture
+  - Configuration options
+
 - **[Data Masking Plan](planning/DATA_MASKING_PLAN.md)** — Data masking/encryption strategy for security and compliance (P0 - Critical)
   - Security goals and requirements
   - Masking methods and re-mapping strategy
