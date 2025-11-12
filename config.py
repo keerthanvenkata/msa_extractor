@@ -19,6 +19,24 @@ load_dotenv()
 # Gemini API Key (required)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# FastAPI Server Configuration
+API_HOST = os.getenv("API_HOST", "0.0.0.0")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+API_WORKERS = int(os.getenv("API_WORKERS", "1"))
+API_RELOAD = os.getenv("API_RELOAD", "false").lower() == "true"  # For development
+
+# File Upload Configuration
+MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "25"))  # Maximum file upload size in MB
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024  # Convert to bytes
+
+# Background Task Configuration
+API_MAX_CONCURRENT_EXTRACTIONS = int(os.getenv("API_MAX_CONCURRENT_EXTRACTIONS", "5"))  # Max concurrent background extraction tasks
+
+# Authentication Configuration
+API_ENABLE_AUTH = os.getenv("API_ENABLE_AUTH", "false").lower() == "true"  # Enable API key authentication
+API_KEY = os.getenv("API_KEY", "")  # API key for authentication (if enabled)
+# Note: For Iteration 1, using simple API key. Future: Upgrade to JWT/OAuth2
+
 
 # ============================================================================
 # File Paths
