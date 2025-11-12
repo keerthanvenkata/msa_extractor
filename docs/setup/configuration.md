@@ -13,6 +13,19 @@
 | `GEMINI_VISION_MODEL` | Vision LLM for direct OCR/understanding | `gemini-2.5-pro` |
 | `GEMINI_MODEL` | Legacy default (kept for backwards compatibility, not used) | `gemini-pro` |
 
+## FastAPI Server Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `API_HOST` | FastAPI server host | `0.0.0.0` |
+| `API_PORT` | FastAPI server port | `8000` |
+| `API_WORKERS` | Number of worker processes | `1` |
+| `API_RELOAD` | Enable auto-reload (development) | `false` |
+| `MAX_UPLOAD_SIZE_MB` | Maximum file upload size (MB) | `25` |
+| `API_MAX_CONCURRENT_EXTRACTIONS` | Max concurrent background extraction tasks | `5` |
+| `API_ENABLE_AUTH` | Enable API key authentication | `false` |
+| `API_KEY` | API key for authentication (if enabled) | `` (must be set if auth enabled) |
+
 ## Extraction Configuration
 
 | Variable | Description | Options | Default |

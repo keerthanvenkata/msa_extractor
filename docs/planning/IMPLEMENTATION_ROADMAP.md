@@ -213,36 +213,207 @@
   - `pydantic>=2.0.0` (for request/response models)
 
 #### 4.3 API Endpoints
-- [ ] **POST `/api/v1/extract/upload`**:
-  - Accept PDF file upload
-  - Validate file type (PDF only)
-  - Validate file size (max limit)
-  - Generate UUID
-  - Save PDF to `uploads/{uuid}.pdf` (local) or upload to GCS (if configured)
-  - Create database job record
-  - Start background extraction task
-  - Return job ID and status
-- [ ] **GET `/api/v1/extract/{job_id}`**:
-  - Validate UUID format
-  - Query database for job
-  - If completed: **Return `result_json` from database** (no file I/O, always uses database)
-  - If processing/pending: Return status only
-  - If failed: Return error message
-  - Handle 404 (job not found)
-  - **Note:** API always uses database (no legacy mode, no file I/O for results)
-- [ ] **GET `/api/v1/extract/jobs`** (optional):
-  - Query parameters: `status`, `limit`, `offset`, `sort`
-  - Return list of jobs with metadata
-- [ ] **GET `/api/v1/extract/{job_id}/logs`** (optional):
-  - Query `extraction_logs` table for job
-  - Return log entries (with pagination: limit, offset)
-  - Support filtering by level (DEBUG, INFO, WARNING, ERROR)
-  - Return log entries as JSON array
-  - **Note:** API always uses database (no legacy mode, no file I/O for logs)
-- [ ] **GET `/health`**:
-  - Return API health status
-  - Check database connection
-  - Return version info
+
+##### POST `/api/v1/extract/upload`
+**Purpose:** Upload PDF/DOCX file and start extraction job
+
+**Request:**
+- `multipart/form-data`:
+  - `file` (required): PDF or DOCX file
+  - `extraction_method` (optional): Override default extraction method
+  - `llm_processing_mode` (optional): Override default LLM processing mode
+
+**Response (201 Created):**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "status": "pending",
+  "file_name": "contract.pdf",
+  "file_size": 1024000,
+  "created_at": "2025-11-12T10:30:00Z",
+  "status_url": "/api/v1/extract/status/abc-123-def-456",
+  "result_url": "/api/v1/extract/result/abc-123-def-456"
+}
+```
+
+**Behavior:**
+- Validates file type (PDF or DOCX)
+- Validates file size (max: `MAX_UPLOAD_SIZE_MB`, default: 25MB)
+- Generates UUID for job
+- Saves file to `uploads/{uuid}.{ext}` (preserves extension)
+- Creates database job record (status: "pending")
+- Starts background extraction task (FastAPI BackgroundTasks)
+- Returns immediately with job ID and status URLs
+
+**Error Responses:**
+- `400 Bad Request`: Invalid file type, file too large, missing file
+- `500 Internal Server Error`: Server error during upload
+
+---
+
+##### GET `/api/v1/extract/status/{job_id}`
+**Purpose:** Check extraction job status (lightweight polling endpoint)
+
+**Response (200 OK):**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "status": "processing",  // pending | processing | completed | failed
+  "file_name": "contract.pdf",
+  "created_at": "2025-11-12T10:30:00Z",
+  "started_at": "2025-11-12T10:30:05Z",
+  "completed_at": null,
+  "error_message": null,
+  "result_url": "/api/v1/extract/result/abc-123-def-456"  // Only if status="completed"
+}
+```
+
+**Behavior:**
+- Validates UUID format
+- Queries database for job
+- Returns lightweight status information
+- Includes `result_url` when status is "completed"
+- Client can poll this endpoint every 2-3 seconds
+
+**Error Responses:**
+- `404 Not Found`: Job ID not found
+
+---
+
+##### GET `/api/v1/extract/result/{job_id}`
+**Purpose:** Get extracted metadata (only when job is completed)
+
+**Response (200 OK - Completed):**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "status": "completed",
+  "file_name": "contract.pdf",
+  "created_at": "2025-11-12T10:30:00Z",
+  "completed_at": "2025-11-12T10:32:15Z",
+  "metadata": {
+    "Contract Lifecycle": {
+      "Effective Date": "2025-01-01",
+      ...
+    },
+    "Commercial Operations": { ... },
+    "Risk & Compliance": { ... }
+  }
+}
+```
+
+**Response (202 Accepted - Not Ready):**
+```json
+{
+  "error": "Job not completed yet",
+  "status": "processing",
+  "status_url": "/api/v1/extract/status/abc-123-def-456"
+}
+```
+
+**Response (200 OK - Failed):**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "status": "failed",
+  "error_message": "Extraction failed: ...",
+  "created_at": "2025-11-12T10:30:00Z",
+  "failed_at": "2025-11-12T10:31:00Z"
+}
+```
+
+**Behavior:**
+- Validates UUID format
+- Queries database for job
+- **Returns `result_json` from `extractions.result_json` column** (database, no file I/O)
+- If not completed: Returns 202 Accepted with status URL
+- If failed: Returns error message
+- **Note:** API always uses database (no legacy mode, no file I/O for results)
+
+**Error Responses:**
+- `202 Accepted`: Job not completed yet
+- `404 Not Found`: Job ID not found
+
+---
+
+##### GET `/api/v1/extract/jobs` (Optional)
+**Purpose:** List extraction jobs (for admin/monitoring)
+
+**Query Parameters:**
+- `status` (optional): Filter by status (`pending`, `processing`, `completed`, `failed`)
+- `limit` (optional): Max results (default: 50)
+- `offset` (optional): Pagination offset (default: 0)
+- `sort` (optional): Sort order (default: `created_at DESC`)
+
+**Response (200 OK):**
+```json
+{
+  "jobs": [
+    {
+      "job_id": "abc-123-def-456",
+      "status": "completed",
+      "file_name": "contract.pdf",
+      "created_at": "2025-11-12T10:30:00Z",
+      "completed_at": "2025-11-12T10:32:15Z"
+    }
+  ],
+  "total": 10,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+---
+
+##### GET `/api/v1/extract/{job_id}/logs` (Optional)
+**Purpose:** Get log entries for a job
+
+**Query Parameters:**
+- `limit` (optional): Max log entries (default: 1000)
+- `level` (optional): Filter by log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`)
+
+**Response (200 OK):**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "logs": [
+    {
+      "timestamp": "2025-11-12T10:30:05Z",
+      "level": "INFO",
+      "message": "Starting extraction",
+      "module": "extractors.pdf_extractor",
+      "details": null
+    }
+  ],
+  "total": 15
+}
+```
+
+**Behavior:**
+- Queries `extraction_logs` table (monthly tables for SQLite)
+- Returns log entries sorted by timestamp (descending)
+- **Note:** API always uses database (no legacy mode, no file I/O for logs)
+
+---
+
+##### GET `/health`
+**Purpose:** Health check endpoint
+
+**Response (200 OK):**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "database": "connected",
+  "storage_type": "local",
+  "timestamp": "2025-11-12T10:30:00Z"
+}
+```
+
+**Behavior:**
+- Checks database connection
+- Returns API version and status
+- Used by load balancers and monitoring
 
 #### 4.4 Background Tasks
 - [ ] Implement `process_extraction(job_id, file_path)` background task:
@@ -280,7 +451,10 @@
   - `API_PORT` (default: 8000)
   - `API_WORKERS` (default: 1)
   - `API_RELOAD` (default: False, for development)
-  - `MAX_UPLOAD_SIZE_MB` (default: 100)
+  - `MAX_UPLOAD_SIZE_MB` (default: 25) - Maximum file upload size in MB
+  - `API_MAX_CONCURRENT_EXTRACTIONS` (default: 5) - Max concurrent background extraction tasks
+  - `API_ENABLE_AUTH` (default: False) - Enable API key authentication
+  - `API_KEY` (default: "") - API key for authentication (if enabled)
 
 #### 4.8 Startup/Shutdown
 - [ ] Initialize database on startup
@@ -288,7 +462,7 @@
 - [ ] Register background tasks
 - [ ] Graceful shutdown handling
 
-#### 4.9 Testing
+#### 4.10 Testing
 - [ ] Unit tests for API endpoints
 - [ ] Integration tests with test database
 - [ ] Test file upload (local and GCS)
@@ -299,7 +473,7 @@
 - [ ] Test background task execution
 - [ ] Test Cloud Run deployment (Iteration 1: SQLite + local storage)
 
-#### 4.10 GCP Cloud Run Deployment (Iteration 1)
+#### 4.11 GCP Cloud Run Deployment (Iteration 1)
 - [ ] Update `Dockerfile` for GCP Cloud Run deployment
 - [ ] Configure SQLite database path for Cloud Run ephemeral storage
 - [ ] Configure `uploads/` directory for Cloud Run ephemeral storage
@@ -308,7 +482,7 @@
 - [ ] Test deployment on Cloud Run
 - [ ] **Note:** Iteration 1 uses SQLite + local storage (Cloud Run ephemeral storage is sufficient)
 
-#### 4.11 GCP Advanced Features (Future Iterations - TODO)
+#### 4.12 GCP Advanced Features (Future Iterations - TODO)
 - [ ] Add GCP configuration options (Cloud SQL, GCS)
 - [ ] Create GCS storage adapter for PDF uploads
 - [ ] Add Cloud SQL connection support (PostgreSQL)
@@ -318,7 +492,7 @@
 - [ ] Test local SQLite → Cloud SQL migration path
 - [ ] Document GCS and Cloud SQL setup
 
-#### 4.12 Docker Integration
+#### 4.13 Docker Integration
 - [ ] Update `Dockerfile` for API mode
 - [ ] Update `docker-compose.yml` for API service
 - [ ] Add health check endpoint to docker-compose
