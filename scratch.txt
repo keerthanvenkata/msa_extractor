@@ -1,0 +1,305 @@
+================================================================================
+CODE REVIEW & EXECUTION SIMULATION - PERSISTENCE SYSTEM
+================================================================================
+Date: November 12, 2025
+Test Case: Single file extraction with database tracking
+Command: python main.py extract --file test.pdf
+
+================================================================================
+INITIAL STATE
+================================================================================
+ENVIRONMENT:
+- Python 3.10.0
+- Working directory: D:\dev\projects\msa_extractor
+- Config values:
+  - DB_PATH: storage/msa_extractor.db
+  - UPLOADS_DIR: uploads/
+  - RESULTS_DIR: results/
+  - LOGS_DIR: logs/
+  - EXTRACTION_METHOD: hybrid
+  - LLM_PROCESSING_MODE: text_llm
+
+FILE SYSTEM:
+- Input file: test.pdf (exists)
+- Database: storage/msa_extractor.db (may or may not exist)
+- Directories: uploads/, storage/, results/, logs/ (created on config import)
+
+================================================================================
+EXECUTION FLOW - STEP BY STEP
+================================================================================
+
+STEP 1: main.py - main() function
+--------------------------------------------------------------------------------
+Line 372: Parse arguments
+- args.command = "extract"
+- args.file = "test.pdf"
+- args.legacy = False (default)
+
+STEP 2: main.py - extract_single_file() call
+--------------------------------------------------------------------------------
+Line 392: extract_single_file(
+    file_path="test.pdf",
+    output_path=None,
+    strategy=None,
+    legacy=False,
+    job_id=None,
+    db=None
+)
+
+STEP 3: main.py - extract_single_file() initialization
+--------------------------------------------------------------------------------
+Line 52-53: Initialize database
+- db = ExtractionDB()  # Creates new instance
+- db_path = None, so uses config.DB_PATH = storage/msa_extractor.db
+
+STEP 4: storage/database.py - ExtractionDB.__init__()
+--------------------------------------------------------------------------------
+Line 38: self.db_path = DB_PATH (storage/msa_extractor.db)
+Line 40: self._init_db()
+
+STEP 5: storage/database.py - _init_db()
+--------------------------------------------------------------------------------
+Line 46: self.db_path.parent.mkdir(parents=True, exist_ok=True)
+  - Creates storage/ directory if needed
+Line 49: self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+  - Opens/creates SQLite database
+Line 50: self.conn.row_factory = sqlite3.Row
+  - Sets row factory for dict-like access
+Line 53: self._create_extractions_table()
+Line 54: self._create_indexes()
+Line 57: self._ensure_log_table()
+
+OBJECT STATE:
+- db.conn: SQLite connection object
+- db.db_path: Path("storage/msa_extractor.db")
+
+STEP 6: storage/database.py - _create_extractions_table()
+--------------------------------------------------------------------------------
+Line 67-87: CREATE TABLE IF NOT EXISTS extractions (...)
+  - Creates table with all columns
+  - Commits transaction
+
+STEP 7: storage/database.py - _create_indexes()
+--------------------------------------------------------------------------------
+Line 96-111: Creates indexes on status, created_at, file_name
+  - Uses IF NOT EXISTS to avoid errors
+
+STEP 8: storage/database.py - _ensure_log_table()
+--------------------------------------------------------------------------------
+Line 135: table_name = "extraction_logs_2025_11" (current month)
+Line 138-149: CREATE TABLE IF NOT EXISTS extraction_logs_2025_11 (...)
+  - Creates monthly log table
+  - Creates index on extraction_id
+
+STEP 9: main.py - extract_single_file() file validation
+--------------------------------------------------------------------------------
+Line 55-57: input_file = Path("test.pdf")
+  - Validates file exists
+Line 59: file_name = "test.pdf"
+Line 60: file_size = file.stat().st_size
+
+STEP 10: main.py - extract_single_file() job creation
+--------------------------------------------------------------------------------
+Line 78-85: db.create_job(...)
+  - file_name="test.pdf"
+  - pdf_storage_path="" (empty, will be set later)
+  - file_size=<size>
+  - extraction_method="hybrid"
+  - llm_processing_mode="text_llm"
+  - ocr_engine=None
+
+STEP 11: storage/database.py - create_job()
+--------------------------------------------------------------------------------
+Line 186: job_id = str(uuid.uuid4())  # e.g., "abc-123-def-456"
+Line 189-197: INSERT INTO extractions (...)
+  - Inserts job with status="pending"
+  - Commits transaction
+
+OBJECT STATE:
+- job_id: "abc-123-def-456" (example UUID)
+- Job in database: status="pending", pdf_storage_path=""
+
+STEP 12: main.py - extract_single_file() file copy
+--------------------------------------------------------------------------------
+Line 88: file_extension = ".pdf"
+Line 89: pdf_storage_path = UPLOADS_DIR / f"{job_id}.pdf"
+  - Path: uploads/abc-123-def-456.pdf
+Line 90: shutil.copy2(input_file, pdf_storage_path)
+  - Copies test.pdf to uploads/abc-123-def-456.pdf
+
+STEP 13: main.py - extract_single_file() update storage path
+--------------------------------------------------------------------------------
+Line 93: db.update_job_status(job_id, "pending")  # Redundant but safe
+Line 94-98: UPDATE extractions SET pdf_storage_path = ? WHERE id = ?
+  - Updates pdf_storage_path to "uploads/abc-123-def-456.pdf"
+  - Commits transaction
+
+OBJECT STATE:
+- pdf_storage_path: "uploads/abc-123-def-456.pdf"
+- File exists in uploads/ directory
+
+STEP 14: main.py - extract_single_file() start processing
+--------------------------------------------------------------------------------
+Line 102: db.update_job_status(job_id, "processing", started_at=datetime.now())
+  - Updates status to "processing"
+  - Sets started_at timestamp
+
+STEP 15: main.py - extract_single_file() extraction
+--------------------------------------------------------------------------------
+Line 105: coordinator = ExtractionCoordinator()
+Line 108: extraction_file_path = str(pdf_storage_path)  # Uses copied file
+Line 110: metadata = coordinator.extract_metadata(extraction_file_path, strategy)
+  - Runs full extraction pipeline
+  - Returns metadata dict
+
+STEP 16: main.py - extract_single_file() validation
+--------------------------------------------------------------------------------
+Line 113-119: Validates and normalizes metadata
+  - Uses coordinator's schema validator
+
+STEP 17: main.py - extract_single_file() store results
+--------------------------------------------------------------------------------
+Line 125: legacy = False, so skip file-based storage
+Line 142-149: db.complete_job(...)
+  - result_json_dict=metadata (stores in DB)
+  - pdf_storage_path="uploads/abc-123-def-456.pdf"
+  - pdf_storage_type="local"
+  - result_json_path=None (not legacy)
+  - log_path=None
+
+STEP 18: storage/database.py - complete_job()
+--------------------------------------------------------------------------------
+Line 309: result_json_str = json.dumps(metadata, ensure_ascii=False)
+Line 312-329: UPDATE extractions SET ... WHERE id = ?
+  - status='completed'
+  - completed_at=CURRENT_TIMESTAMP
+  - result_json=<JSON string>
+  - pdf_storage_path="uploads/abc-123-def-456.pdf"
+  - Commits transaction
+
+OBJECT STATE:
+- Job status: "completed"
+- result_json: Stored in database as TEXT
+- PDF file: Still in uploads/ directory
+
+STEP 19: main.py - extract_single_file() return
+--------------------------------------------------------------------------------
+Line 152-153: result = metadata.copy()
+  - result["_job_id"] = job_id
+  - Returns metadata with job_id
+
+STEP 20: main.py - main() print results
+--------------------------------------------------------------------------------
+Line 401-403: Prints job_id
+Line 407: Prints metadata JSON to stdout
+
+================================================================================
+ISSUES IDENTIFIED
+================================================================================
+
+P0 - CRITICAL BUGS:
+1. **Database connection not closed in extract_single_file()**
+   - Location: main.py, extract_single_file()
+   - Issue: db = ExtractionDB() is created but never closed
+   - Impact: Database connections may leak, especially in batch processing
+   - Fix: Use context manager (with ExtractionDB() as db:) or call db.close()
+
+2. **Redundant status update**
+   - Location: main.py line 93
+   - Issue: update_job_status(job_id, "pending") is called after job is already created with status="pending"
+   - Impact: Minor performance issue, unnecessary DB call
+   - Fix: Remove redundant call
+
+3. **Direct database cursor access**
+   - Location: main.py lines 94-98
+   - Issue: Directly accessing db.conn.cursor() instead of using ExtractionDB methods
+   - Impact: Bypasses abstraction, harder to maintain
+   - Fix: Add method to ExtractionDB for updating pdf_storage_path
+
+P1 - HIGH PRIORITY ISSUES:
+4. **Error handling: job_id may be undefined**
+   - Location: main.py lines 159, 170
+   - Issue: If job creation fails before job_id is set, error handler will fail
+   - Impact: Unhandled exception in error handler
+   - Fix: Initialize job_id = None at start, check before using
+
+5. **File extension handling for DOCX**
+   - Location: main.py line 88-89
+   - Issue: Variable named pdf_storage_path but can be .docx
+   - Impact: Confusing naming, but functionally correct
+   - Fix: Consider renaming to file_storage_path (but breaks DB schema)
+
+6. **Batch processing: database connection reuse**
+   - Location: main.py extract_batch()
+   - Issue: Creates new ExtractionDB() for batch, but each file creates another
+   - Impact: Multiple database connections, inefficient
+   - Fix: Pass db instance to extract_single_file() (already supported!)
+
+P2 - MEDIUM PRIORITY ISSUES:
+7. **Legacy mode: logs still in database**
+   - Location: main.py line 138-139
+   - Issue: Comment says logs still written to DB in legacy mode
+   - Impact: Inconsistent with legacy mode concept
+   - Fix: Either implement file-based logging or update documentation
+
+8. **No cleanup of failed job files**
+   - Location: main.py error handlers
+   - Issue: If job fails, PDF file remains in uploads/ directory
+   - Impact: Disk space waste
+   - Fix: Add cleanup logic for failed jobs
+
+9. **Database connection in list_jobs() and get_job()**
+   - Location: main.py lines 280, 291
+   - Issue: Creates new connection for each call
+   - Impact: Inefficient for multiple calls
+   - Fix: Consider connection pooling or reuse
+
+P3 - LOW PRIORITY / OPTIMIZATIONS:
+10. **Index creation error handling**
+    - Location: storage/database.py line 107-109
+    - Issue: Silent failure on index creation errors
+    - Impact: May hide real issues
+    - Fix: Log warning instead of pass
+
+11. **JSON parsing error handling**
+    - Location: storage/database.py lines 227-229, 234-236
+    - Issue: Sets result_json to None on parse error, but doesn't log details
+    - Impact: Hard to debug corrupted JSON
+    - Fix: Log more details about parse errors
+
+12. **Monthly log table query efficiency**
+    - Location: storage/database.py get_logs()
+    - Issue: Queries all monthly tables, then sorts in memory
+    - Impact: Inefficient for many months
+    - Fix: Use UNION ALL with ORDER BY in SQL
+
+================================================================================
+POTENTIAL RACE CONDITIONS
+================================================================================
+
+1. **Concurrent job creation**
+   - Issue: UUID generation is not atomic with database insert
+   - Impact: Extremely low probability of collision
+   - Mitigation: UUID v4 has 2^122 possible values, collision probability negligible
+
+2. **File copy and database update**
+   - Issue: File copied before database path updated
+   - Impact: If process crashes, database has empty path but file exists
+   - Mitigation: Transaction ensures atomicity, but file system is separate
+
+================================================================================
+MEMORY USAGE
+================================================================================
+
+- Database connection: ~1-2 KB per connection
+- Job metadata: ~200-500 bytes per job
+- Result JSON: ~1-5 KB per result
+- Log entries: ~100-200 bytes per entry
+- Monthly log tables: ~10-50 MB per month (depending on volume)
+
+Total memory per job: ~10-20 KB (excluding PDF file)
+
+================================================================================
+END OF SIMULATION
+================================================================================
+
