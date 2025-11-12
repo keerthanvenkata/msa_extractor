@@ -41,9 +41,11 @@ Primary table to track all extraction jobs.
 | `started_at` | TIMESTAMP | | When processing started |
 | `completed_at` | TIMESTAMP | | When processing finished |
 | `error_message` | TEXT | | Error details if failed |
-| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB, not file)** |
+| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB by default, NULL in legacy mode)** |
 | `pdf_storage_path` | TEXT | | Path to PDF (local: `uploads/{uuid}.pdf`, future: GCS path) |
 | `pdf_storage_type` | TEXT | | `local` (Iteration 1) or `gcs` (future) |
+| `result_json_path` | TEXT | | **Legacy mode only:** Path to `results/{uuid}.json` file (if `--legacy` flag used) |
+| `log_path` | TEXT | | **Legacy mode only:** Path to `logs/{uuid}.log` file (if `--legacy` flag used) |
 | `extraction_method` | TEXT | | EXTRACTION_METHOD used |
 | `llm_processing_mode` | TEXT | | LLM_PROCESSING_MODE used |
 | `ocr_engine` | TEXT | | OCR_ENGINE used (if applicable) |
@@ -94,17 +96,40 @@ project_root/ (or Cloud Run ephemeral storage):
 ├── uploads/          # Temporary PDF storage (local filesystem)
 │   ├── {uuid}.pdf    # Uploaded PDFs (temporary, cleaned after N days)
 │   └── ...
+├── results/          # Legacy mode only (file-based JSON storage)
+│   ├── {uuid}.json   # Only used with --legacy flag
+│   └── ...
+├── logs/             # Legacy mode only (file-based log storage)
+│   ├── {uuid}.log    # Only used with --legacy flag
+│   └── ...
 └── storage/          # Database
     └── msa_extractor.db  # SQLite database
         ├── extractions table (with result_json column)
         └── extraction_logs_YYYY_MM tables (monthly)
 ```
 
-**Note:**
-- **JSON results:** Stored in `extractions.result_json` column (no separate files)
-- **Logs:** Stored in `extraction_logs` table (no separate files)
-- **PDFs:** Only files stored (local filesystem, Cloud Run ephemeral storage)
-- **Cloud Run:** Ephemeral storage sufficient for Iteration 1
+**Default Behavior (Database Storage):**
+- **JSON results:** Stored in `extractions.result_json` column (database)
+- **Logs:** Stored in `extraction_logs` table (database)
+- **No files in `results/` or `logs/` directories**
+
+**Legacy Mode (CLI `--legacy` flag):**
+- **JSON results:** Saved to `results/{uuid}.json` files
+- **Logs:** Saved to `logs/{uuid}.log` files
+- **Database:** Still tracks job metadata
+- **Purpose:** Backward compatibility with existing workflows
+
+**API Behavior:**
+- **Always uses database** (no legacy mode)
+- JSON results from `extractions.result_json` column
+- Logs from `extraction_logs` table
+
+**PDFs:**
+- Always stored as files (local filesystem, Cloud Run ephemeral storage)
+- Cleared after N days (configurable)
+
+**Cloud Run:**
+- Ephemeral storage sufficient for Iteration 1
 
 ---
 
@@ -635,16 +660,25 @@ The detailed FastAPI backend plan is above. Key integration points:
 - [ ] Create `storage/database.py` with `ExtractionDB` class
 - [ ] Create database schema (migrations or init script)
 - [ ] Add configuration variables to `config.py`
-- [ ] Create storage directories (`uploads/`, `storage/`)
-- [ ] **Note:** No `results/` or `logs/` directories needed (data stored in database)
+- [ ] Create storage directories:
+  - `uploads/` (for temporary PDFs)
+  - `storage/` (for database)
+  - `results/` (for legacy mode - file-based JSON storage)
+  - `logs/` (for legacy mode - file-based log storage)
+- [ ] **Note:** `results/` and `logs/` directories kept for legacy CLI mode (`--legacy` flag), but default and API use database
 
 ### Phase 2: Integration with Current CLI (Before FastAPI)
 - [ ] Update `main.py` to use database
+- [ ] Add `--legacy` flag to CLI (default: False)
+  - When enabled: Use file-based storage (`results/`, `logs/` directories)
+  - When disabled (default): Use database storage
 - [ ] Generate UUIDs for each extraction
 - [ ] Save PDFs to `uploads/{uuid}.pdf`
-- [ ] Store JSON results in `extractions.result_json` column (not files)
-- [ ] Store logs in `extraction_logs` table (not files)
-- [ ] Test with existing pipeline
+- [ ] **Default mode:** Store JSON results in `extractions.result_json` column (database)
+- [ ] **Default mode:** Store logs in `extraction_logs` table (database)
+- [ ] **Legacy mode:** Save JSON to `results/{uuid}.json` files
+- [ ] **Legacy mode:** Save logs to `logs/{uuid}.log` files
+- [ ] Test with existing pipeline (both default and legacy modes)
 
 ### Phase 3: Cleanup Implementation
 - [ ] Create `storage/cleanup.py` with cleanup functions

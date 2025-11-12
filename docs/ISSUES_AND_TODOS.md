@@ -532,8 +532,10 @@ Implement SQLite-based persistence system for tracking extraction jobs with UUID
 
 2. **File Storage:**
    - Store uploaded PDFs in `uploads/{uuid}.pdf` (temporary, local filesystem)
-   - **Store JSON results in `extractions.result_json` column** (database, not files)
-   - **Store logs in `extraction_logs` table** (database, monthly tables for SQLite)
+   - **Default:** Store JSON results in `extractions.result_json` column (database)
+   - **Default:** Store logs in `extraction_logs` table (database, monthly tables for SQLite)
+   - **Legacy mode:** CLI `--legacy` flag allows file-based storage (`results/`, `logs/` directories)
+   - **API:** Always uses database (no legacy mode)
    - PDFs cleared after N days (configurable, default: 7 days)
    - Cloud Run ephemeral storage sufficient for Iteration 1
 
@@ -564,7 +566,9 @@ Implement SQLite-based persistence system for tracking extraction jobs with UUID
 **Iteration 1 Scope:**
 - SQLite database (local)
 - Local filesystem for PDFs (Cloud Run ephemeral storage)
-- JSON results and logs stored in database (not separate files)
+- **Default:** JSON results and logs stored in database
+- **Legacy mode:** CLI `--legacy` flag for file-based storage (backward compatibility)
+- **API:** Always uses database (no legacy mode)
 
 ---
 

@@ -16,7 +16,10 @@
 - **PDF Files**: Temporary storage in `uploads/{uuid}.pdf` (local filesystem)
   - Cleared after N days (configurable, default: 7 days)
   - Cloud Run provides ephemeral storage (enough for first run)
-- **No separate JSON or log files** - everything in database
+- **Default behavior**: Everything stored in database (JSON and logs)
+- **Legacy mode**: CLI `--legacy` flag allows file-based storage (`results/`, `logs/` directories)
+  - For backward compatibility
+  - API always uses database (no legacy mode)
 
 ### Future Iterations (TODO)
 - **GCS Integration**: Migrate PDF storage to Cloud Storage bucket
@@ -29,6 +32,12 @@
 - Simpler deployment: No file system management for results/logs
 - Better for API: Direct DB queries, no file I/O overhead for results
 - Cloud Run compatible: Ephemeral storage for PDFs, SQLite for database
+
+**Legacy Mode Support:**
+- CLI `--legacy` flag: Allows file-based storage (`results/`, `logs/` directories)
+- Backward compatibility: Existing workflows can continue using file-based storage
+- Database still tracks job metadata even in legacy mode
+- API always uses database (no legacy mode option)
 
 ---
 
@@ -71,7 +80,9 @@
 - [ ] Create storage directories on startup:
   - `uploads/` (for temporary PDFs - local only)
   - `storage/` (for database)
-- [ ] **Remove `results/` and `logs/` directory creation** (no longer needed)
+  - `results/` (for legacy mode - file-based JSON storage)
+  - `logs/` (for legacy mode - file-based log storage)
+- [ ] **Note:** `results/` and `logs/` directories kept for legacy CLI mode, but default and API use database
 
 #### 1.4 Testing
 - [ ] Unit tests for `ExtractionDB` class
@@ -85,13 +96,19 @@
 
 #### 2.1 Update Main CLI
 - [ ] Modify `extract_single_file()` in `main.py`:
+  - Add `--legacy` flag option (default: False, uses database)
   - Generate UUID for each extraction
   - Create database job record (status: "pending")
   - Copy PDF to `uploads/{uuid}.pdf` (local) or upload to GCS (if configured)
   - Update job status to "processing"
   - Run extraction
-  - **Store JSON result in `extractions.result_json` column** (not separate file)
-  - **Store logs in `extraction_logs` table** (not separate files)
+  - **If `--legacy` flag:**
+    - Save JSON to `results/{uuid}.json` (file-based)
+    - Save logs to `logs/{uuid}.log` (file-based)
+    - Update database with file paths
+  - **If default (no `--legacy` flag):**
+    - **Store JSON result in `extractions.result_json` column** (database)
+    - **Store logs in `extraction_logs` table** (database)
   - Update job status to "completed" with PDF storage path
   - Handle errors: update status to "failed" with error message, log to DB
 - [ ] Modify `extract_batch()` in `main.py`:
@@ -101,6 +118,10 @@
   - Return list of job IDs
 
 #### 2.2 CLI Commands
+- [ ] Add `--legacy` flag to CLI (default: False)
+  - When enabled: Use file-based storage (`results/`, `logs/` directories)
+  - When disabled (default): Use database storage
+  - API always uses database (no legacy mode)
 - [ ] Add `--job-id` flag to `extract_single_file` (optional, for re-running failed jobs)
 - [ ] Add `python main.py list-jobs [--status STATUS] [--limit N]` command
 - [ ] Add `python main.py get-job <job_id>` command
@@ -109,10 +130,12 @@
 #### 2.3 Logging Integration
 - [ ] Create custom log handler that writes to `extraction_logs` table
 - [ ] Update logger to accept `job_id` context
-- [ ] Store all log entries in database (with job_id, level, message, timestamp)
+- [ ] **Default mode:** Store all log entries in database (with job_id, level, message, timestamp)
+- [ ] **Legacy mode:** Write logs to `logs/{uuid}.log` files (when `--legacy` flag is used)
 - [ ] Use monthly log tables (`extraction_logs_YYYY_MM`) for SQLite
 - [ ] For GCP: Use partitioned table or monthly tables based on Cloud SQL type
 - [ ] Ensure UUID is in all log messages for traceability
+- [ ] **Note:** API always uses database logging (no legacy mode)
 
 #### 2.4 Testing
 - [ ] Test single file extraction with UUID
@@ -202,10 +225,11 @@
 - [ ] **GET `/api/v1/extract/{job_id}`**:
   - Validate UUID format
   - Query database for job
-  - If completed: **Return `result_json` from database** (no file I/O)
+  - If completed: **Return `result_json` from database** (no file I/O, always uses database)
   - If processing/pending: Return status only
   - If failed: Return error message
   - Handle 404 (job not found)
+  - **Note:** API always uses database (no legacy mode, no file I/O for results)
 - [ ] **GET `/api/v1/extract/jobs`** (optional):
   - Query parameters: `status`, `limit`, `offset`, `sort`
   - Return list of jobs with metadata
@@ -214,6 +238,7 @@
   - Return log entries (with pagination: limit, offset)
   - Support filtering by level (DEBUG, INFO, WARNING, ERROR)
   - Return log entries as JSON array
+  - **Note:** API always uses database (no legacy mode, no file I/O for logs)
 - [ ] **GET `/health`**:
   - Return API health status
   - Check database connection
@@ -223,10 +248,11 @@
 - [ ] Implement `process_extraction(job_id, file_path)` background task:
   - Update job status to "processing"
   - Run extraction using `ExtractionCoordinator`
-  - **Store JSON result in `extractions.result_json` column** (not file)
-  - **Store logs in `extraction_logs` table** (not files)
+  - **Store JSON result in `extractions.result_json` column** (database, always)
+  - **Store logs in `extraction_logs` table** (database, always)
   - Update job status to "completed"
   - Handle errors: update status to "failed", log to DB
+  - **Note:** API background tasks always use database (no legacy mode)
 - [ ] Implement background cleanup task (optional):
   - Run cleanup on schedule
   - Log cleanup operations
@@ -314,9 +340,11 @@
 | `started_at` | TIMESTAMP | | When processing started |
 | `completed_at` | TIMESTAMP | | When processing finished |
 | `error_message` | TEXT | | Error details if failed |
-| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB)** |
+| `result_json` | TEXT (JSON) | | **Extracted metadata JSON (stored in DB by default, NULL in legacy mode)** |
 | `pdf_storage_path` | TEXT | | Path to PDF (local: `uploads/{uuid}.pdf`, GCP: GCS path) |
-| `pdf_storage_type` | TEXT | | `local` or `gcs` |
+| `pdf_storage_type` | TEXT | | `local` (Iteration 1) or `gcs` (future) |
+| `result_json_path` | TEXT | | **Legacy mode only:** Path to `results/{uuid}.json` file (if `--legacy` flag used) |
+| `log_path` | TEXT | | **Legacy mode only:** Path to `logs/{uuid}.log` file (if `--legacy` flag used) |
 | `extraction_method` | TEXT | | EXTRACTION_METHOD used |
 | `llm_processing_mode` | TEXT | | LLM_PROCESSING_MODE used |
 | `ocr_engine` | TEXT | | OCR_ENGINE used (if applicable) |
@@ -369,16 +397,34 @@ project_root/ (or Cloud Run ephemeral storage):
 │   ├── {uuid1}.pdf
 │   ├── {uuid2}.pdf
 │   └── ...
+├── results/              # Legacy mode only (file-based JSON storage)
+│   ├── {uuid1}.json      # Only used with --legacy flag
+│   └── ...
+├── logs/                 # Legacy mode only (file-based log storage)
+│   ├── {uuid1}.log       # Only used with --legacy flag
+│   └── ...
 └── storage/              # Database
     └── msa_extractor.db  # SQLite database
         ├── extractions table (with result_json column)
         └── extraction_logs_YYYY_MM tables (monthly)
 ```
 
+**Default Behavior (Database Storage):**
+- JSON results stored in `extractions.result_json` column
+- Logs stored in `extraction_logs` table
+- No files in `results/` or `logs/` directories
+
+**Legacy Mode (`--legacy` flag):**
+- JSON results saved to `results/{uuid}.json` files
+- Logs saved to `logs/{uuid}.log` files
+- Database still tracks job metadata
+- For backward compatibility with existing workflows
+
 **Cloud Run Deployment:**
 - Uses ephemeral storage for `uploads/` and `storage/` directories
 - SQLite database stored in ephemeral storage
 - PDFs cleared after N days (configurable)
+- API always uses database (no legacy mode)
 - Sufficient for Iteration 1
 
 ### Future Iterations: GCP Production (Cloud SQL + Cloud Storage)
@@ -395,9 +441,11 @@ Cloud Storage (GCS):
 ```
 
 **Note:** 
-- **Iteration 1:** JSON results stored in `extractions.result_json` column (no separate files)
-- **Iteration 1:** Logs stored in `extraction_logs` table (no separate files)
+- **Iteration 1 (Default):** JSON results stored in `extractions.result_json` column (database)
+- **Iteration 1 (Default):** Logs stored in `extraction_logs` table (database)
+- **Iteration 1 (Legacy Mode):** JSON and logs saved to files (`results/`, `logs/` directories) when `--legacy` flag is used
 - **Iteration 1:** Only PDFs stored as files (local filesystem, Cloud Run ephemeral storage)
+- **API:** Always uses database (no legacy mode)
 - **Future:** PDFs migrated to GCS, database migrated to Cloud SQL
 
 ---
@@ -406,8 +454,11 @@ Cloud Storage (GCS):
 
 1. **Phase 1** (Database & Storage) → Foundation
 2. **Phase 2** (CLI Integration) → Test with existing pipeline
+   - Default mode: Database storage
+   - Legacy mode: File-based storage (`--legacy` flag)
 3. **Phase 3** (Cleanup) → Maintenance
 4. **Phase 4** (FastAPI) → API service
+   - Always uses database (no legacy mode)
 
 ---
 
