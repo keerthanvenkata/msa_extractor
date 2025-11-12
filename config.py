@@ -34,7 +34,12 @@ API_MAX_CONCURRENT_EXTRACTIONS = int(os.getenv("API_MAX_CONCURRENT_EXTRACTIONS",
 
 # Authentication Configuration
 API_ENABLE_AUTH = os.getenv("API_ENABLE_AUTH", "false").lower() == "true"  # Enable API key authentication
-API_KEY = os.getenv("API_KEY", "")  # API key for authentication (if enabled)
+API_KEY_RAW = os.getenv("API_KEY", "")  # API key(s) for authentication (if enabled)
+# Support multiple keys: comma-separated list (e.g., "key1,key2,key3")
+# Empty keys are filtered out
+API_KEYS = {key.strip() for key in API_KEY_RAW.split(",") if key.strip()} if API_KEY_RAW else set()
+# For backward compatibility, also provide single key (first key if multiple)
+API_KEY = list(API_KEYS)[0] if API_KEYS else ""
 # Note: For Iteration 1, using simple API key. Future: Upgrade to JWT/OAuth2
 
 
