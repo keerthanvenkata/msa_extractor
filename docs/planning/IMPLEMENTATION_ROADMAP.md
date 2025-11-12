@@ -454,7 +454,7 @@
   - `MAX_UPLOAD_SIZE_MB` (default: 25) - Maximum file upload size in MB
   - `API_MAX_CONCURRENT_EXTRACTIONS` (default: 5) - Max concurrent background extraction tasks
   - `API_ENABLE_AUTH` (default: False) - Enable API key authentication
-  - `API_KEY` (default: "") - API key for authentication (if enabled)
+  - `API_KEY` (default: "") - API key(s) for authentication (comma-separated for multiple keys)
 
 #### 4.8 Startup/Shutdown
 - [ ] Initialize database on startup

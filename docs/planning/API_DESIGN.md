@@ -34,7 +34,10 @@ https://your-domain.com/api/v1
 **Implementation:**
 - API key passed in header: `X-API-Key: <key>`
 - Or query parameter: `?api_key=<key>` (less secure, but simpler for testing)
-- API key stored in environment variable: `API_KEY`
+- API key(s) stored in environment variable: `API_KEY`
+- **Multiple keys supported:** Use comma-separated list: `API_KEY=key1,key2,key3`
+  - Any key in the list will be accepted
+  - Useful for key rotation or multiple clients
 - Enable/disable via `API_ENABLE_AUTH` (default: `false` for development)
 
 **Usage:**

@@ -24,11 +24,14 @@
 | `MAX_UPLOAD_SIZE_MB` | Maximum file upload size (MB) | `25` |
 | `API_MAX_CONCURRENT_EXTRACTIONS` | Max concurrent background extraction tasks | `5` |
 | `API_ENABLE_AUTH` | Enable API key authentication | `false` |
-| `API_KEY` | API key for authentication (if enabled) | `` (must be set if auth enabled) |
+| `API_KEY` | API key(s) for authentication (if enabled) | `` (must be set if auth enabled) |
 
 **Authentication Setup:**
 - Set `API_ENABLE_AUTH=true` to enable authentication
 - Set `API_KEY=<your-secret-key>` (use a strong, random key)
+- **Multiple keys supported:** Use comma-separated list: `API_KEY=key1,key2,key3`
+  - Useful for key rotation or multiple clients
+  - Any key in the list will be accepted
 - Pass API key in request header: `X-API-Key: <your-secret-key>`
 - Or use query parameter: `?api_key=<your-secret-key>` (less secure, for testing only)
 - See [API Design Specification](../planning/API_DESIGN.md) for details
