@@ -90,6 +90,21 @@ pytest==7.4.3
 pytest-cov==4.1.0
 
 # ============================================================================
+# API FRAMEWORK (Required for FastAPI backend)
+# ============================================================================
+# fastapi - Modern, fast web framework for building APIs
+fastapi>=0.104.0
+
+# uvicorn - ASGI server for FastAPI
+uvicorn[standard]>=0.24.0
+
+# python-multipart - Required for file uploads in FastAPI
+python-multipart>=0.0.6
+
+# pydantic - Data validation (FastAPI uses v2 by default)
+pydantic>=2.0.0
+
+# ============================================================================
 # NOTE: sqlite3 is built-in to Python, no package needed
 # ============================================================================
 
