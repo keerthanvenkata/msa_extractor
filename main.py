@@ -48,9 +48,11 @@ def extract_single_file(
     Returns:
         Dictionary with extracted metadata and job_id
     """
-    # Initialize database if not provided
+    # Initialize database if not provided (use context manager if we create it)
+    db_created = False
     if db is None:
         db = ExtractionDB()
+        db_created = True
     
     input_file = Path(file_path)
     if not input_file.exists():
@@ -58,6 +60,9 @@ def extract_single_file(
     
     file_name = input_file.name
     file_size = input_file.stat().st_size
+    
+    # Initialize job_id to None for error handling
+    job_id = None
     
     try:
         # Validate configuration
@@ -89,8 +94,7 @@ def extract_single_file(
             pdf_storage_path = UPLOADS_DIR / f"{job_id}{file_extension}"
             shutil.copy2(input_file, pdf_storage_path)
             
-            # Update job with storage path
-            db.update_job_status(job_id, "pending")
+            # Update job with storage path (use direct SQL since we need to update specific field)
             cursor = db.conn.cursor()
             cursor.execute(
                 "UPDATE extractions SET pdf_storage_path = ? WHERE id = ?",
@@ -221,79 +225,70 @@ def extract_batch(
     else:
         output_path = None
     
-    # Initialize database
-    db = ExtractionDB()
-    
-    # Process files
-    results = []
-    job_ids = []
-    
-    for i, file_path in enumerate(files, 1):
-        logger.info(f"Processing file {i}/{len(files)}: {file_path.name}")
+    # Use context manager for database connection
+    with ExtractionDB() as db:
+        # Process files
+        results = []
+        job_ids = []
         
-        try:
-            # Generate output filename (legacy mode only)
-            output_file = None
-            if legacy and output_path:
-                output_file = output_path / f"{file_path.stem}.json"
+        for i, file_path in enumerate(files, 1):
+            logger.info(f"Processing file {i}/{len(files)}: {file_path.name}")
             
-            # Extract metadata
-            metadata = extract_single_file(
-                str(file_path),
-                str(output_file) if output_file else None,
-                strategy,
-                legacy=legacy,
-                db=db
-            )
-            
-            job_id = metadata.pop("_job_id", None)
-            job_ids.append(job_id)
-            
-            results.append({
-                "file": str(file_path),
-                "job_id": job_id,
-                "status": "success",
-                "metadata": metadata if legacy else None  # Only include in legacy mode
-            })
-            
-        except Exception as e:
-            logger.error(f"Error processing {file_path.name}: {e}")
-            results.append({
-                "file": str(file_path),
-                "job_id": None,
-                "status": "error",
-                "error": str(e)
-            })
-    
-    # Save batch summary (legacy mode only)
-    if legacy and output_path:
-        summary_file = output_path / "batch_summary.json"
-        with open(summary_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        logger.info(f"Batch summary saved to: {summary_file}")
-    
-    logger.info(f"Batch processing complete. Processed {len(results)} files. Job IDs: {job_ids}")
-    
-    return results
+            try:
+                # Generate output filename (legacy mode only)
+                output_file = None
+                if legacy and output_path:
+                    output_file = output_path / f"{file_path.stem}.json"
+                
+                # Extract metadata (pass db instance for reuse)
+                metadata = extract_single_file(
+                    str(file_path),
+                    str(output_file) if output_file else None,
+                    strategy,
+                    legacy=legacy,
+                    db=db
+                )
+                
+                job_id = metadata.pop("_job_id", None)
+                job_ids.append(job_id)
+                
+                results.append({
+                    "file": str(file_path),
+                    "job_id": job_id,
+                    "status": "success",
+                    "metadata": metadata if legacy else None  # Only include in legacy mode
+                })
+            except Exception as e:
+                logger.error(f"Error processing {file_path.name}: {e}")
+                results.append({
+                    "file": str(file_path),
+                    "job_id": None,
+                    "status": "error",
+                    "error": str(e)
+                })
+        
+        # Save batch summary (legacy mode only)
+        if legacy and output_path:
+            summary_file = output_path / "batch_summary.json"
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
+            logger.info(f"Batch summary saved to: {summary_file}")
+        
+        logger.info(f"Batch processing complete. Processed {len(results)} files. Job IDs: {job_ids}")
+        
+        return results
 
 
 def list_jobs(status: Optional[str] = None, limit: int = 50) -> List[dict]:
     """List extraction jobs."""
-    db = ExtractionDB()
-    try:
-        jobs = db.list_jobs(status=status, limit=limit)
-        return jobs
-    finally:
-        db.close()
+    with ExtractionDB() as db:
+        return db.list_jobs(status=status, limit=limit)
 
 
 def get_job(job_id: str) -> Optional[dict]:
     """Get a job by ID."""
-    db = ExtractionDB()
-    try:
+    with ExtractionDB() as db:
         return db.get_job(job_id)
-    finally:
-        db.close()
 
 
 def main():
