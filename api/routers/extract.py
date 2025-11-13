@@ -97,6 +97,10 @@ async def upload_file(
         None,
         description="Override LLM processing mode (text_llm, vision_llm, multimodal, dual_llm)"
     ),
+    ocr_engine: Optional[str] = Form(
+        None,
+        description="Override OCR engine (tesseract, gcv). Only used if extraction_method requires OCR."
+    ),
     db: ExtractionDB = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
@@ -110,6 +114,7 @@ async def upload_file(
     - `file`: PDF or DOCX file (required)
     - `extraction_method`: Optional override (defaults to config)
     - `llm_processing_mode`: Optional override (defaults to config)
+    - `ocr_engine`: Optional override (defaults to config, only used if extraction_method requires OCR)
     
     **Response:**
     - Job ID and status URLs for polling
@@ -152,7 +157,13 @@ async def upload_file(
         # Use provided extraction method or default from config
         extraction_method_used = extraction_method or EXTRACTION_METHOD
         llm_mode_used = llm_processing_mode or LLM_PROCESSING_MODE
-        ocr_engine_used = OCR_ENGINE if extraction_method_used in ["ocr_all", "ocr_images_only"] else None
+        # Use provided OCR engine or determine from extraction method
+        if ocr_engine:
+            ocr_engine_used = ocr_engine
+        elif extraction_method_used in ["ocr_all", "ocr_images_only"]:
+            ocr_engine_used = OCR_ENGINE
+        else:
+            ocr_engine_used = None
         
         # Pass job_id to ensure file path and database record use the same ID
         db.create_job(
@@ -172,7 +183,7 @@ async def upload_file(
             file_path=file_path,
             extraction_method=extraction_method_used,
             llm_processing_mode=llm_mode_used,
-            ocr_engine=ocr_engine_used
+            ocr_engine=ocr_engine_used  # Pass OCR engine override if provided
         )
         
         # Get created_at timestamp from database
