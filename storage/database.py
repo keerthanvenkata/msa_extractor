@@ -168,6 +168,7 @@ class ExtractionDB:
         extraction_method: Optional[str] = None,
         llm_processing_mode: Optional[str] = None,
         ocr_engine: Optional[str] = None,
+        job_id: Optional[str] = None,
     ) -> str:
         """
         Create a new extraction job.
@@ -179,11 +180,13 @@ class ExtractionDB:
             extraction_method: EXTRACTION_METHOD used
             llm_processing_mode: LLM_PROCESSING_MODE used
             ocr_engine: OCR_ENGINE used (if applicable)
+            job_id: Optional job UUID (if not provided, generates a new one)
         
         Returns:
             Job UUID (str)
         """
-        job_id = str(uuid.uuid4())
+        if job_id is None:
+            job_id = str(uuid.uuid4())
         cursor = self.conn.cursor()
         
         cursor.execute("""
