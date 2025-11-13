@@ -64,19 +64,73 @@ def validate_file_type(filename: str) -> None:
 
 def validate_file_size(size: int) -> None:
     """
-    Validate that file size is within limits.
+    Validate file size is within limits.
     
     Args:
         size: File size in bytes
     
     Raises:
-        HTTPException: If file is too large
+        HTTPException: If file size exceeds maximum
     """
     if size > MAX_UPLOAD_SIZE_BYTES:
         max_mb = MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large: {size} bytes. Maximum size is {max_mb}MB."
+            detail=f"File size ({size / (1024 * 1024):.2f} MB) exceeds maximum allowed size ({max_mb} MB)"
+        )
+
+
+def validate_extraction_method(method: Optional[str]) -> None:
+    """
+    Validate extraction method parameter.
+    
+    Args:
+        method: Extraction method to validate
+    
+    Raises:
+        HTTPException: If method is invalid
+    """
+    if method is not None and method not in ALLOWED_EXTRACTION_METHODS:
+        allowed = ", ".join(sorted(ALLOWED_EXTRACTION_METHODS))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid extraction_method: {method}. Allowed values: {allowed}"
+        )
+
+
+def validate_llm_processing_mode(mode: Optional[str]) -> None:
+    """
+    Validate LLM processing mode parameter.
+    
+    Args:
+        mode: LLM processing mode to validate
+    
+    Raises:
+        HTTPException: If mode is invalid
+    """
+    if mode is not None and mode not in ALLOWED_LLM_PROCESSING_MODES:
+        allowed = ", ".join(sorted(ALLOWED_LLM_PROCESSING_MODES))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid llm_processing_mode: {mode}. Allowed values: {allowed}"
+        )
+
+
+def validate_ocr_engine(engine: Optional[str]) -> None:
+    """
+    Validate OCR engine parameter.
+    
+    Args:
+        engine: OCR engine to validate
+    
+    Raises:
+        HTTPException: If engine is invalid
+    """
+    if engine is not None and engine not in ALLOWED_OCR_ENGINES:
+        allowed = ", ".join(sorted(ALLOWED_OCR_ENGINES))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid ocr_engine: {engine}. Allowed values: {allowed}"
         )
 
 
@@ -134,6 +188,11 @@ async def upload_file(
         
         validate_file_type(file.filename)
         
+        # Validate parameter overrides
+        validate_extraction_method(extraction_method)
+        validate_llm_processing_mode(llm_processing_mode)
+        validate_ocr_engine(ocr_engine)
+        
         # Read file content to get size
         content = await file.read()
         file_size = len(content)
@@ -186,9 +245,8 @@ async def upload_file(
             ocr_engine=ocr_engine_used  # Pass OCR engine override if provided
         )
         
-        # Get created_at timestamp from database
-        job = db.get_job(job_id)
-        created_at = job.get("created_at") if job else datetime.now().isoformat()
+        # Use current timestamp (job was just created)
+        created_at = datetime.now().isoformat()
         
         # Return response
         return UploadResponse(
