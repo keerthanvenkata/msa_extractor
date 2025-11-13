@@ -18,7 +18,109 @@ This guide covers deploying the MSA Metadata Extractor API to Google Cloud Platf
 
 ## Quick Start
 
-### 1. Set Up GCP Project
+### Option 1: Using Google Cloud Console (No CLI Required)
+
+#### Step 1: Enable Required APIs
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select your project
+3. Go to **APIs & Services > Library**
+4. Enable these APIs:
+   - Cloud Build API
+   - Cloud Run API
+   - Artifact Registry API (or Container Registry API)
+
+#### Step 2: Build Container Using Cloud Build
+
+1. Go to **Cloud Build > Triggers** in Cloud Console
+2. Click **Create Trigger**
+3. Connect your repository (GitHub, Cloud Source Repositories, etc.)
+4. Or use **Cloud Build > History > Run** to build from local files:
+   - Click **Run** button
+   - Select **Build from Dockerfile**
+   - Upload your project files (or connect to source)
+   - Set build configuration:
+     - **Cloud Build configuration file:** Leave empty (uses Dockerfile)
+     - **Dockerfile location:** `Dockerfile`
+     - **Image name:** `gcr.io/YOUR-PROJECT-ID/msa-extractor-api` (replace YOUR-PROJECT-ID)
+   - Click **Run**
+
+#### Step 3: Deploy to Cloud Run
+
+1. Go to **Cloud Run** in Cloud Console
+2. Click **Create Service**
+3. Configure:
+   - **Service name:** `msa-extractor-api`
+   - **Region:** Choose your region (e.g., `us-central1`)
+   - **Deploy one revision from an existing container image**
+   - **Container image URL:** Click **Select** and choose the image you built
+   - **Container port:** `8080` (Cloud Run sets PORT automatically)
+   - **Authentication:** Allow unauthenticated invocations (for now)
+4. **Container** tab:
+   - **Memory:** 2 GiB
+   - **CPU:** 2
+   - **Timeout:** 3600 seconds
+   - **Max instances:** 10
+5. **Variables & Secrets** tab:
+   - Add environment variables:
+     - `GEMINI_API_KEY` = `your-gemini-api-key`
+     - `API_ENABLE_AUTH` = `false`
+6. Click **Create**
+
+#### Step 4: Get Service URL
+
+After deployment, the service URL will be displayed in the Cloud Run service details page.
+
+---
+
+### Option 2: Build Locally and Push (If Docker is Installed)
+
+If you have Docker installed locally, you can build and push the image:
+
+#### Step 1: Authenticate Docker with GCP
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Go to **IAM & Admin > Service Accounts**
+3. Create a service account with **Storage Admin** role (for pushing to Container Registry)
+4. Create a JSON key and download it
+5. In PowerShell (or terminal):
+```powershell
+# Set environment variable (replace with your key file path)
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\key.json"
+
+# Authenticate Docker (if using Container Registry)
+docker login -u oauth2accesstoken -p (gcloud auth print-access-token) gcr.io
+```
+
+**Note:** If you don't have `gcloud` CLI, you can use the service account JSON key directly with Docker.
+
+#### Step 2: Build and Tag Image
+
+```powershell
+# Set your project ID
+$PROJECT_ID = "your-project-id"
+
+# Build the image
+docker build -t gcr.io/$PROJECT_ID/msa-extractor-api .
+
+# Tag for Container Registry
+docker tag gcr.io/$PROJECT_ID/msa-extractor-api gcr.io/$PROJECT_ID/msa-extractor-api:latest
+```
+
+#### Step 3: Push to Container Registry
+
+```powershell
+# Push the image
+docker push gcr.io/$PROJECT_ID/msa-extractor-api:latest
+```
+
+#### Step 4: Deploy via Cloud Console
+
+Follow **Option 1, Step 3** above to deploy the pushed image to Cloud Run.
+
+---
+
+### Option 3: Using gcloud CLI (If Available)
 
 ```bash
 # Set your project ID
@@ -29,11 +131,7 @@ gcloud config set project $PROJECT_ID
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
-```
 
-### 2. Build and Deploy
-
-```bash
 # Build container image
 gcloud builds submit --tag gcr.io/$PROJECT_ID/msa-extractor-api
 
@@ -48,21 +146,16 @@ gcloud run deploy msa-extractor-api \
   --timeout 3600 \
   --max-instances 10 \
   --set-env-vars GEMINI_API_KEY=your-gemini-api-key \
-  --set-env-vars API_ENABLE_AUTH=false \
-  --set-env-vars API_PORT=8080
-```
+  --set-env-vars API_ENABLE_AUTH=false
 
-**Note:** Cloud Run automatically sets `PORT=8080`. The app reads `PORT` environment variable.
-
-### 3. Get Service URL
-
-```bash
 # Get the service URL
 gcloud run services describe msa-extractor-api \
   --platform managed \
   --region us-central1 \
   --format 'value(status.url)'
 ```
+
+**Note:** Cloud Run automatically sets `PORT=8080`. The app reads `PORT` environment variable.
 
 ---
 
