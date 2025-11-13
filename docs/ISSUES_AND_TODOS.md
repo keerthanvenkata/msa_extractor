@@ -2,7 +2,7 @@
 
 This document tracks all identified issues, bugs, TODOs, and optimization opportunities in the MSA Metadata Extractor codebase.
 
-**Last Updated:** November 12, 2025  
+**Last Updated:** November 13, 2025  
 **Status:** Active tracking
 
 ---
@@ -313,7 +313,7 @@ Comment indicates logs still written to DB in legacy mode, which is inconsistent
 ---
 
 ### BUG-020: No Cleanup of Failed Job Files
-**Location:** `main.py` - error handlers
+**Location:** `main.py` - error handlers (CLI), `api/services/extraction_service.py` (API)
 
 **Problem:**
 If job fails, PDF file remains in `uploads/` directory, wasting disk space.
@@ -322,7 +322,7 @@ If job fails, PDF file remains in `uploads/` directory, wasting disk space.
 
 **Priority:** P2 - Nice to have
 
-**Status:** 🔵 Open - Deferred to next iteration (cleanup service implementation)
+**Status:** 🟢 Fixed (2025-11-13) - API cleanup implemented in `extraction_service.py`. CLI cleanup still deferred to cleanup service implementation.
 
 ---
 
@@ -780,6 +780,56 @@ Queries all monthly tables, then sorts in memory, which is inefficient for many 
 
 ---
 
+### BUG-025: Missing Parameter Validation in API Upload Endpoint
+**Location:** `api/routers/extract.py`
+
+**Problem:**
+The API upload endpoint accepts `extraction_method`, `llm_processing_mode`, and `ocr_engine` parameters but doesn't validate them against allowed values. Invalid values could cause extraction failures or unexpected behavior.
+
+**Impact:** Medium - Invalid parameters cause errors during extraction, poor user experience
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-11-13)
+- Added `validate_extraction_method()`, `validate_llm_processing_mode()`, and `validate_ocr_engine()` functions
+- Added validation calls in `upload_file()` endpoint
+- Returns clear error messages with allowed values
+
+---
+
+### BUG-026: File Cleanup Missing on Job Failure
+**Location:** `api/services/extraction_service.py`
+
+**Problem:**
+When an extraction job fails, the uploaded PDF file remains in the `uploads/` directory, wasting disk space over time.
+
+**Impact:** Medium - Disk space waste, especially with many failed jobs
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-11-13)
+- Added `_cleanup_file_on_failure()` helper function
+- Calls cleanup in both exception handlers (FileError/ExtractionError and general Exception)
+- Logs cleanup actions for debugging
+
+---
+
+### BUG-027: Redundant Database Query for created_at
+**Location:** `api/routers/extract.py` line ~190
+
+**Problem:**
+After creating a job, the code queries the database just to get the `created_at` timestamp, which is unnecessary since the job was just created.
+
+**Impact:** Low - Minor performance issue, extra database query
+
+**Priority:** P2 - Nice to have
+
+**Status:** 🟢 Fixed (2025-11-13)
+- Changed to use `datetime.now().isoformat()` directly
+- Removed unnecessary `db.get_job()` call
+
+---
+
 ## 🚀 Optimizations
 
 ### OPT-001: Cache PDF Type Detection
@@ -835,7 +885,7 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Category | Count | P0 | P1 | P2 | P3 |
 |----------|-------|----|----|----|----|
 | Critical Bugs | 6 | 2 | 3 | 0 | 0 |
-| High Priority | 2 | 0 | 2 | 0 | 0 |
+| High Priority | 5 | 0 | 3 | 2 | 0 |
 | Medium Priority | 3 | 0 | 0 | 3 | 0 |
 | Performance | 4 | 0 | 1 | 2 | 1 |
 | Data Quality | 2 | 0 | 1 | 1 | 0 |

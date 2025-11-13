@@ -131,7 +131,7 @@ Upload a PDF or DOCX file and start extraction job.
 ```
 
 **Error Responses:**
-- `400 Bad Request`: Invalid file type, file too large, missing file
+- `400 Bad Request`: Invalid file type, file too large, missing file, invalid parameter values
 - `401 Unauthorized`: Invalid or missing API key (if auth enabled)
 - `500 Internal Server Error`: Server error during upload
 
@@ -139,6 +139,9 @@ Upload a PDF or DOCX file and start extraction job.
 - File type: PDF or DOCX only
 - File size: Max `MAX_UPLOAD_SIZE_MB` (default: 25MB)
 - File must be provided
+- `extraction_method`: Must be one of: `text_direct`, `ocr_all`, `ocr_images_only`, `vision_all`, `hybrid`
+- `llm_processing_mode`: Must be one of: `text_llm`, `vision_llm`, `multimodal`, `dual_llm`
+- `ocr_engine`: Must be one of: `tesseract`, `gcv` (only used if extraction_method requires OCR)
 
 **Behavior:**
 1. Validates file type and size
