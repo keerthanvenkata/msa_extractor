@@ -4,6 +4,7 @@ Extraction service for background task processing.
 Handles the actual extraction work in background tasks.
 """
 
+import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,22 @@ from utils.exceptions import FileError, ExtractionError
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _cleanup_file_on_failure(file_path: Path, job_id: str) -> None:
+    """
+    Cleanup uploaded file when job fails.
+    
+    Args:
+        file_path: Path to file to delete
+        job_id: Job ID for logging
+    """
+    try:
+        if file_path.exists():
+            file_path.unlink()
+            logger.info(f"Cleaned up file for failed job {job_id}: {file_path}")
+    except Exception as e:
+        logger.warning(f"Failed to cleanup file for job {job_id}: {e}")
 
 
 def process_extraction(
@@ -139,6 +156,9 @@ def process_extraction(
         )
         logger.error(f"Extraction failed for job {job_id}: {e}", exc_info=True)
         
+        # Cleanup uploaded file on failure
+        _cleanup_file_on_failure(file_path, job_id)
+        
     except Exception as e:
         # Update job status to failed for unexpected errors
         error_msg = f"Unexpected error: {str(e)}"
@@ -154,6 +174,9 @@ def process_extraction(
             module=__name__
         )
         logger.error(f"Unexpected error processing job {job_id}: {e}", exc_info=True)
+        
+        # Cleanup uploaded file on failure
+        _cleanup_file_on_failure(file_path, job_id)
         
     finally:
         # Close database connection if we created it
