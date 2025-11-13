@@ -34,8 +34,8 @@ ENV API_PORT=8000
 # Expose API port
 EXPOSE 8000
 
-# Default command (can be overridden)
-# For CLI: CMD ["python", "main.py", "--help"]
-# For API: CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["python", "main.py", "--help"]
+# Default command for Cloud Run / API deployment
+# Cloud Run sets PORT environment variable automatically
+# For CLI usage, override with: docker run ... python main.py --help
+CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}
 
