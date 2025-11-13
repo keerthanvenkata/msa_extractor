@@ -27,6 +27,21 @@ There are three ways to manage environment variables in Cloud Run:
 
 ## Method 1: Google Secret Manager (Recommended for Secrets)
 
+### Step 0: Enable Secret Manager API
+
+**First, enable the Secret Manager API:**
+
+```powershell
+# Enable Secret Manager API
+gcloud services enable secretmanager.googleapis.com --project=YOUR-PROJECT-ID
+```
+
+**Or via Cloud Console:**
+- Visit: https://console.cloud.google.com/apis/api/secretmanager.googleapis.com/overview?project=YOUR-PROJECT-ID
+- Click **"Enable"**
+
+**Wait 1-2 minutes** for the API to be fully enabled before proceeding.
+
 ### Step 1: Create Secrets
 
 ```powershell
@@ -195,15 +210,20 @@ gcloud run services update msa-extractor-api `
 ### Example: Production Deployment
 
 ```powershell
+# 0. Enable Secret Manager API (one-time setup)
+$PROJECT_ID = "msa-extractor2234223"
+gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+
+# Wait 1-2 minutes for API to be fully enabled, then:
+
 # 1. Create secrets (one-time setup)
-echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic"
-echo -n "your-strong-api-key" | gcloud secrets create msa-api-key --data-file=- --replication-policy="automatic"
+echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
+echo -n "your-strong-api-key" | gcloud secrets create msa-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
 
 # 2. Grant access
-$PROJECT_ID = "msa-extractor2234223"
 $SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
-gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor"
-gcloud secrets add-iam-policy-binding msa-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor"
+gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor" --project=$PROJECT_ID
+gcloud secrets add-iam-policy-binding msa-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor" --project=$PROJECT_ID
 
 # 3. Deploy with secrets and config
 gcloud run deploy msa-extractor-api `

@@ -110,8 +110,13 @@ gcloud run deploy msa-extractor-api `
 ### Option B: Production (Using Secret Manager) ✅ Recommended
 
 ```powershell
-# 1. Create secrets (one-time setup)
+# 0. Enable Secret Manager API (one-time setup)
 $PROJECT_ID = "YOUR-PROJECT-ID"
+gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+
+# Wait 1-2 minutes for API to be fully enabled, then:
+
+# 1. Create secrets (one-time setup)
 echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
 
 # 2. Grant Cloud Run access to secrets
