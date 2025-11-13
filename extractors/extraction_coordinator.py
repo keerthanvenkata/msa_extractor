@@ -42,8 +42,14 @@ class ExtractionCoordinator:
         self.strategy_factory = StrategyFactory(gemini_client=self.gemini_client)
         self.logger = get_logger(self.__class__.__module__)
     
-    def extract_metadata(self, file_path: str, 
-                        strategy: str = None) -> Dict[str, Any]:
+    def extract_metadata(
+        self, 
+        file_path: str, 
+        strategy: str = None,
+        extraction_method: Optional[str] = None,
+        llm_processing_mode: Optional[str] = None,
+        ocr_engine: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Extract metadata from document using full pipeline.
         
@@ -55,30 +61,54 @@ class ExtractionCoordinator:
         
         Args:
             file_path: Path to document file
-            strategy: Extraction strategy (defaults to config value)
+            strategy: Extraction strategy (deprecated, use extraction_method instead)
+            extraction_method: Override extraction method (defaults to config value)
+            llm_processing_mode: Override LLM processing mode (defaults to config value)
+            ocr_engine: Override OCR engine (defaults to config value)
         
         Returns:
             Dictionary with extracted metadata matching schema
         """
         self.logger.info(f"Starting metadata extraction for: {file_path}")
         
-        # Step 1: Extract text from document
-        extraction_result = self._extract_text(file_path, strategy)
+        # Use provided overrides or fall back to config
+        extraction_method_used = extraction_method or EXTRACTION_METHOD
+        llm_mode_used = llm_processing_mode or LLM_PROCESSING_MODE
+        ocr_engine_used = ocr_engine or OCR_ENGINE
         
-        # Step 2: Process with LLM based on LLM_PROCESSING_MODE
-        llm_mode = extraction_result.metadata.get("llm_processing_mode", LLM_PROCESSING_MODE)
+        # Step 1: Extract text from document
+        extraction_result = self._extract_text(
+            file_path, 
+            strategy,
+            extraction_method=extraction_method_used,
+            ocr_engine=ocr_engine_used
+        )
+        
+        # Step 2: Process with LLM using override or result metadata or config
+        llm_mode = (
+            llm_mode_used or 
+            extraction_result.metadata.get("llm_processing_mode") or 
+            LLM_PROCESSING_MODE
+        )
         metadata = self._process_with_llm(extraction_result, llm_mode)
         
         return metadata
     
-    def _extract_text(self, file_path: str, 
-                     strategy: str = None) -> ExtractedTextResult:
+    def _extract_text(
+        self, 
+        file_path: str, 
+        strategy: str = None,
+        extraction_method: Optional[str] = None,
+        ocr_engine: Optional[str] = None
+    ) -> ExtractedTextResult:
         """
         Extract text from document.
         
         Args:
             file_path: Path to document file
-            strategy: Extraction strategy
+            strategy: Extraction strategy (deprecated)
+            extraction_method: Override extraction method
+            ocr_engine: Override OCR engine
         
         Returns:
             ExtractedTextResult with text
@@ -86,7 +116,7 @@ class ExtractionCoordinator:
         file_ext = Path(file_path).suffix.lower()
         
         if file_ext == ".pdf":
-            return self._extract_from_pdf(file_path, strategy)
+            return self._extract_from_pdf(file_path, strategy, extraction_method, ocr_engine)
         elif file_ext == ".docx":
             return self._extract_from_docx(file_path)
         else:
@@ -95,14 +125,21 @@ class ExtractionCoordinator:
                 details={"file_path": file_path, "file_extension": file_ext}
             )
     
-    def _extract_from_pdf(self, file_path: str, 
-                          strategy: str = None) -> ExtractedTextResult:
+    def _extract_from_pdf(
+        self, 
+        file_path: str, 
+        strategy: str = None,
+        extraction_method: Optional[str] = None,
+        ocr_engine: Optional[str] = None
+    ) -> ExtractedTextResult:
         """
         Extract text from PDF.
         
         Args:
             file_path: Path to PDF file
-            strategy: Extraction strategy
+            strategy: Extraction strategy (deprecated)
+            extraction_method: Override extraction method
+            ocr_engine: Override OCR engine
         
         Returns:
             ExtractedTextResult with text
@@ -110,22 +147,34 @@ class ExtractionCoordinator:
         extractor = self.strategy_factory.get_extractor(file_path, strategy)
         result = extractor.extract(file_path)
         
+        # Use provided extraction_method or get from result metadata or config
+        extraction_method_used = (
+            extraction_method or 
+            result.metadata.get("extraction_method") or 
+            EXTRACTION_METHOD
+        )
+        
+        # Update result metadata with the extraction method used
+        result.metadata["extraction_method"] = extraction_method_used
+        
         # Run OCR if extraction method requires it
-        extraction_method = result.metadata.get("extraction_method", "")
         preprocessed_images = result.metadata.get("preprocessed_images")
         
-        if preprocessed_images and extraction_method in ["ocr_all", "ocr_images_only"]:
+        if preprocessed_images and extraction_method_used in ["ocr_all", "ocr_images_only"]:
+            # Use provided OCR engine or config default
+            ocr_engine_used = ocr_engine or OCR_ENGINE
+            
             # Run OCR on preprocessed images
-            ocr_handler = OCRHandler(ocr_engine=OCR_ENGINE)
+            ocr_handler = OCRHandler(ocr_engine=ocr_engine_used)
             ocr_texts = ocr_handler.extract_text_from_images(preprocessed_images)
             
             # Combine with existing text (for ocr_images_only)
-            if extraction_method == "ocr_images_only" and result.raw_text:
+            if extraction_method_used == "ocr_images_only" and result.raw_text:
                 result.raw_text += "\n\n" + "\n\n".join(ocr_texts)
             else:
                 result.raw_text = "\n\n".join(ocr_texts)
             
-            result.metadata["ocr_engine"] = OCR_ENGINE
+            result.metadata["ocr_engine"] = ocr_engine_used
             
             # Clear preprocessed images from memory after OCR
             if "preprocessed_images" in result.metadata:
