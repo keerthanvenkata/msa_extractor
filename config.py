@@ -20,8 +20,9 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # FastAPI Server Configuration
+# Cloud Run sets PORT automatically, fallback to API_PORT or 8000
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", "8000"))
+API_PORT = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))  # PORT for Cloud Run, API_PORT for local
 API_WORKERS = int(os.getenv("API_WORKERS", "1"))
 API_RELOAD = os.getenv("API_RELOAD", "false").lower() == "true"  # For development
 
