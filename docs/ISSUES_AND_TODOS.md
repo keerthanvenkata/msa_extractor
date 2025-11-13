@@ -734,6 +734,86 @@ Migrate from SQLite to Cloud SQL PostgreSQL for production deployment with bette
 
 ---
 
+### TODO-014: Migrate to Google GenAI Library with JSON Schema Support (Next Iteration)
+**Location:** `ai/gemini_client.py`, `requirements.txt`
+
+**Problem:**
+Current implementation uses `google-generativeai==0.3.2` (older version) and manually parses JSON responses with markdown stripping. The newer Google GenAI library supports native JSON Schema via `response_schema` parameter, which guarantees structured JSON output.
+
+**Current Implementation:**
+- Manual JSON parsing with markdown code block stripping (`_parse_json_response`)
+- Post-processing validation and normalization
+- Potential for JSON parsing errors and validation failures
+
+**Benefits of Migration:**
+- **Native JSON Schema Support:** Use `response_schema` parameter to enforce schema at API level
+- **Guaranteed Structured Output:** API returns valid JSON matching schema (no parsing errors)
+- **Reduced Code Complexity:** Eliminate manual JSON parsing and markdown stripping
+- **Better Reliability:** Fewer validation failures, more consistent responses
+- **Pydantic Integration:** New library integrates with Pydantic for schema validation
+
+**Migration Steps:**
+1. Upgrade `google-generativeai` to latest version (check compatibility)
+2. Update `GeminiClient` to use `response_schema` parameter in `generate_content()` calls
+3. Remove or simplify `_parse_json_response()` method (may only need basic error handling)
+4. Update schema validation to work with guaranteed JSON responses
+5. Test all extraction methods (text, image, multimodal)
+6. Update documentation
+
+**Research Notes:**
+- Google announced JSON Schema support in 2024
+- Library supports Pydantic models for schema definition
+- May require updating prompt templates (less emphasis on JSON format instructions)
+- Check version compatibility with current Gemini models
+
+**Priority:** P1 - High value improvement for reliability
+
+**Status:** 📋 TODO (Next Iteration)
+
+**References:**
+- Google Blog: https://blog.google/technology/developers/gemini-api-structured-outputs/
+- Current library: `google-generativeai==0.3.2`
+- Current JSON parsing: `ai/gemini_client.py:_parse_json_response()`
+
+---
+
+### TODO-015: Docker Container Best Practices - Virtual Environment (Documentation)
+**Location:** `Dockerfile`, `docs/setup/LINUX_AND_DOCKER_SETUP.md`
+
+**Context:**
+During Docker builds, pip shows warning: "Running pip as the 'root' user can result in broken permissions". This is normal and expected in Docker containers.
+
+**Decision:**
+**Do NOT use virtual environments (`venv`) in Docker containers.**
+
+**Rationale:**
+1. **Docker Already Provides Isolation:** Containers are isolated environments - no need for additional venv layer
+2. **Increased Complexity:** Adding venv adds unnecessary complexity and larger image sizes
+3. **Root User is Fine:** Running as root in containers is acceptable (unlike local development)
+4. **Best Practice:** Industry standard is to install packages directly in container, not in venv
+5. **The Warning is for Local Dev:** The pip warning is relevant for local development, not containers
+
+**Documentation Needed:**
+- Update `Dockerfile` comments to explain why we don't use venv
+- Add section to Docker setup documentation explaining this decision
+- Note that venv should still be used for local development (outside Docker)
+
+**Alternative (If Security is Concern):**
+- Use non-root user in Docker (create user, switch with `USER` directive)
+- Still don't use venv - install packages system-wide for that user
+- This is more complex but provides better security isolation
+
+**Priority:** P3 - Documentation improvement
+
+**Status:** 📋 TODO (Next Iteration)
+
+**References:**
+- MLOps.ninja: https://mlops.ninja/blog/deploy/delivery-units/no-venv-in-docker
+- Current Dockerfile: Uses root user, installs packages directly
+- Local development: Should still use venv (not in Docker)
+
+---
+
 ## 🔵 Low Priority / Optimizations
 
 ### BUG-022: Index Creation Error Handling
@@ -891,9 +971,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
 | Low Priority | 3 | 0 | 0 | 0 | 3 |
-| TODOs | 13 | 1 | 5 | 6 | 1 |
+| TODOs | 15 | 1 | 6 | 7 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **39** | **3** | **13** | **15** | **6** |
+| **Total** | **41** | **3** | **14** | **16** | **7** |
 
 ---
 

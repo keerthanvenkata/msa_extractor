@@ -126,6 +126,9 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
+# Note: We install packages directly (not in venv) because Docker containers
+# already provide isolation. The pip warning about root user is expected and
+# acceptable in containers. For local development, use venv outside Docker.
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
