@@ -119,8 +119,9 @@ gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
 # 1. Create secrets (one-time setup)
 echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
 
-# 2. Grant Cloud Run access to secrets
-$SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
+# 2. Grant Cloud Run access to secrets (service account uses project NUMBER, not project ID)
+$PROJECT_NUMBER = gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
+$SERVICE_ACCOUNT = "$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 gcloud secrets add-iam-policy-binding gemini-api-key `
   --member="serviceAccount:$SERVICE_ACCOUNT" `
   --role="roles/secretmanager.secretAccessor" `

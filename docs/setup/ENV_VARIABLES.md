@@ -75,8 +75,10 @@ Remove-Item gemini-key.txt
 ### Step 2: Grant Cloud Run Access to Secrets
 
 ```powershell
-# Get your Cloud Run service account email
-$SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
+# Get your Cloud Run service account email (uses project NUMBER, not project ID)
+$PROJECT_NUMBER = gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
+$SERVICE_ACCOUNT = "$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+echo "Service Account: $SERVICE_ACCOUNT"
 
 # Grant access to secrets
 gcloud secrets add-iam-policy-binding gemini-api-key `
@@ -88,6 +90,11 @@ gcloud secrets add-iam-policy-binding msa-api-key `
   --member="serviceAccount:$SERVICE_ACCOUNT" `
   --role="roles/secretmanager.secretAccessor" `
   --project=$PROJECT_ID
+```
+
+**Important:** The service account uses the **project number** (e.g., `592845797104`), not the project ID. Get it with:
+```powershell
+gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
 ```
 
 ### Step 3: Deploy with Secret References
@@ -220,8 +227,9 @@ gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
 echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
 echo -n "your-strong-api-key" | gcloud secrets create msa-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
 
-# 2. Grant access
-$SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
+# 2. Grant access (service account uses project NUMBER, not project ID)
+$PROJECT_NUMBER = gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
+$SERVICE_ACCOUNT = "$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor" --project=$PROJECT_ID
 gcloud secrets add-iam-policy-binding msa-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor" --project=$PROJECT_ID
 
@@ -313,12 +321,14 @@ gcloud run services describe msa-extractor-api `
 ### "Permission denied" when accessing secrets
 
 ```powershell
-# Grant access to Cloud Run service account
+# Grant access to Cloud Run service account (uses project NUMBER, not project ID)
 $PROJECT_ID = "YOUR-PROJECT-ID"
-$SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
+$PROJECT_NUMBER = gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
+$SERVICE_ACCOUNT = "$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 gcloud secrets add-iam-policy-binding SECRET_NAME `
   --member="serviceAccount:$SERVICE_ACCOUNT" `
-  --role="roles/secretmanager.secretAccessor"
+  --role="roles/secretmanager.secretAccessor" `
+  --project=$PROJECT_ID
 ```
 
 ### Secret not found
