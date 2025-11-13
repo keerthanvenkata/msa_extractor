@@ -1,4 +1,12 @@
-# Quick Deployment Guide - Cloud Console Method
+# Quick Deployment Guide
+
+**Choose your method:**
+- **Cloud Console (Web UI):** See this file - no CLI needed
+- **gcloud CLI:** See [DEPLOY_CLI.md](DEPLOY_CLI.md) for command-line deployment
+
+---
+
+## Cloud Console Method
 
 **For users without gcloud CLI access**
 
