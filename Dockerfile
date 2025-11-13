@@ -40,6 +40,8 @@ EXPOSE 8000
 
 # Default command for Cloud Run / API deployment
 # Cloud Run sets PORT environment variable automatically (usually 8080)
+# PYTHONPATH is set to /app so Python can find root-level modules (storage, config, utils, etc.)
+# Using 'python -m uvicorn' ensures PYTHONPATH is respected
 # For CLI usage, override with: docker run ... python main.py --help
-CMD ["/bin/sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["/bin/sh", "-c", "python -m uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 
