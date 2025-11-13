@@ -136,6 +136,7 @@ gcloud services enable artifactregistry.googleapis.com
 gcloud builds submit --tag gcr.io/$PROJECT_ID/msa-extractor-api
 
 # Deploy to Cloud Run
+# ⚠️ For production, use Secret Manager instead (see ENV_VARIABLES.md)
 gcloud run deploy msa-extractor-api \
   --image gcr.io/$PROJECT_ID/msa-extractor-api \
   --platform managed \
@@ -161,41 +162,52 @@ gcloud run services describe msa-extractor-api \
 
 ## Configuration
 
-### Required Environment Variables
+### Environment Variables Management
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `GEMINI_API_KEY` | Gemini API key (required) | `AIza...` |
-| `PORT` | Server port (Cloud Run sets automatically) | `8080` |
+⚠️ **Important:** For production, use **Google Secret Manager** for sensitive values (API keys). See [Environment Variables Guide](ENV_VARIABLES.md) for best practices.
 
-### Optional Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `API_ENABLE_AUTH` | Enable API key authentication | `false` |
-| `API_KEY` | API key(s) for authentication | `` |
-| `MAX_UPLOAD_SIZE_MB` | Maximum file upload size | `25` |
-| `EXTRACTION_METHOD` | Default extraction method | `hybrid` |
-| `LLM_PROCESSING_MODE` | Default LLM processing mode | `text_llm` |
-| `OCR_ENGINE` | Default OCR engine | `tesseract` |
-
-### Setting Environment Variables
-
-**During Deployment:**
+**Quick Start (Development):**
 ```bash
+# ⚠️ For development only - use Secret Manager for production
 gcloud run deploy msa-extractor-api \
   --image gcr.io/$PROJECT_ID/msa-extractor-api \
   --set-env-vars GEMINI_API_KEY=your-key \
-  --set-env-vars API_ENABLE_AUTH=true \
-  --set-env-vars API_KEY=your-api-key
+  --set-env-vars API_ENABLE_AUTH=false
 ```
 
-**After Deployment:**
+**Production (Recommended):**
 ```bash
-gcloud run services update msa-extractor-api \
-  --update-env-vars API_ENABLE_AUTH=true \
-  --update-env-vars API_KEY=your-api-key
+# 1. Create secrets first (see ENV_VARIABLES.md)
+# 2. Deploy with secret references
+gcloud run deploy msa-extractor-api \
+  --image gcr.io/$PROJECT_ID/msa-extractor-api \
+  --set-secrets GEMINI_API_KEY=gemini-api-key:latest \
+  --set-env-vars API_ENABLE_AUTH=false
 ```
+
+### Required Configuration
+
+| Variable | Description | Method | Example |
+|----------|-------------|--------|---------|
+| `GEMINI_API_KEY` | Gemini API key (required) | **Secret Manager** ✅ | `AIza...` |
+| `PORT` | Server port | Auto-set by Cloud Run | `8080` |
+
+### Optional Configuration
+
+| Variable | Description | Default | Method |
+|----------|-------------|---------|--------|
+| `API_ENABLE_AUTH` | Enable API key authentication | `false` | Env Var |
+| `API_KEY` | API key(s) for authentication | `` | **Secret Manager** ✅ |
+| `MAX_UPLOAD_SIZE_MB` | Maximum file upload size | `25` | Env Var |
+| `EXTRACTION_METHOD` | Default extraction method | `hybrid` | Env Var |
+| `LLM_PROCESSING_MODE` | Default LLM processing mode | `text_llm` | Env Var |
+| `OCR_ENGINE` | Default OCR engine | `tesseract` | Env Var |
+
+**📖 See [Environment Variables Guide](ENV_VARIABLES.md) for:**
+- Setting up Secret Manager
+- Managing secrets securely
+- Updating configuration
+- Best practices
 
 ---
 

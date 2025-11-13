@@ -88,6 +88,10 @@ gcloud builds submit --tag gcr.io/$PROJECT_ID/msa-extractor-api
 
 ## Step 5: Deploy to Cloud Run
 
+### Option A: Quick Start (Development Only)
+
+⚠️ **For production, use Secret Manager instead (see Option B or [ENV_VARIABLES.md](docs/setup/ENV_VARIABLES.md))**
+
 ```powershell
 # Deploy to Cloud Run (replace YOUR-PROJECT-ID and your-gemini-api-key)
 gcloud run deploy msa-extractor-api `
@@ -103,16 +107,40 @@ gcloud run deploy msa-extractor-api `
   --set-env-vars API_ENABLE_AUTH=false
 ```
 
+### Option B: Production (Using Secret Manager) ✅ Recommended
+
+```powershell
+# 1. Create secrets (one-time setup)
+$PROJECT_ID = "YOUR-PROJECT-ID"
+echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
+
+# 2. Grant Cloud Run access to secrets
+$SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
+gcloud secrets add-iam-policy-binding gemini-api-key `
+  --member="serviceAccount:$SERVICE_ACCOUNT" `
+  --role="roles/secretmanager.secretAccessor" `
+  --project=$PROJECT_ID
+
+# 3. Deploy with secret references
+gcloud run deploy msa-extractor-api `
+  --image gcr.io/$PROJECT_ID/msa-extractor-api `
+  --platform managed `
+  --region us-central1 `
+  --allow-unauthenticated `
+  --memory 2Gi `
+  --cpu 2 `
+  --timeout 3600 `
+  --max-instances 10 `
+  --set-secrets GEMINI_API_KEY=gemini-api-key:latest `
+  --set-env-vars API_ENABLE_AUTH=false
+```
+
 **Important Notes:**
 - Replace `YOUR-PROJECT-ID` with your actual project ID
-- Replace `your-actual-gemini-api-key` with your real Gemini API key
+- Replace `YOUR-GEMINI-API-KEY` with your real Gemini API key
 - The backticks (`) in PowerShell allow line continuation
 - Cloud Run automatically sets `PORT=8080` - the app reads this automatically
-
-**Alternative (single line):**
-```powershell
-gcloud run deploy msa-extractor-api --image gcr.io/YOUR-PROJECT-ID/msa-extractor-api --platform managed --region us-central1 --allow-unauthenticated --memory 2Gi --cpu 2 --timeout 3600 --max-instances 10 --set-env-vars GEMINI_API_KEY=your-actual-gemini-api-key,API_ENABLE_AUTH=false
-```
+- **📖 See [Environment Variables Guide](docs/setup/ENV_VARIABLES.md) for detailed instructions**
 
 ---
 
