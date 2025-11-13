@@ -46,7 +46,7 @@ gcloud services enable secretmanager.googleapis.com --project=YOUR-PROJECT-ID
 
 ```powershell
 # Set your project ID
-$PROJECT_ID = "msa-extractor2234223"
+$PROJECT_ID = "YOUR-PROJECT-ID"
 
 # Create Gemini API key secret
 echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key `
@@ -211,7 +211,7 @@ gcloud run services update msa-extractor-api `
 
 ```powershell
 # 0. Enable Secret Manager API (one-time setup)
-$PROJECT_ID = "msa-extractor2234223"
+$PROJECT_ID = "YOUR-PROJECT-ID"
 gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
 
 # Wait 1-2 minutes for API to be fully enabled, then:
@@ -314,7 +314,7 @@ gcloud run services describe msa-extractor-api `
 
 ```powershell
 # Grant access to Cloud Run service account
-$PROJECT_ID = "msa-extractor2234223"
+$PROJECT_ID = "YOUR-PROJECT-ID"
 $SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
 gcloud secrets add-iam-policy-binding SECRET_NAME `
   --member="serviceAccount:$SERVICE_ACCOUNT" `
@@ -352,7 +352,7 @@ If you've already deployed with `--set-env-vars GEMINI_API_KEY=...`, migrate to 
 echo -n "YOUR-EXISTING-KEY" | gcloud secrets create gemini-api-key --data-file=- --replication-policy="automatic"
 
 # 2. Grant access
-$PROJECT_ID = "msa-extractor2234223"
+$PROJECT_ID = "YOUR-PROJECT-ID"
 $SERVICE_ACCOUNT = "$PROJECT_ID-compute@developer.gserviceaccount.com"
 gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor"
 
