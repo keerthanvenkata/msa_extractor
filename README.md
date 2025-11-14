@@ -147,10 +147,13 @@ All outputs follow this JSON structure. See [`docs/REQUIREMENTS.md`](docs/REQUIR
 ```json
 {
   "Contract Lifecycle": {
+    "Party A": "",
+    "Party B": "",
     "Execution Date": "",
     "Effective Date": "",
     "Expiration / Termination Date": "",
-    "Authorized Signatory": ""
+    "Authorized Signatory - Party A": "",
+    "Authorized Signatory - Party B": ""
   },
   "Commercial Operations": {
     "Billing Frequency": "",
