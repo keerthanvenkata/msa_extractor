@@ -29,9 +29,9 @@ See [Extraction Architecture](../../architecture/EXTRACTION_ARCHITECTURE.md) for
    │   └─> extractor.extract()
    │
    └─> _process_with_llm(extraction_result, llm_mode)
+       ├─> multimodal (default) → gemini_client.extract_metadata_multimodal()
        ├─> text_llm → gemini_client.extract_metadata_from_text()
        ├─> vision_llm → gemini_client.extract_metadata_from_image()
-       ├─> multimodal → gemini_client.extract_metadata_multimodal()
        └─> dual_llm → Both text + vision, then merge
 ```
 
@@ -39,23 +39,23 @@ See [Extraction Architecture](../../architecture/EXTRACTION_ARCHITECTURE.md) for
 
 The coordinator handles four LLM processing modes:
 
-### 1. `text_llm` (Default)
+### 1. `multimodal` (Default)
+- Sends text + images together to vision LLM in single call
+- Uses `gemini_client.extract_metadata_multimodal()`
+- **Input**: `raw_text` + `image_pages_bytes` from extraction result
+- **Use Case**: Best for signatures, context preservation, mixed PDFs
+
+### 2. `text_llm`
 - Sends all text (direct + OCR) to text LLM
 - Uses `gemini_client.extract_metadata_from_text()`
 - **Input**: `raw_text` from extraction result
 - **Use Case**: Cost-effective, text-based extraction
 
-### 2. `vision_llm`
+### 3. `vision_llm`
 - Sends all images to vision LLM
 - Uses `gemini_client.extract_metadata_from_image()`
 - **Input**: First image from `image_pages_bytes`
 - **Use Case**: Vision-only extraction, complex layouts
-
-### 3. `multimodal`
-- Sends text + images together to vision LLM in single call
-- Uses `gemini_client.extract_metadata_multimodal()`
-- **Input**: `raw_text` + `image_pages_bytes`
-- **Use Case**: Best for signatures, context preservation
 
 ### 4. `dual_llm`
 - Sends text to text LLM and images to vision LLM separately

@@ -75,9 +75,9 @@ Controls how content is extracted from PDF:
 
 ### `LLM_PROCESSING_MODE`
 Controls how extracted content is processed:
-- `text_llm` - Send text to text LLM (default)
+- `multimodal` - Send text + images together to vision LLM (default)
+- `text_llm` - Send text to text LLM
 - `vision_llm` - Send images to vision LLM
-- `multimodal` - Send text + images together to vision LLM
 - `dual_llm` - Send text to text LLM + images to vision LLM separately
 
 ### `OCR_ENGINE`
@@ -100,6 +100,8 @@ OCR engine to use when OCR is needed:
 | `hybrid` | `dual_llm` | ✅ Extract | ✅ Convert | ❌ | Text LLM + Vision LLM |
 
 ## Common Use Cases
+
+**Note:** Default configuration is `EXTRACTION_METHOD=hybrid` + `LLM_PROCESSING_MODE=multimodal` (best for mixed PDFs with signature pages).
 
 ### 1. Text-Only PDF → Vision LLM
 ```env

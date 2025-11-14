@@ -202,7 +202,7 @@ gcloud run deploy msa-extractor-api \
 | `API_KEY` | API key(s) for authentication | `` | **Secret Manager** ✅ |
 | `MAX_UPLOAD_SIZE_MB` | Maximum file upload size | `25` | Env Var |
 | `EXTRACTION_METHOD` | Default extraction method | `hybrid` | Env Var |
-| `LLM_PROCESSING_MODE` | Default LLM processing mode | `text_llm` | Env Var |
+| `LLM_PROCESSING_MODE` | Default LLM processing mode | `multimodal` | Env Var |
 | `OCR_ENGINE` | Default OCR engine | `tesseract` | Env Var |
 
 **📖 See [Environment Variables Guide](ENV_VARIABLES.md) for:**
@@ -342,7 +342,7 @@ Expected response:
 curl -X POST https://your-service-url/api/v1/extract/upload \
   -F "file=@contract.pdf" \
   -F "extraction_method=hybrid" \
-  -F "llm_processing_mode=text_llm"
+  -F "llm_processing_mode=multimodal"
 ```
 
 ### 3. Check Job Status

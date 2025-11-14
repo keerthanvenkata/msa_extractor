@@ -115,7 +115,7 @@ Upload a PDF or DOCX file and start extraction job.
 - Body:
   - `file` (required): PDF or DOCX file
   - `extraction_method` (optional): Override default (`text_direct`, `ocr_all`, `ocr_images_only`, `vision_all`, `hybrid`)
-  - `llm_processing_mode` (optional): Override default (`text_llm`, `vision_llm`, `multimodal`, `dual_llm`)
+  - `llm_processing_mode` (optional): Override default (`multimodal`, `text_llm`, `vision_llm`, `dual_llm`) - Default: `multimodal`
 
 **Response (201 Created):**
 ```json

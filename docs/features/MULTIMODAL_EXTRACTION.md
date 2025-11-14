@@ -14,9 +14,9 @@ For a complete guide to the extraction architecture, see [EXTRACTION_ARCHITECTUR
 
 ## Multimodal Processing Mode
 
-The `multimodal` LLM processing mode is configured via `LLM_PROCESSING_MODE=multimodal` environment variable.
+The `multimodal` LLM processing mode is the **default** configuration (`LLM_PROCESSING_MODE=multimodal`). It can be overridden via environment variable if needed.
 
-**Recommended Configuration:**
+**Default Configuration (Recommended):**
 ```env
 EXTRACTION_METHOD=hybrid
 LLM_PROCESSING_MODE=multimodal

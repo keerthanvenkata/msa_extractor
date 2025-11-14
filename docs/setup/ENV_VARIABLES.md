@@ -160,7 +160,7 @@ gcloud run deploy msa-extractor-api `
   --cpu 2 `
   --timeout 3600 `
   --max-instances 10 `
-  --set-env-vars API_ENABLE_AUTH=false,MAX_UPLOAD_SIZE_MB=50,EXTRACTION_METHOD=hybrid,LLM_PROCESSING_MODE=text_llm
+  --set-env-vars API_ENABLE_AUTH=false,MAX_UPLOAD_SIZE_MB=50,EXTRACTION_METHOD=hybrid,LLM_PROCESSING_MODE=multimodal
 ```
 
 ### After Deployment (Update)
@@ -250,7 +250,7 @@ gcloud run deploy msa-extractor-api `
   --timeout 3600 `
   --max-instances 10 `
   --set-secrets GEMINI_API_KEY=gemini-api-key:latest,API_KEY=msa-api-key:latest `
-  --set-env-vars API_ENABLE_AUTH=true,MAX_UPLOAD_SIZE_MB=50,EXTRACTION_METHOD=hybrid,LLM_PROCESSING_MODE=text_llm
+  --set-env-vars API_ENABLE_AUTH=true,MAX_UPLOAD_SIZE_MB=50,EXTRACTION_METHOD=hybrid,LLM_PROCESSING_MODE=multimodal
 ```
 
 ---

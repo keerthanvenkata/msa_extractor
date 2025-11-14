@@ -41,7 +41,7 @@
 | Variable | Description | Options | Default |
 |----------|-------------|---------|---------|
 | `EXTRACTION_METHOD` | How to extract content from PDF pages | `text_direct`, `ocr_all`, `ocr_images_only`, `vision_all`, `hybrid` | `hybrid` |
-| `LLM_PROCESSING_MODE` | How to process extracted content with LLMs | `text_llm`, `vision_llm`, `multimodal`, `dual_llm` | `text_llm` |
+| `LLM_PROCESSING_MODE` | How to process extracted content with LLMs | `text_llm`, `vision_llm`, `multimodal`, `dual_llm` | `multimodal` |
 | `OCR_ENGINE` | OCR backend when OCR is needed | `tesseract`, `gcv` | `tesseract` |
 
 ### Extraction Methods
@@ -54,9 +54,9 @@
 
 ### LLM Processing Modes
 
-- **`text_llm`**: Send all text (direct + OCR) to text LLM (default)
+- **`multimodal`**: Send text + images together to vision LLM in single call (default)
+- **`text_llm`**: Send all text (direct + OCR) to text LLM
 - **`vision_llm`**: Send all images to vision LLM
-- **`multimodal`**: Send text + images together to vision LLM in single call
 - **`dual_llm`**: Send text to text LLM + images to vision LLM separately, then merge
 
 See [EXTRACTION_ARCHITECTURE.md](../architecture/EXTRACTION_ARCHITECTURE.md) for detailed information.

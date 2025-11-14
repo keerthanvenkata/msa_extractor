@@ -203,9 +203,9 @@ class ExtractionCoordinator:
         Process extracted content with LLM based on LLM_PROCESSING_MODE.
         
         Supports:
+        - multimodal: Send text + images together to vision LLM (default)
         - text_llm: Send text to text LLM
         - vision_llm: Send images to vision LLM
-        - multimodal: Send text + images together to vision LLM
         - dual_llm: Send text to text LLM + images to vision LLM separately, then merge
         
         Args:

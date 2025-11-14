@@ -139,7 +139,7 @@ job_id = db.create_job(
     pdf_storage_path="uploads/abc-123.pdf",
     file_size=1024000,
     extraction_method="hybrid",
-    llm_processing_mode="text_llm"
+    llm_processing_mode="multimodal"
 )
 ```
 

@@ -316,7 +316,7 @@ Comment indicates logs still written to DB in legacy mode, which is inconsistent
 **Location:** `extractors/extraction_coordinator.py:_process_with_llm()`
 
 **Problem:**
-When using `hybrid` extraction method with `text_llm` processing mode:
+When using `hybrid` extraction method with `text_llm` processing mode (note: `multimodal` is now the default):
 - Image pages are extracted and stored in `image_pages_bytes` but are NOT processed
 - Only text from text-based pages is sent to the text LLM
 - Important information on image pages (e.g., signatures, dates) may be missed
