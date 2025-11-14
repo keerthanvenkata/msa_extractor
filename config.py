@@ -17,7 +17,8 @@ load_dotenv()
 # ============================================================================
 
 # Gemini API Key (required)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# Strip whitespace/newlines from API key (Secret Manager may include trailing newlines)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
 # FastAPI Server Configuration
 # Cloud Run sets PORT automatically, fallback to API_PORT or 8000
