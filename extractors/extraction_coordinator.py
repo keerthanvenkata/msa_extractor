@@ -218,12 +218,32 @@ class ExtractionCoordinator:
         llm_mode = llm_mode or LLM_PROCESSING_MODE
         
         if llm_mode == "text_llm":
-            # Send text to text LLM
+            # Send text to text LLM (images are ignored in this mode)
+            image_pages_bytes = extraction_result.metadata.get("image_pages_bytes", [])
+            if image_pages_bytes:
+                self.logger.warning(
+                    f"text_llm mode: {len(image_pages_bytes)} image page(s) detected but will be ignored. "
+                    f"Only text will be sent to text LLM. Consider using 'multimodal' or 'dual_llm' mode "
+                    f"if image pages contain important information (e.g., signatures)."
+                )
+            
             if not extraction_result.raw_text:
-                self.logger.warning("No text extracted, returning empty schema")
+                self.logger.warning(
+                    "No text extracted for text_llm mode. If document has image pages, "
+                    "consider using 'multimodal' or 'vision_llm' mode instead."
+                )
                 from ai.schema import SchemaValidator
                 validator = SchemaValidator()
                 return validator.get_empty_schema()
+            
+            # Validate text length (text LLM has limits)
+            text_length = len(extraction_result.raw_text)
+            max_text_length = 50000  # Approximate limit for text LLM
+            if text_length > max_text_length:
+                self.logger.warning(
+                    f"Text length ({text_length} chars) exceeds recommended limit ({max_text_length} chars). "
+                    f"Text will be truncated or may cause API errors. Consider using 'multimodal' mode instead."
+                )
             
             try:
                 metadata = self.gemini_client.extract_metadata_from_text(
@@ -231,10 +251,25 @@ class ExtractionCoordinator:
                 )
                 return metadata
             except LLMError as e:
-                self.logger.error("Text LLM extraction failed", exc_info=True)
+                error_msg = str(e)
+                # Provide helpful error message if images are available
+                if image_pages_bytes:
+                    self.logger.error(
+                        f"Text LLM extraction failed. Document has {len(image_pages_bytes)} image page(s) "
+                        f"that were not processed. Consider using 'multimodal' or 'dual_llm' mode instead.",
+                        exc_info=True
+                    )
+                else:
+                    self.logger.error("Text LLM extraction failed", exc_info=True)
+                
                 raise ExtractionError(
                     f"Failed to extract metadata using text LLM: {e}",
-                    details={"file_path": extraction_result.metadata.get("file_path", "unknown")}
+                    details={
+                        "file_path": extraction_result.metadata.get("file_path", "unknown"),
+                        "text_length": text_length,
+                        "has_image_pages": len(image_pages_bytes) > 0,
+                        "suggestion": "Try 'multimodal' or 'dual_llm' mode if document has image pages"
+                    }
                 ) from e
         
         elif llm_mode == "vision_llm":
