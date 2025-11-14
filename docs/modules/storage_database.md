@@ -1,8 +1,10 @@
 # Storage Database Module
 
-**Last Updated:** November 12, 2025  
+**Last Updated:** November 14, 2025  
 **Module:** `storage.database`  
 **Class:** `ExtractionDB`
+
+**⚠️ Cloud Run Limitation:** SQLite database is stored in ephemeral container filesystem. Jobs and data are lost when containers restart. For production, migrate to Cloud SQL (see [BUG-029](../../ISSUES_AND_TODOS.md#bug-029-ephemeral-database-storage-in-cloud-run)).
 
 ---
 
@@ -401,6 +403,9 @@ All errors are logged using the centralized logging system.
 ## Future Enhancements
 
 - **Cloud SQL Support:** Migration to PostgreSQL for production
+  - **Critical:** Current SQLite implementation is ephemeral in Cloud Run
+  - Jobs and data are lost when containers restart
+  - See [BUG-029](../../ISSUES_AND_TODOS.md#bug-029-ephemeral-database-storage-in-cloud-run) for details
 - **Connection Pooling:** For multi-threaded FastAPI backend
 - **Soft Delete:** Mark jobs as deleted instead of hard delete
 - **Archive Old Logs:** Move old monthly log tables to archive
