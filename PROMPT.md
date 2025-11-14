@@ -27,10 +27,13 @@ All outputs MUST follow this exact JSON structure. If a value cannot be found, r
 
 {
   "Contract Lifecycle": {
+    "Party A": "",
+    "Party B": "",
     "Execution Date": "",
     "Effective Date": "",
     "Expiration / Termination Date": "",
-    "Authorized Signatory": ""
+    "Authorized Signatory - Party A": "",
+    "Authorized Signatory - Party B": ""
   },
   "Commercial Operations": {
     "Billing Frequency": "",
@@ -48,10 +51,13 @@ All outputs MUST follow this exact JSON structure. If a value cannot be found, r
 **Field Definitions** (see `docs/REQUIREMENTS.md` for complete definitions):
 
 **Contract Lifecycle:**
+- Party A: Name of the first party to the agreement (typically the client or service recipient). Format: Full legal entity name as stated in the contract (e.g., Adaequare Inc.)
+- Party B: Name of the second party to the agreement (typically the vendor or service provider). Format: Full legal entity name as stated in the contract (e.g., Orbit Inc.)
 - Execution Date: Date when both parties have signed the agreement. Format: ISO yyyy-mm-dd (e.g., 2025-03-14)
 - Effective Date: Date the MSA becomes legally effective (may differ from execution). Format: ISO yyyy-mm-dd (e.g., 2025-04-01)
 - Expiration / Termination Date: Date on which the agreement expires or terminates unless renewed. Format: ISO yyyy-mm-dd or "Evergreen" if auto-renews (e.g., 2028-03-31 or Evergreen)
-- Authorized Signatory: Name and designation of the individual authorized to sign on behalf of each party. Format: Full name and title (e.g., John Doe, VP of Operations). If multiple, separate with semicolons.
+- Authorized Signatory - Party A: Name and designation of the individual authorized to sign on behalf of Party A. Format: Full name and title (e.g., John Doe, VP of Operations). Extract from signature page or execution section.
+- Authorized Signatory - Party B: Name and designation of the individual authorized to sign on behalf of Party B. Format: Full name and title (e.g., Jane Smith, CEO). Extract from signature page or execution section.
 
 **Commercial Operations:**
 - Billing Frequency: How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced
@@ -94,10 +100,17 @@ Rules:
 4. For "Indemnification Clause Reference":
    - Return the section heading/number and a 1–2 sentence excerpt
    - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-5. For fields with multiple values (e.g., multiple signatories):
-   - Combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO"
-6. Return no commentary, no extra keys, and no markdown — JSON only.
+5. For Party A and Party B:
+   - Extract full legal entity names as stated in the contract
+   - Party A is typically the client/service recipient (first party mentioned)
+   - Party B is typically the vendor/service provider (second party mentioned)
+   - Look in the contract header, "Parties" section, or first paragraph
+6. For Authorized Signatories:
+   - Extract separately for each party from signature pages or execution sections
+   - Include full name and title/designation
+   - If multiple signatories for one party, combine with semicolons
+   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
+7. Return no commentary, no extra keys, and no markdown — JSON only.
 
 MSA TEXT:
 \"\"\"<contract text here>\"\"\"
