@@ -62,7 +62,7 @@ contracts/
 results/
 logs/
 uploads/
-storage/
+# Note: storage/ Python module is needed, only database files are excluded via *.db patterns above
 *.json
 !package.json
 !package-lock.json
