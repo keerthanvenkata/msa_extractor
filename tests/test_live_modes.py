@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Service URL
 SERVICE_URL = "https://msa-extractor-api-592845797104.us-central1.run.app"
+# SERVICE_URL = "http://localhost:8000"
 
 # PDF files to test (relative to project root)
 PDF_FILES = [
