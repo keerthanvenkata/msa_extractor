@@ -51,6 +51,7 @@ htmlcov/
 # User Data Directories
 contracts/
 results/
+uploads/
 *.db
 *.sqlite
 *.sqlite3
