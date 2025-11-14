@@ -39,10 +39,13 @@ def mock_gemini_client():
     mock_client = Mock()
     mock_client.extract_metadata_from_text = Mock(return_value={
         "Contract Lifecycle": {
+            "Party A": "Adaequare Inc.",
+            "Party B": "Orbit Inc.",
             "Execution Date": "2025-03-14",
             "Effective Date": "2025-04-01",
             "Expiration / Termination Date": "2028-03-31",
-            "Authorized Signatory": "John Doe, VP of Operations"
+            "Authorized Signatory - Party A": "John Doe, VP of Operations",
+            "Authorized Signatory - Party B": "Jane Smith, CEO"
         },
         "Commercial Operations": {
             "Billing Frequency": "Monthly",

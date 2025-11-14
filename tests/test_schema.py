@@ -15,10 +15,13 @@ class TestSchemaValidator:
         validator = SchemaValidator()
         metadata = {
             "Contract Lifecycle": {
+                "Party A": "Adaequare Inc.",
+                "Party B": "Orbit Inc.",
                 "Execution Date": "2025-03-14",
                 "Effective Date": "2025-04-01",
                 "Expiration / Termination Date": "2028-03-31",
-                "Authorized Signatory": "John Doe"
+                "Authorized Signatory - Party A": "John Doe, VP of Operations",
+                "Authorized Signatory - Party B": "Jane Smith, CEO"
             },
             "Commercial Operations": {
                 "Billing Frequency": "Monthly",
@@ -107,10 +110,13 @@ class TestConvenienceFunctions:
         """Test validate_metadata convenience function."""
         metadata = {
             "Contract Lifecycle": {
+                "Party A": "Adaequare Inc.",
+                "Party B": "Orbit Inc.",
                 "Execution Date": "2025-03-14",
                 "Effective Date": "2025-04-01",
                 "Expiration / Termination Date": "2028-03-31",
-                "Authorized Signatory": "John Doe"
+                "Authorized Signatory - Party A": "John Doe, VP of Operations",
+                "Authorized Signatory - Party B": "Jane Smith, CEO"
             },
             "Commercial Operations": {
                 "Billing Frequency": "Monthly",

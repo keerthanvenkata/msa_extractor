@@ -62,10 +62,13 @@ class TestRepresentativePDFs:
             # Log extracted values for manual review
             lifecycle = metadata.get("Contract Lifecycle", {})
             print(f"\n[Orbit PDF] Extracted:")
+            print(f"  Party A: {lifecycle.get('Party A', 'Not Found')}")
+            print(f"  Party B: {lifecycle.get('Party B', 'Not Found')}")
             print(f"  Execution Date: {lifecycle.get('Execution Date', 'Not Found')}")
             print(f"  Effective Date: {lifecycle.get('Effective Date', 'Not Found')}")
             print(f"  Expiration Date: {lifecycle.get('Expiration / Termination Date', 'Not Found')}")
-            print(f"  Signatory: {lifecycle.get('Authorized Signatory', 'Not Found')}")
+            print(f"  Signatory - Party A: {lifecycle.get('Authorized Signatory - Party A', 'Not Found')}")
+            print(f"  Signatory - Party B: {lifecycle.get('Authorized Signatory - Party B', 'Not Found')}")
             
         except ExtractionError as e:
             pytest.skip(f"Extraction failed (may need API key or file issue): {e}")

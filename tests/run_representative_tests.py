@@ -70,10 +70,13 @@ def extract_and_save(pdf_name: str, pdf_path: Path) -> dict:
         risk = metadata.get("Risk & Compliance", {})
         
         print(f"\nExtracted Metadata:")
+        print(f"  Party A: {lifecycle.get('Party A', 'Not Found')}")
+        print(f"  Party B: {lifecycle.get('Party B', 'Not Found')}")
         print(f"  Execution Date: {lifecycle.get('Execution Date', 'Not Found')}")
         print(f"  Effective Date: {lifecycle.get('Effective Date', 'Not Found')}")
         print(f"  Expiration Date: {lifecycle.get('Expiration / Termination Date', 'Not Found')}")
-        print(f"  Authorized Signatory: {lifecycle.get('Authorized Signatory', 'Not Found')}")
+        print(f"  Authorized Signatory - Party A: {lifecycle.get('Authorized Signatory - Party A', 'Not Found')}")
+        print(f"  Authorized Signatory - Party B: {lifecycle.get('Authorized Signatory - Party B', 'Not Found')}")
         print(f"  Billing Frequency: {commercial.get('Billing Frequency', 'Not Found')}")
         print(f"  Payment Terms: {commercial.get('Payment Terms', 'Not Found')}")
         
