@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSA Extractor - Job Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+            background-color: #e3f2fd;
+        }
+        .status-pending {
+            border-left-color: #ff9800;
+            background-color: #fff3e0;
+        }
+        .status-processing {
+            border-left-color: #2196F3;
+            background-color: #e3f2fd;
+        }
+        .status-completed {
+            border-left-color: #4CAF50;
+            background-color: #e8f5e9;
+        }
+        .status-failed {
+            border-left-color: #f44336;
+            background-color: #ffebee;
+        }
+        .status-info {
+            margin: 10px 0;
+        }
+        .status-info strong {
+            display: inline-block;
+            width: 150px;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .results pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+        }
+        .auto-poll {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MSA Metadata Extractor - Job Status</h1>
+        
+        <div class="input-group">
+            <label for="serviceUrl">Service URL:</label>
+            <input type="text" id="serviceUrl" value="https://msa-extractor-api-592845797104.us-central1.run.app" placeholder="https://your-service-url.run.app">
+        </div>
+        
+        <div class="input-group">
+            <label for="jobId">Job ID:</label>
+            <input type="text" id="jobId" placeholder="Enter job ID or paste from URL" autofocus>
+        </div>
+        
+        <button id="checkBtn" onclick="checkStatus()">Check Status</button>
+        <button id="startPollBtn" onclick="startPolling()">Start Auto-Polling</button>
+        <button id="stopPollBtn" onclick="stopPolling()" disabled>Stop Polling</button>
+        
+        <div id="statusBox" style="display: none;"></div>
+        <div id="resultsBox" style="display: none;"></div>
+        <div id="errorBox" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let pollInterval = null;
+        const POLL_INTERVAL = 3000; // 3 seconds
+
+        // Get job ID from URL parameter if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobIdParam = urlParams.get('job_id') || urlParams.get('jobId');
+        if (jobIdParam) {
+            document.getElementById('jobId').value = jobIdParam;
+        }
+
+        async function checkStatus() {
+            const serviceUrl = document.getElementById('serviceUrl').value.trim();
+            const jobId = document.getElementById('jobId').value.trim();
+            
+            if (!jobId) {
+                showError('Please enter a Job ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serviceUrl}/api/v1/extract/status/${jobId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                displayStatus(data);
+                
+                // If completed, fetch results
+                if (data.status === 'completed') {
+                    await fetchResults(serviceUrl, jobId);
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        }
+
+        async function fetchResults(serviceUrl, jobId) {
+            try {
+                const response = await fetch(`${serviceUrl}/api/v1/extract/result/${jobId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                showError(`Error fetching results: ${error.message}`);
+            }
+        }
+
+        function displayStatus(data) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.style.display = 'block';
+            statusBox.className = `status-box status-${data.status}`;
+            
+            let html = `<h3>Status: <strong>${data.status.toUpperCase()}</strong></h3>`;
+            html += `<div class="status-info"><strong>Job ID:</strong> ${data.job_id}</div>`;
+            html += `<div class="status-info"><strong>File Name:</strong> ${data.file_name}</div>`;
+            html += `<div class="status-info"><strong>File Size:</strong> ${formatBytes(data.file_size)}</div>`;
+            html += `<div class="status-info"><strong>Created At:</strong> ${new Date(data.created_at).toLocaleString()}</div>`;
+            
+            if (data.started_at) {
+                html += `<div class="status-info"><strong>Started At:</strong> ${new Date(data.started_at).toLocaleString()}</div>`;
+            }
+            if (data.completed_at) {
+                html += `<div class="status-info"><strong>Completed At:</strong> ${new Date(data.completed_at).toLocaleString()}</div>`;
+            }
+            if (data.error_message) {
+                html += `<div class="status-info"><strong>Error:</strong> <span style="color: #f44336;">${data.error_message}</span></div>`;
+            }
+            
+            if (pollInterval) {
+                html += `<div class="auto-poll">🔄 Auto-polling every ${POLL_INTERVAL/1000} seconds...</div>`;
+            }
+            
+            statusBox.innerHTML = html;
+            hideError();
+        }
+
+        function displayResults(data) {
+            const resultsBox = document.getElementById('resultsBox');
+            resultsBox.style.display = 'block';
+            resultsBox.className = 'results';
+            resultsBox.innerHTML = `
+                <h3>Extraction Results</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+            // Stop polling if we got results
+            if (pollInterval) {
+                stopPolling();
+            }
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.style.display = 'block';
+            errorBox.textContent = message;
+        }
+
+        function hideError() {
+            document.getElementById('errorBox').style.display = 'none';
+        }
+
+        function startPolling() {
+            const jobId = document.getElementById('jobId').value.trim();
+            if (!jobId) {
+                showError('Please enter a Job ID');
+                return;
+            }
+
+            // Start polling immediately
+            checkStatus();
+            
+            // Then poll every few seconds
+            pollInterval = setInterval(checkStatus, POLL_INTERVAL);
+            
+            document.getElementById('startPollBtn').disabled = true;
+            document.getElementById('stopPollBtn').disabled = false;
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            document.getElementById('startPollBtn').disabled = false;
+            document.getElementById('stopPollBtn').disabled = true;
+            document.getElementById('checkBtn').disabled = false;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Allow Enter key to trigger check
+        document.getElementById('jobId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkStatus();
+            }
+        });
+    </script>
+</body>
+</html>
+
