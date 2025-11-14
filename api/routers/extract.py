@@ -43,6 +43,11 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/extract", tags=["extraction"])
 
+# Whitelist of allowed values for override parameters
+ALLOWED_EXTRACTION_METHODS = {"text_direct", "ocr_all", "ocr_images_only", "vision_all", "hybrid"}
+ALLOWED_LLM_PROCESSING_MODES = {"text_llm", "vision_llm", "multimodal", "dual_llm"}
+ALLOWED_OCR_ENGINES = {"tesseract", "gcv"}
+
 
 def validate_file_type(filename: str) -> None:
     """
