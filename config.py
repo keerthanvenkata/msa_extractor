@@ -64,7 +64,20 @@ STORAGE_DIR = BASE_DIR / "storage"
 STORAGE_DIR.mkdir(exist_ok=True)
 
 # Database path (SQLite)
-DB_PATH = Path(os.getenv("DB_PATH", STORAGE_DIR / "msa_extractor.db"))
+# Handle both relative paths (./storage/msa_extractor.db) and absolute paths
+db_path_env = os.getenv("DB_PATH", "")
+if db_path_env:
+    # Remove leading ./ if present, then resolve relative to BASE_DIR
+    db_path_clean = db_path_env.lstrip("./")
+    if os.path.isabs(db_path_clean):
+        # Absolute path
+        DB_PATH = Path(db_path_clean)
+    else:
+        # Relative path - resolve from BASE_DIR
+        DB_PATH = BASE_DIR / db_path_clean
+else:
+    # Default: use storage directory
+    DB_PATH = STORAGE_DIR / "msa_extractor.db"
 
 # Uploads directory (for temporary PDFs)
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", BASE_DIR / "uploads"))
@@ -182,11 +195,11 @@ NOT_FOUND_VALUE = "Not Found"
 
 # Maximum text length for LLM processing (characters)
 # For longer docs, implement chunking + aggregation (deferred to next iteration)
-MAX_TEXT_LENGTH = 50000
+MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", "50000"))
 
 # Maximum length per metadata field (characters)
-# Each field value must not exceed this limit
-MAX_FIELD_LENGTH = 1000
+# Each field value must not exceed this limit (default: 1000)
+MAX_FIELD_LENGTH = int(os.getenv("MAX_FIELD_LENGTH", "1000"))
 
 # ============================================================================
 # Retry Configuration
@@ -245,11 +258,11 @@ EXTRACTION_METHOD = os.getenv("EXTRACTION_METHOD", "hybrid")
 
 # LLM Processing Mode: How to process extracted content with LLMs
 # Options:
-#   - text_llm: Send all text (direct + OCR) to text LLM (default)
+#   - text_llm: Send all text (direct + OCR) to text LLM
 #   - vision_llm: Send all images to vision LLM
-#   - multimodal: Send text + images together to vision LLM in single call
+#   - multimodal: Send text + images together to vision LLM in single call (default)
 #   - dual_llm: Send text to text LLM + images to vision LLM separately, then merge
-LLM_PROCESSING_MODE = os.getenv("LLM_PROCESSING_MODE", "text_llm")
+LLM_PROCESSING_MODE = os.getenv("LLM_PROCESSING_MODE", "multimodal")
 
 # OCR Engine: Which OCR engine to use when OCR is needed
 # Options: "tesseract", "gcv"
