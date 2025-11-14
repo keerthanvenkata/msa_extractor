@@ -45,18 +45,25 @@ class ExtractionDB:
             # Ensure parent directory exists
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             
+            # Check if database already exists
+            db_exists = self.db_path.exists()
+            
             # Connect to database
             self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             self.conn.row_factory = sqlite3.Row  # Return rows as dict-like objects
             
-            # Create tables
+            # Create tables (idempotent - safe to call multiple times)
             self._create_extractions_table()
             self._create_indexes()
             
             # Create current month's log table
             self._ensure_log_table()
             
-            logger.info(f"Database initialized: {self.db_path}")
+            # Only log at INFO level if database was just created, otherwise DEBUG
+            if not db_exists:
+                logger.info(f"Database initialized (new): {self.db_path}")
+            else:
+                logger.debug(f"Database connected: {self.db_path}")
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
