@@ -59,7 +59,21 @@ def upload_file(file_path: str, extraction_method: Optional[str] = None,
             data['llm_processing_mode'] = llm_processing_mode
         
         response = requests.post(url, files=files, data=data)
-        response.raise_for_status()
+        
+        # Get full error details
+        if not response.ok:
+            error_detail = ""
+            try:
+                error_json = response.json()
+                error_detail = error_json.get('detail', str(error_json))
+            except:
+                error_detail = response.text[:500]
+            
+            raise requests.HTTPError(
+                f"{response.status_code} {response.reason}: {error_detail} "
+                f"for url: {url}"
+            )
+        
         return response.json()
 
 
@@ -118,7 +132,7 @@ def test_combination(file_path: str, extraction_method: str, llm_processing_mode
         print("Uploading file...")
         upload_response = upload_file(file_path, extraction_method, llm_processing_mode)
         job_id = upload_response.get('job_id')
-        print(f"Job ID: {job_id}")
+        print(f"✅ Upload successful - Job ID: {job_id}")
         
         # Wait for completion
         print("Waiting for extraction...")
@@ -138,11 +152,27 @@ def test_combination(file_path: str, extraction_method: str, llm_processing_mode
             'llm_processing_mode': llm_processing_mode
         }
         
-    except Exception as e:
+    except requests.HTTPError as e:
+        # HTTP errors - show full details
+        error_msg = str(e)
         return {
             'job_id': None,
             'status': 'error',
-            'error': str(e),
+            'error': error_msg,
+            'result_status_code': None,
+            'has_result': False,
+            'description': description,
+            'extraction_method': extraction_method,
+            'llm_processing_mode': llm_processing_mode
+        }
+    except Exception as e:
+        # Other errors
+        import traceback
+        error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        return {
+            'job_id': None,
+            'status': 'error',
+            'error': error_msg,
             'result_status_code': None,
             'has_result': False,
             'description': description,
@@ -173,15 +203,21 @@ def main():
             results.append(result)
             
             # Brief summary
+            job_id = result.get('job_id', 'N/A')
             if result['status'] == 'completed':
-                print(f"  ✅ SUCCESS: {description}")
+                print(f"  ✅ SUCCESS: {description} (Job ID: {job_id})")
             elif result['status'] == 'failed':
-                print(f"  ❌ FAILED: {description}")
+                print(f"  ❌ FAILED: {description} (Job ID: {job_id})")
                 error = result.get('error', 'Unknown')
                 error_preview = error[:100] + '...' if len(error) > 100 else error
                 print(f"     Error: {error_preview}")
+            elif result['status'] == 'error':
+                print(f"  ❌ ERROR: {description} (Job ID: {job_id})")
+                error = result.get('error', 'Unknown')
+                error_preview = error[:200] + '...' if len(error) > 200 else error
+                print(f"     Error: {error_preview}")
             else:
-                print(f"  ⏳ {result['status'].upper()}: {description}")
+                print(f"  ⏳ {result['status'].upper()}: {description} (Job ID: {job_id})")
     
     # Print summary
     print("\n\n" + "="*60)
@@ -238,14 +274,28 @@ def main():
     print("\n\n" + "="*60)
     print("DETAILED RESULTS")
     print("="*60)
-    print(f"{'File':<40} {'Mode':<30} {'Status':<12} {'Error':<50}")
-    print("-" * 132)
+    print(f"{'File':<35} {'Mode':<25} {'Job ID':<38} {'Status':<12}")
+    print("-" * 110)
     for result in results:
-        file = result.get('file', 'Unknown')[:38]
-        mode = result.get('description', 'Unknown')[:28]
+        file = result.get('file', 'Unknown')[:33]
+        mode = result.get('description', 'Unknown')[:23]
+        job_id = result.get('job_id', 'N/A')[:36]
         status = result.get('status', 'Unknown')[:10]
-        error = (result.get('error', '') or '')[:48]
-        print(f"{file:<40} {mode:<30} {status:<12} {error:<50}")
+        print(f"{file:<35} {mode:<25} {job_id:<38} {status:<12}")
+    
+    # Error details table
+    error_results = [r for r in results if r.get('status') in ['failed', 'error']]
+    if error_results:
+        print("\n\n" + "="*60)
+        print("ERROR DETAILS")
+        print("="*60)
+        print(f"{'Job ID':<38} {'Mode':<25} {'Error':<50}")
+        print("-" * 113)
+        for result in error_results:
+            job_id = result.get('job_id', 'N/A')[:36]
+            mode = result.get('description', 'Unknown')[:23]
+            error = (result.get('error', '') or '')[:48]
+            print(f"{job_id:<38} {mode:<25} {error:<50}")
     
     # Analysis
     print("\n\n" + "="*60)
