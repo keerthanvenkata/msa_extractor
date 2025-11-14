@@ -312,6 +312,78 @@ Comment indicates logs still written to DB in legacy mode, which is inconsistent
 
 ---
 
+### BUG-028: Hybrid + text_llm Mode - Image Pages Not Processed
+**Location:** `extractors/extraction_coordinator.py:_process_with_llm()`
+
+**Problem:**
+When using `hybrid` extraction method with `text_llm` processing mode:
+- Image pages are extracted and stored in `image_pages_bytes` but are NOT processed
+- Only text from text-based pages is sent to the text LLM
+- Important information on image pages (e.g., signatures, dates) may be missed
+- API errors (e.g., "503 Illegal metadata") may occur if text content is problematic
+
+**Root Cause:**
+The `hybrid` method extracts both text and images, but `text_llm` mode only processes text. This is by design, but:
+1. No warning is given when images are detected but ignored
+2. Users may not realize important information is being skipped
+3. Error messages don't suggest alternative modes
+
+**Impact:** High - Missing critical metadata from image pages (signatures, execution dates)
+
+**Priority:** P1 - Should fix soon
+
+**Status:** 🟢 Fixed (2025-11-14)
+- Added warnings when images are detected but not processed in text_llm mode
+- Added better error messages suggesting 'multimodal' or 'dual_llm' modes
+- Added text length validation and warnings
+- Improved error details to help diagnose issues
+
+**Recommendation:**
+For documents with image pages (especially signature pages), use:
+- `multimodal` mode: Sends text + images together to vision LLM
+- `dual_llm` mode: Processes text and images separately, then merges
+
+---
+
+### BUG-029: Ephemeral Database Storage in Cloud Run
+**Location:** `storage/database.py`, Cloud Run deployment
+
+**Problem:**
+SQLite database is stored in the container's local filesystem (`/app/storage/msa_extractor.db`), which is **ephemeral** in Cloud Run. This means:
+- Database is lost when container restarts or scales to zero
+- Jobs and extraction history disappear after container lifecycle events
+- No persistence across deployments or container updates
+- Multiple container instances have separate databases (no shared state)
+
+**Root Cause:**
+Cloud Run containers are stateless by default. Local filesystem storage is temporary and not persisted across container restarts.
+
+**Impact:** Critical - Production data loss, jobs disappear, no historical tracking
+
+**Priority:** P0 - Must fix before production use
+
+**Status:** 🔴 Open
+
+**Workarounds:**
+1. Use Cloud SQL (PostgreSQL/MySQL) for persistent database
+2. Use Cloud Storage with mounted volume (Cloud Run supports persistent volumes)
+3. Use Cloud Firestore for NoSQL storage
+4. For testing: Accept ephemeral storage, jobs only persist during container lifetime
+
+**Recommended Solution:**
+Migrate to Cloud SQL PostgreSQL:
+- Persistent storage
+- Shared across container instances
+- Automatic backups
+- Better performance for concurrent requests
+- Standard SQL interface (minimal code changes)
+
+**Related:**
+- TODO-011: Migrate to Cloud SQL for Production
+- Current implementation is acceptable for development/testing only
+
+---
+
 ### BUG-020: No Cleanup of Failed Job Files
 **Location:** `main.py` - error handlers (CLI), `api/services/extraction_service.py` (API)
 
@@ -964,7 +1036,7 @@ Implement streaming for very large PDFs to reduce memory usage.
 
 | Category | Count | P0 | P1 | P2 | P3 |
 |----------|-------|----|----|----|----|
-| Critical Bugs | 6 | 2 | 3 | 0 | 0 |
+| Critical Bugs | 8 | 3 | 4 | 0 | 0 |
 | High Priority | 5 | 0 | 3 | 2 | 0 |
 | Medium Priority | 3 | 0 | 0 | 3 | 0 |
 | Performance | 4 | 0 | 1 | 2 | 1 |
@@ -973,7 +1045,7 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Low Priority | 3 | 0 | 0 | 0 | 3 |
 | TODOs | 15 | 1 | 6 | 7 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **41** | **3** | **14** | **16** | **7** |
+| **Total** | **43** | **4** | **15** | **16** | **7** |
 
 ---
 
