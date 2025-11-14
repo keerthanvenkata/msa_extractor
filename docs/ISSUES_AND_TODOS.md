@@ -2,7 +2,7 @@
 
 This document tracks all identified issues, bugs, TODOs, and optimization opportunities in the MSA Metadata Extractor codebase.
 
-**Last Updated:** November 13, 2025  
+**Last Updated:** November 14, 2025  
 **Status:** Active tracking
 
 ---
@@ -806,13 +806,14 @@ Migrate from SQLite to Cloud SQL PostgreSQL for production deployment with bette
 
 ---
 
-### TODO-014: Migrate to Google GenAI Library with JSON Schema Support (Next Iteration)
+### TODO-014: Migrate to Google GenAI Library (google-genai) with JSON Schema Support (Next Iteration)
 **Location:** `ai/gemini_client.py`, `requirements.txt`
 
 **Problem:**
-Current implementation uses `google-generativeai==0.3.2` (older version) and manually parses JSON responses with markdown stripping. The newer Google GenAI library supports native JSON Schema via `response_schema` parameter, which guarantees structured JSON output.
+Current implementation uses `google-generativeai` (deprecated/not supported anymore) and manually parses JSON responses with markdown stripping. The latest library `google-genai` supports native JSON Schema via `response_schema` parameter, which guarantees structured JSON output.
 
 **Current Implementation:**
+- Uses deprecated `google-generativeai` library
 - Manual JSON parsing with markdown code block stripping (`_parse_json_response`)
 - Post-processing validation and normalization
 - Potential for JSON parsing errors and validation failures
@@ -823,28 +824,31 @@ Current implementation uses `google-generativeai==0.3.2` (older version) and man
 - **Reduced Code Complexity:** Eliminate manual JSON parsing and markdown stripping
 - **Better Reliability:** Fewer validation failures, more consistent responses
 - **Pydantic Integration:** New library integrates with Pydantic for schema validation
+- **Future-Proof:** Using supported, actively maintained library
 
 **Migration Steps:**
-1. Upgrade `google-generativeai` to latest version (check compatibility)
-2. Update `GeminiClient` to use `response_schema` parameter in `generate_content()` calls
-3. Remove or simplify `_parse_json_response()` method (may only need basic error handling)
-4. Update schema validation to work with guaranteed JSON responses
-5. Test all extraction methods (text, image, multimodal)
-6. Update documentation
+1. Replace `google-generativeai` with `google-genai` in `requirements.txt`
+2. Update `GeminiClient` imports and initialization
+3. Update `GeminiClient` to use `response_schema` parameter in `generate_content()` calls
+4. Remove or simplify `_parse_json_response()` method (may only need basic error handling)
+5. Update schema validation to work with guaranteed JSON responses
+6. Test all extraction methods (text, image, multimodal)
+7. Update documentation
 
 **Research Notes:**
-- Google announced JSON Schema support in 2024
+- Google's latest SDK is `google-genai` (not `google-generativeai`)
+- Library supports native JSON Schema with `response_schema` parameter
 - Library supports Pydantic models for schema definition
 - May require updating prompt templates (less emphasis on JSON format instructions)
 - Check version compatibility with current Gemini models
 
-**Priority:** P1 - High value improvement for reliability
+**Priority:** P1 - High value improvement for reliability and future support
 
 **Status:** 📋 TODO (Next Iteration)
 
 **References:**
-- Google Blog: https://blog.google/technology/developers/gemini-api-structured-outputs/
-- Current library: `google-generativeai==0.3.2`
+- Current library: `google-generativeai` (deprecated)
+- Target library: `google-genai` (latest, supported)
 - Current JSON parsing: `ai/gemini_client.py:_parse_json_response()`
 
 ---
@@ -883,6 +887,201 @@ During Docker builds, pip shows warning: "Running pip as the 'root' user can res
 - MLOps.ninja: https://mlops.ninja/blog/deploy/delivery-units/no-venv-in-docker
 - Current Dockerfile: Uses root user, installs packages directly
 - Local development: Should still use venv (not in Docker)
+
+---
+
+### TODO-016: Implement Scheduled PDF Cleanup Service (Next Iteration)
+**Location:** `storage/cleanup.py`, `api/services/cleanup_service.py`
+
+**Description:**
+Implement automated cleanup service for uploaded PDF files to manage disk space and prevent storage bloat.
+
+**Requirements:**
+1. **Scheduled Cleanup:**
+   - Time-based: Delete PDFs older than N days (default: 7 days)
+   - Count-based: Delete oldest PDFs when count exceeds threshold (default: 1000)
+   - Configurable retention policies via environment variables
+
+2. **Cleanup Rules:**
+   - Always retain JSON results and logs in database
+   - Never delete pending/processing jobs
+   - Only delete completed or failed jobs after retention period
+   - Log all cleanup actions for audit trail
+
+3. **Implementation Options:**
+   - **Option A:** Background task in FastAPI (using APScheduler or similar)
+   - **Option B:** Separate cleanup service/worker
+   - **Option C:** Cloud Run scheduled job (Cloud Scheduler + Cloud Run job)
+   - **Option D:** Cron job in container (if running long-lived container)
+
+4. **Configuration:**
+   - `CLEANUP_ENABLED=true/false` - Enable/disable cleanup
+   - `CLEANUP_RETENTION_DAYS=7` - Days to retain PDFs
+   - `CLEANUP_MAX_FILES=1000` - Max files before cleanup triggers
+   - `CLEANUP_SCHEDULE="0 2 * * *"` - Cron schedule (default: daily at 2 AM)
+
+5. **Integration:**
+   - Work with both local filesystem and GCS storage (when implemented)
+   - Update database to mark files as cleaned
+   - Handle cleanup errors gracefully (don't fail if file already deleted)
+
+**Priority:** P1 - Important for production to prevent disk space issues
+
+**Status:** 📋 TODO (Next Iteration)
+
+**Related:**
+- TODO-011: Persistence & Storage System (cleanup was deferred)
+- BUG-020: No Cleanup of Failed Job Files (API cleanup implemented, scheduled cleanup pending)
+
+---
+
+### TODO-017: Implement Proper Authentication System (Next Iteration)
+**Location:** `api/dependencies.py`, `api/middleware/auth.py` (new)
+
+**Description:**
+Current implementation has basic API key authentication. Implement proper authentication system for production use.
+
+**Requirements:**
+1. **Authentication Methods:**
+   - API Key authentication (current, keep for backward compatibility)
+   - OAuth2/JWT tokens for user-based authentication
+   - Service account authentication for service-to-service calls
+   - Optional: OIDC integration
+
+2. **Authorization:**
+   - Role-based access control (RBAC)
+   - User roles: admin, user, read-only
+   - Permission-based access to endpoints
+   - Rate limiting per user/API key
+
+3. **Security Features:**
+   - API key rotation support
+   - Token expiration and refresh
+   - Secure storage of credentials (Secret Manager)
+   - Audit logging for authentication events
+
+4. **Configuration:**
+   - `AUTH_ENABLED=true/false` - Enable/disable authentication
+   - `AUTH_METHOD=api_key|oauth2|jwt` - Authentication method
+   - `API_KEY_ROTATION_DAYS=90` - API key rotation period
+   - `JWT_SECRET_KEY` - JWT signing key (from Secret Manager)
+   - `JWT_EXPIRATION_HOURS=24` - JWT token expiration
+
+5. **Implementation:**
+   - Create `api/middleware/auth.py` for authentication middleware
+   - Update `api/dependencies.py` to support multiple auth methods
+   - Add user management endpoints (if needed)
+   - Database schema for users, API keys, tokens
+
+**Priority:** P1 - Required for production security
+
+**Status:** 📋 TODO (Next Iteration)
+
+**Related:**
+- Current: Basic API key auth in `api/dependencies.py`
+- TODO-009: Data Masking/Encryption (security-related)
+
+---
+
+### TODO-018: Implement File Upload Queue System (Next Iteration)
+**Location:** `api/services/queue_service.py` (new), `api/routers/extract.py`
+
+**Description:**
+Implement a queue system to handle multiple file uploads concurrently and manage processing capacity.
+
+**Requirements:**
+1. **Queue System:**
+   - Accept multiple file uploads without blocking
+   - Queue jobs for processing when capacity is reached
+   - Process jobs in order (FIFO) or priority-based
+   - Support job prioritization (urgent, normal, low)
+
+2. **Queue Management:**
+   - Configurable queue size limits
+   - Queue status endpoint (`GET /api/v1/extract/queue/status`)
+   - Job position in queue (`GET /api/v1/extract/status/{job_id}` includes queue position)
+   - Queue pause/resume functionality (admin)
+
+3. **Implementation Options:**
+   - **Option A:** In-memory queue (simple, but lost on restart)
+   - **Option B:** Database-backed queue (persistent, survives restarts)
+   - **Option C:** External queue service (Redis, Cloud Tasks, Pub/Sub)
+   - **Option D:** Celery with Redis/RabbitMQ (full-featured task queue)
+
+4. **Configuration:**
+   - `QUEUE_ENABLED=true/false` - Enable/disable queue
+   - `MAX_CONCURRENT_JOBS=5` - Max jobs processing simultaneously
+   - `MAX_QUEUE_SIZE=100` - Max jobs waiting in queue
+   - `QUEUE_PRIORITY_ENABLED=true/false` - Enable priority queue
+
+5. **Features:**
+   - Automatic retry for failed jobs
+   - Job cancellation support
+   - Queue statistics and monitoring
+   - Dead letter queue for permanently failed jobs
+
+**Priority:** P1 - Important for handling multiple concurrent uploads
+
+**Status:** 📋 TODO (Next Iteration)
+
+**Related:**
+- Current: FastAPI background tasks (no queue, processes immediately)
+- TODO-011: Persistence & Storage System (database for queue state)
+
+---
+
+### TODO-019: Create Web Interface for Status Polling (Next Iteration)
+**Location:** `web/` (new directory), `api/routers/web.py` (new)
+
+**Description:**
+Create a user-friendly web interface (HTML/JavaScript) that allows users to upload files, monitor job status, and view results without writing code.
+
+**Requirements:**
+1. **Web Interface Features:**
+   - File upload form with drag-and-drop support
+   - Real-time status polling with automatic refresh
+   - Job list view with filtering and search
+   - Results display with formatted metadata
+   - Download results as JSON
+   - Error display with helpful messages
+
+2. **Status Polling:**
+   - Automatic polling every 5-10 seconds while job is processing
+   - Visual progress indicators
+   - Estimated time remaining (if possible)
+   - Stop polling when job completes or fails
+
+3. **User Experience:**
+   - Responsive design (mobile-friendly)
+   - Dark/light theme toggle
+   - Job history (last N jobs)
+   - Export results to CSV/Excel
+   - Print-friendly results view
+
+4. **Implementation:**
+   - **Option A:** Static HTML/JavaScript (served by FastAPI)
+   - **Option B:** React/Vue.js SPA (separate frontend)
+   - **Option C:** Streamlit dashboard (Python-based, quick to build)
+   - **Option D:** Simple Flask/FastAPI template (Jinja2 templates)
+
+5. **API Integration:**
+   - Use existing FastAPI endpoints
+   - WebSocket support for real-time updates (optional, advanced)
+   - API key management UI (if authentication implemented)
+
+6. **Deployment:**
+   - Serve static files from FastAPI (`/static/` or `/web/`)
+   - Or deploy as separate frontend service
+   - CORS configuration for cross-origin requests
+
+**Priority:** P1 - High value for non-technical users
+
+**Status:** 📋 TODO (Next Iteration)
+
+**Related:**
+- `status_checker.html` - Basic status checker exists (can be enhanced)
+- `docs/API_QUICK_START.md` - User guide for API usage
+- TODO-017: Proper Authentication (for secure web interface)
 
 ---
 
@@ -1043,9 +1242,9 @@ Implement streaming for very large PDFs to reduce memory usage.
 | Data Quality | 2 | 0 | 1 | 1 | 0 |
 | Code Quality | 2 | 0 | 1 | 0 | 1 |
 | Low Priority | 3 | 0 | 0 | 0 | 3 |
-| TODOs | 15 | 1 | 6 | 7 | 1 |
+| TODOs | 19 | 1 | 10 | 7 | 1 |
 | Optimizations | 4 | 0 | 0 | 3 | 1 |
-| **Total** | **43** | **4** | **15** | **16** | **7** |
+| **Total** | **47** | **4** | **19** | **16** | **7** |
 
 ---
 
