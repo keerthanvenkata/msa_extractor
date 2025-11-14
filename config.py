@@ -147,10 +147,13 @@ if LOG_FILE_ENABLED:
 # See docs/REQUIREMENTS.md for field definitions, examples, and update checklist
 METADATA_SCHEMA = {
     "Contract Lifecycle": {
+        "Party A": "",
+        "Party B": "",
         "Execution Date": "",
         "Effective Date": "",
         "Expiration / Termination Date": "",
-        "Authorized Signatory": ""
+        "Authorized Signatory - Party A": "",
+        "Authorized Signatory - Party B": ""
     },
     "Commercial Operations": {
         "Billing Frequency": "",
@@ -168,10 +171,13 @@ METADATA_SCHEMA = {
 # Field definitions for LLM prompts (from docs/REQUIREMENTS.md)
 FIELD_DEFINITIONS = {
     "Contract Lifecycle": {
+        "Party A": "Name of the first party to the agreement (typically the client or service recipient). Format: Full legal entity name as stated in the contract (e.g., Adaequare Inc.)",
+        "Party B": "Name of the second party to the agreement (typically the vendor or service provider). Format: Full legal entity name as stated in the contract (e.g., Orbit Inc.)",
         "Execution Date": "Date when both parties have signed the agreement. Format: ISO yyyy-mm-dd (e.g., 2025-03-14)",
         "Effective Date": "Date the MSA becomes legally effective (may differ from execution). Format: ISO yyyy-mm-dd (e.g., 2025-04-01)",
         "Expiration / Termination Date": "Date on which the agreement expires or terminates unless renewed. Format: ISO yyyy-mm-dd or 'Evergreen' if auto-renews (e.g., 2028-03-31 or Evergreen)",
-        "Authorized Signatory": "Name and designation of the individual authorized to sign on behalf of each party. Format: Full name and title (e.g., John Doe, VP of Operations). If multiple, separate with semicolons."
+        "Authorized Signatory - Party A": "Name and designation of the individual authorized to sign on behalf of Party A. Format: Full name and title (e.g., John Doe, VP of Operations). Extract from signature page or execution section.",
+        "Authorized Signatory - Party B": "Name and designation of the individual authorized to sign on behalf of Party B. Format: Full name and title (e.g., Jane Smith, CEO). Extract from signature page or execution section."
     },
     "Commercial Operations": {
         "Billing Frequency": "How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced",
