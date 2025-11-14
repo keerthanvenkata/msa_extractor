@@ -1,7 +1,9 @@
 # GCP Cloud Run Deployment Guide
 
-**Last Updated:** November 13, 2025  
+**Last Updated:** November 14, 2025  
 **Status:** Ready for Deployment
+
+**⚠️ Important:** This deployment uses ephemeral SQLite storage. Jobs and data are lost when containers restart. For production, migrate to Cloud SQL (see [ISSUES_AND_TODOS.md](../../ISSUES_AND_TODOS.md#bug-029-ephemeral-database-storage-in-cloud-run)).
 
 This guide covers deploying the MSA Metadata Extractor API to Google Cloud Platform (GCP) Cloud Run.
 
@@ -257,9 +259,16 @@ gcloud run deploy msa-extractor-api \
 - Container restarts
 - Service is updated/redeployed
 
+**Current Limitations:**
+1. **Database:** SQLite stored in ephemeral filesystem - jobs disappear on restart
+2. **File Storage:** Uploaded PDFs stored in ephemeral filesystem - files lost on restart
+3. **No Shared State:** Multiple container instances have separate databases
+
+**Impact:** Not suitable for production without persistent storage migration.
+
 ### Future Iterations
 
-- **Cloud SQL:** Persistent database (PostgreSQL)
+- **Cloud SQL:** Persistent database (PostgreSQL) - See [BUG-029](../../ISSUES_AND_TODOS.md#bug-029-ephemeral-database-storage-in-cloud-run)
 - **Cloud Storage:** Persistent PDF storage (GCS bucket)
 - See [IMPLEMENTATION_ROADMAP.md](../planning/IMPLEMENTATION_ROADMAP.md) for details
 
@@ -410,6 +419,19 @@ curl https://your-service-url/api/v1/extract/{job_id}/logs
 - **SQLite locked:** Multiple instances accessing same database
   - **Solution:** Use Cloud SQL in future iteration
   - **Workaround:** Limit concurrency to 1 instance
+
+- **Jobs disappear after container restart:**
+  - **Cause:** SQLite database is stored in ephemeral container filesystem
+  - **Impact:** All jobs and extraction history are lost when containers restart or scale to zero
+  - **Solution:** Migrate to Cloud SQL PostgreSQL (see [ISSUES_AND_TODOS.md](../../ISSUES_AND_TODOS.md#bug-029-ephemeral-database-storage-in-cloud-run))
+  - **Workaround:** Accept ephemeral storage for development/testing only
+
+### API Key Issues
+
+- **"Illegal header value" error:**
+  - **Cause:** API key from Secret Manager may have trailing newlines/whitespace
+  - **Fix:** Application automatically strips whitespace from `GEMINI_API_KEY` (fixed in v1.0.0)
+  - **Prevention:** Ensure Secret Manager secrets don't have extra newlines when creating
 
 ---
 

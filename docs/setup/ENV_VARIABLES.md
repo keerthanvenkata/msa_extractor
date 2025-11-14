@@ -1,6 +1,10 @@
 # Environment Variables Management for Cloud Run
 
+**Last Updated:** November 14, 2025
+
 **Best practices for managing configuration and secrets in Google Cloud Run**
+
+**Note:** The application automatically strips whitespace/newlines from `GEMINI_API_KEY` when reading from environment variables. This prevents "Illegal header value" errors that can occur when Secret Manager includes trailing newlines.
 
 ---
 
@@ -49,6 +53,8 @@ gcloud services enable secretmanager.googleapis.com --project=YOUR-PROJECT-ID
 $PROJECT_ID = "YOUR-PROJECT-ID"
 
 # Create Gemini API key secret
+# Note: The application automatically strips whitespace/newlines from the API key
+# when reading from environment variables, so trailing newlines in the secret are safe
 echo -n "YOUR-GEMINI-API-KEY" | gcloud secrets create gemini-api-key `
   --data-file=- `
   --replication-policy="automatic" `
