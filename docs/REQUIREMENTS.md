@@ -8,10 +8,13 @@ This document defines the canonical schema and field definitions for MSA metadat
 
 | Field Name | Definition / Description | Example / Format |
 |------------|-------------------------|------------------|
+| **Party A** | Name of the first party to the agreement (typically the client or service recipient). | `Adaequare Inc.` |
+| **Party B** | Name of the second party to the agreement (typically the vendor or service provider). | `Orbit Inc.` |
 | **Execution Date** | Date when both parties have signed the agreement. | `2025-03-14` |
 | **Effective Date** | Date the MSA becomes legally effective (may differ from execution). | `2025-04-01` |
 | **Expiration / Termination Date** | Date on which the agreement expires or terminates unless renewed. | `2028-03-31` or `Evergreen` |
-| **Authorized Signatory** | Name and designation of the individual authorized to sign on behalf of each party. | `John Doe, VP of Operations` |
+| **Authorized Signatory - Party A** | Name and designation of the individual authorized to sign on behalf of Party A. | `John Doe, VP of Operations` |
+| **Authorized Signatory - Party B** | Name and designation of the individual authorized to sign on behalf of Party B. | `Jane Smith, CEO` |
 
 ### Commercial Operations
 
@@ -35,10 +38,13 @@ This document defines the canonical schema and field definitions for MSA metadat
 ```json
 {
   "Contract Lifecycle": {
+    "Party A": "",
+    "Party B": "",
     "Execution Date": "",
     "Effective Date": "",
     "Expiration / Termination Date": "",
-    "Authorized Signatory": ""
+    "Authorized Signatory - Party A": "",
+    "Authorized Signatory - Party B": ""
   },
   "Commercial Operations": {
     "Billing Frequency": "",
@@ -71,9 +77,17 @@ This document defines the canonical schema and field definitions for MSA metadat
    - If contract is "Evergreen" (auto-renews): Return `"Evergreen"`
    - If no explicit expiration: Return `"Not Found"`
 
-5. **Multiple Values**: 
-   - For fields that may have multiple values (e.g., multiple signatories), combine with semicolons
-   - Example: `"John Doe, VP of Operations; Jane Smith, CFO"`
+5. **Party Identification**:
+   - Extract full legal entity names as stated in the contract
+   - Party A is typically the client/service recipient
+   - Party B is typically the vendor/service provider
+   - If party names are ambiguous, use the order they appear in the contract
+
+6. **Authorized Signatories**:
+   - Extract separately for each party from signature pages or execution sections
+   - Include full name and title/designation
+   - If multiple signatories for one party, combine with semicolons
+   - Example: `"John Doe, VP of Operations; Jane Smith, CFO"` (for Party A)
 
 ## Affected Components
 
@@ -112,5 +126,6 @@ When modifying requirements:
 
 ## Version History
 
+- **November 14, 2025**: Added Party A, Party B, and separate authorized signatories for each party
 - **November 11, 2025**: Initial requirements definition with exact field definitions and examples
 

@@ -49,7 +49,7 @@ empty_schema = validator.get_empty_schema()
 ## Schema Structure
 
 The schema matches `METADATA_SCHEMA` from `config.py`:
-- Contract Lifecycle (4 fields)
+- Contract Lifecycle (7 fields: Party A, Party B, Execution Date, Effective Date, Expiration/Termination Date, Authorized Signatory - Party A, Authorized Signatory - Party B)
 - Commercial Operations (3 fields)
 - Risk & Compliance (4 fields)
 
