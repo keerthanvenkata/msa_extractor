@@ -200,9 +200,5 @@ pytest tests/
 
 ## License
 
-[Add your license here]
-
-## Contributing
-
-[Add contribution guidelines here]
+© 2025 Keerthan Venkata. All rights reserved.
 
