@@ -265,28 +265,61 @@ EXTRACTION RULES:
 3. For "Expiration / Termination Date":
    - If contract is "Evergreen" (auto-renews): Return "Evergreen"
    - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
-4. For "Indemnification Clause Reference":
-   - Return the section heading/number and a 1–2 sentence excerpt
-   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-5. For Party A and Party B:
-   - Extract full legal entity names as stated in the contract
-   - Party A is typically the client/service recipient (first party mentioned)
-   - Party B is typically the vendor/service provider (second party mentioned)
-   - Look in the contract header, "Parties" section, or first paragraph
-6. For Authorized Signatories:
-   - Extract separately for each party from signature pages or execution sections
-   - Include full name and title/designation
-   - If multiple signatories for one party, combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
-7. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
-8. Return no commentary, no extra keys, and no markdown — JSON only.
+4. For "Document Type":
+   - Must be exactly "MSA" or "NDA" (case-sensitive)
+   - Use "MSA" for Master/Professional Services Agreement
+   - Use "NDA" for Non-Disclosure Agreement
+   - Determine from document title or heading
+5. For "Termination Notice Period":
+   - Format: "<number> <unit>" (e.g., "30 days", "3 months")
+   - Extract the primary/default notice period for the main agreement
+   - If multiple periods exist (e.g., different for work orders), return the primary agreement notice
+6. For "Pricing Model Type":
+   - Must be exactly one of: "Fixed", "T&M", or "Subscription" (case-sensitive)
+   - Use "T&M" if billed by hourly rates
+   - Use "Fixed" or "Subscription" only if explicitly stated
+7. For "Currency":
+   - Use ISO currency code (e.g., "USD", "INR", "EUR", "GBP")
+   - Infer from currency symbols ($, ₹, €, £) or explicitly stated amounts
+   - If multiple currencies mentioned, prefer the primary settlement currency
+8. For "Contract Value":
+   - Return decimal number if explicitly stated (e.g., "50000.00" or "50000")
+   - Many MSAs defer value to Work Orders/SOWs - return "{NOT_FOUND_VALUE}" if not specified in main agreement
+   - Normalize commas if present
+9. For "Force Majeure Clause Reference":
+   - If no explicit clause exists, return "{NOT_FOUND_VALUE}"
+   - Otherwise, return section heading/number and brief excerpt
+10. For clause references (Indemnification, Confidentiality, Force Majeure):
+    - Return the section heading/number and a 1–2 sentence excerpt
+    - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
+11. For Party A and Party B:
+    - Extract full legal entity names as stated in the contract
+    - Party A is typically the client/service recipient (first party mentioned)
+    - Party B is typically the vendor/service provider (second party mentioned)
+    - Look in the contract header, "Parties" section, or first paragraph
+12. For Authorized Signatories:
+    - Extract separately for each party from signature pages or execution sections
+    - Include full name and title/designation
+    - If multiple signatories for one party, combine with semicolons
+    - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
+13. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
+14. Return no commentary, no extra keys, and no markdown — JSON only.
 
 SEARCH GUIDANCE:
 - Agreements may have different structures and section names. Search the ENTIRE document thoroughly.
 - Information may appear in: main body, signature pages, appendices, exhibits, schedules, or footers/headers.
+- Organization Name: Look in preamble/opening party identification (typically Page 1).
+- Document Type: Check document title/header (typically Page 1).
 - Party A and Party B names are typically in the contract header, "Parties" section, or first paragraph.
 - Execution Date and Authorized Signatories are often on signature pages (typically last page or last few pages).
+- Termination Notice Period: Look in termination sections (e.g., "Section Four – Termination").
+- Pricing Model Type: Check sections about work orders, rate schedules, or commercial terms (e.g., "Section Three – Work Orders").
+- Currency: May appear in any monetary amounts (e.g., insurance limits, payment terms, rate schedules).
+- Contract Value: Check Work Orders/SOW references; return "{NOT_FOUND_VALUE}" if not explicitly defined in main agreement.
 - Payment Terms, Billing Frequency may be in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
+- Governing Law: Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law" (e.g., "Section Seventeen – Governing Law").
+- Confidentiality Clause Reference: Check sections about confidential information (e.g., "Section Eight – Confidential Information").
+- Force Majeure Clause Reference: Search for "Force Majeure" explicitly; if absent, return "{NOT_FOUND_VALUE}".
 - Indemnification, Limitation of Liability, Insurance may be in: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 - Look for information regardless of exact section names - focus on content and context.
 - Cross-reference related fields (e.g., Effective Date may be defined relative to Execution Date).
@@ -312,28 +345,61 @@ EXTRACTION RULES:
 3. For "Expiration / Termination Date":
    - If contract is "Evergreen" (auto-renews): Return "Evergreen"
    - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
-4. For "Indemnification Clause Reference":
-   - Return the section heading/number and a 1–2 sentence excerpt
-   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-5. For Party A and Party B:
-   - Extract full legal entity names as stated in the contract
-   - Party A is typically the client/service recipient (first party mentioned)
-   - Party B is typically the vendor/service provider (second party mentioned)
-   - Look in the contract header, "Parties" section, or first paragraph
-6. For Authorized Signatories:
-   - Extract separately for each party from signature pages or execution sections
-   - Include full name and title/designation
-   - If multiple signatories for one party, combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
-7. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
-8. Return no commentary, no extra keys, and no markdown — JSON only.
+4. For "Document Type":
+   - Must be exactly "MSA" or "NDA" (case-sensitive)
+   - Use "MSA" for Master/Professional Services Agreement
+   - Use "NDA" for Non-Disclosure Agreement
+   - Determine from document title or heading
+5. For "Termination Notice Period":
+   - Format: "<number> <unit>" (e.g., "30 days", "3 months")
+   - Extract the primary/default notice period for the main agreement
+   - If multiple periods exist (e.g., different for work orders), return the primary agreement notice
+6. For "Pricing Model Type":
+   - Must be exactly one of: "Fixed", "T&M", or "Subscription" (case-sensitive)
+   - Use "T&M" if billed by hourly rates
+   - Use "Fixed" or "Subscription" only if explicitly stated
+7. For "Currency":
+   - Use ISO currency code (e.g., "USD", "INR", "EUR", "GBP")
+   - Infer from currency symbols ($, ₹, €, £) or explicitly stated amounts
+   - If multiple currencies mentioned, prefer the primary settlement currency
+8. For "Contract Value":
+   - Return decimal number if explicitly stated (e.g., "50000.00" or "50000")
+   - Many MSAs defer value to Work Orders/SOWs - return "{NOT_FOUND_VALUE}" if not specified in main agreement
+   - Normalize commas if present
+9. For "Force Majeure Clause Reference":
+   - If no explicit clause exists, return "{NOT_FOUND_VALUE}"
+   - Otherwise, return section heading/number and brief excerpt
+10. For clause references (Indemnification, Confidentiality, Force Majeure):
+    - Return the section heading/number and a 1–2 sentence excerpt
+    - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
+11. For Party A and Party B:
+    - Extract full legal entity names as stated in the contract
+    - Party A is typically the client/service recipient (first party mentioned)
+    - Party B is typically the vendor/service provider (second party mentioned)
+    - Look in the contract header, "Parties" section, or first paragraph
+12. For Authorized Signatories:
+    - Extract separately for each party from signature pages or execution sections
+    - Include full name and title/designation
+    - If multiple signatories for one party, combine with semicolons
+    - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
+13. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
+14. Return no commentary, no extra keys, and no markdown — JSON only.
 
 SEARCH GUIDANCE:
 - Agreements may have different structures and section names. Search the ENTIRE document thoroughly.
 - Information may appear in: main body, signature pages, appendices, exhibits, schedules, or footers/headers.
+- Organization Name: Look in preamble/opening party identification (typically Page 1).
+- Document Type: Check document title/header (typically Page 1).
 - Party A and Party B names are typically in the contract header, "Parties" section, or first paragraph.
 - Execution Date and Authorized Signatories are often on signature pages (typically last page or last few pages).
+- Termination Notice Period: Look in termination sections (e.g., "Section Four – Termination").
+- Pricing Model Type: Check sections about work orders, rate schedules, or commercial terms (e.g., "Section Three – Work Orders").
+- Currency: May appear in any monetary amounts (e.g., insurance limits, payment terms, rate schedules).
+- Contract Value: Check Work Orders/SOW references; return "{NOT_FOUND_VALUE}" if not explicitly defined in main agreement.
 - Payment Terms, Billing Frequency may be in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
+- Governing Law: Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law" (e.g., "Section Seventeen – Governing Law").
+- Confidentiality Clause Reference: Check sections about confidential information (e.g., "Section Eight – Confidential Information").
+- Force Majeure Clause Reference: Search for "Force Majeure" explicitly; if absent, return "{NOT_FOUND_VALUE}".
 - Indemnification, Limitation of Liability, Insurance may be in: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 - Look for information regardless of exact section names - focus on content and context.
 - Cross-reference related fields (e.g., Effective Date may be defined relative to Execution Date).
