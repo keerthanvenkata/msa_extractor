@@ -26,6 +26,9 @@ All outputs MUST follow this exact JSON structure. If a value cannot be found, r
 **IMPORTANT**: See `docs/REQUIREMENTS.md` for the canonical field definitions, examples, and update checklist.
 
 {
+  "Org Details": {
+    "Organization Name": ""
+  },
   "Contract Lifecycle": {
     "Party A": "",
     "Party B": "",
@@ -35,16 +38,30 @@ All outputs MUST follow this exact JSON structure. If a value cannot be found, r
     "Authorized Signatory - Party A": "",
     "Authorized Signatory - Party B": ""
   },
+  "Business Terms": {
+    "Document Type": "",
+    "Termination Notice Period": ""
+  },
   "Commercial Operations": {
     "Billing Frequency": "",
     "Payment Terms": "",
     "Expense Reimbursement Rules": ""
+  },
+  "Finance Terms": {
+    "Pricing Model Type": "",
+    "Currency": "",
+    "Contract Value": ""
   },
   "Risk & Compliance": {
     "Indemnification Clause Reference": "",
     "Limitation of Liability Cap": "",
     "Insurance Requirements": "",
     "Warranties / Disclaimers": ""
+  },
+  "Legal Terms": {
+    "Governing Law": "",
+    "Confidentiality Clause Reference": "",
+    "Force Majeure Clause Reference": ""
   }
 }
 
