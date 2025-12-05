@@ -147,6 +147,9 @@ if LOG_FILE_ENABLED:
 # JSON Schema structure (as defined in docs/REQUIREMENTS.md)
 # See docs/REQUIREMENTS.md for field definitions, examples, and update checklist
 METADATA_SCHEMA = {
+    "Org Details": {
+        "Organization Name": ""
+    },
     "Contract Lifecycle": {
         "Party A": "",
         "Party B": "",
@@ -156,21 +159,38 @@ METADATA_SCHEMA = {
         "Authorized Signatory - Party A": "",
         "Authorized Signatory - Party B": ""
     },
+    "Business Terms": {
+        "Document Type": "",
+        "Termination Notice Period": ""
+    },
     "Commercial Operations": {
         "Billing Frequency": "",
         "Payment Terms": "",
         "Expense Reimbursement Rules": ""
+    },
+    "Finance Terms": {
+        "Pricing Model Type": "",
+        "Currency": "",
+        "Contract Value": ""
     },
     "Risk & Compliance": {
         "Indemnification Clause Reference": "",
         "Limitation of Liability Cap": "",
         "Insurance Requirements": "",
         "Warranties / Disclaimers": ""
+    },
+    "Legal Terms": {
+        "Governing Law": "",
+        "Confidentiality Clause Reference": "",
+        "Force Majeure Clause Reference": ""
     }
 }
 
 # Field definitions for LLM prompts (from docs/REQUIREMENTS.md)
 FIELD_DEFINITIONS = {
+    "Org Details": {
+        "Organization Name": "Full legal name of the contracting organization (counterparty). Format: As stated in the agreement (e.g., 'Adaequare Inc')"
+    },
     "Contract Lifecycle": {
         "Party A": "Name of the first party to the agreement (typically the client or service recipient). Format: Full legal entity name as stated in the contract (e.g., Adaequare Inc.)",
         "Party B": "Name of the second party to the agreement (typically the vendor or service provider). Format: Full legal entity name as stated in the contract (e.g., Orbit Inc.)",
@@ -180,16 +200,30 @@ FIELD_DEFINITIONS = {
         "Authorized Signatory - Party A": "Name and designation of the individual authorized to sign on behalf of Party A. Format: Full name and title (e.g., John Doe, VP of Operations). Extract from signature page or execution section.",
         "Authorized Signatory - Party B": "Name and designation of the individual authorized to sign on behalf of Party B. Format: Full name and title (e.g., Jane Smith, CEO). Extract from signature page or execution section."
     },
+    "Business Terms": {
+        "Document Type": "Type of agreement as stated by the title or heading. Use 'MSA' for Master/Professional Services Agreement and 'NDA' for Non-Disclosure Agreement. Format: 'MSA' or 'NDA'",
+        "Termination Notice Period": "Minimum written notice required to terminate the agreement. Extract the default notice period and note any special cases. Format: '<number> <unit>' (e.g., '30 days'). Ex: 'may terminate the agreement on 30 days written notice'; note nuance: after initial 6 months, work orders may be terminated on 15 days written notice. Return the primary agreement notice as value ('30 days')"
+    },
     "Commercial Operations": {
         "Billing Frequency": "How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced",
         "Payment Terms": "Time allowed for payment after invoice submission. Format: Terms as stated (e.g., Net 30 days from invoice date)",
         "Expense Reimbursement Rules": "Terms governing travel, lodging, and other reimbursable expenses. Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required)"
+    },
+    "Finance Terms": {
+        "Pricing Model Type": "Commercial structure indicated by references to hourly rates, work orders, and rate schedules. Use 'T&M' if billed by hourly rates; use 'Fixed' or 'Subscription' only if explicitly stated. Format: Enum ['Fixed','T&M','Subscription'].",
+        "Currency": "Settlement/monetary currency inferred from currency symbols or stated amounts. Format: ISO code (e.g., 'USD'). If a different currency is explicitly stated, prefer that.",
+        "Contract Value": "Total contract value if explicitly stated; otherwise return 'Not Found'. Many PSAs/MSAs defer value to Work Orders/SOWs. Format: Decimal number or 'Not Found' if not specified."
     },
     "Risk & Compliance": {
         "Indemnification Clause Reference": "Clause defining indemnity obligations and covered risks. Format: Section heading/number and 1-2 sentence excerpt (e.g., Section 12 – Indemnification: Each party agrees to indemnify...)",
         "Limitation of Liability Cap": "Maximum financial liability for either party. Format: Cap as stated (e.g., Aggregate liability not to exceed fees paid in previous 12 months)",
         "Insurance Requirements": "Types and minimum coverage levels required by client. Format: Requirements as stated (e.g., CGL $2M per occurrence; Workers Comp as per law)",
         "Warranties / Disclaimers": "Assurances or disclaimers related to service performance or quality. Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied)"
+    },
+    "Legal Terms": {
+        "Governing Law": "Jurisdiction whose laws govern the agreement, including venue/court location if specified. Format: Text as stated (e.g., 'Texas, USA' or 'Laws of the State of Texas; courts of Collin County, Texas')",
+        "Confidentiality Clause Reference": "Clause title/number and a brief excerpt describing confidentiality obligations and return of materials. Format: 'Section <number> – <title>: <1–2 sentence excerpt>'",
+        "Force Majeure Clause Reference": "Clause title/number and short excerpt describing relief from obligations due to extraordinary events. If no explicit clause exists, return 'Not Found'"
     }
 }
 
