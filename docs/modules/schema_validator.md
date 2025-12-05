@@ -49,9 +49,13 @@ empty_schema = validator.get_empty_schema()
 ## Schema Structure
 
 The schema matches `METADATA_SCHEMA` from `config.py`:
+- Org Details (1 field: Organization Name)
 - Contract Lifecycle (7 fields: Party A, Party B, Execution Date, Effective Date, Expiration/Termination Date, Authorized Signatory - Party A, Authorized Signatory - Party B)
-- Commercial Operations (3 fields)
-- Risk & Compliance (4 fields)
+- Business Terms (2 fields: Document Type, Termination Notice Period)
+- Commercial Operations (3 fields: Billing Frequency, Payment Terms, Expense Reimbursement Rules)
+- Finance Terms (3 fields: Pricing Model Type, Currency, Contract Value)
+- Risk & Compliance (4 fields: Indemnification Clause Reference, Limitation of Liability Cap, Insurance Requirements, Warranties / Disclaimers)
+- Legal Terms (3 fields: Governing Law, Confidentiality Clause Reference, Force Majeure Clause Reference)
 
 All fields are required and must be strings.
 
