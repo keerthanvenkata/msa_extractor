@@ -146,6 +146,9 @@ All outputs follow this JSON structure. See [`docs/REQUIREMENTS.md`](docs/REQUIR
 
 ```json
 {
+  "Org Details": {
+    "Organization Name": ""
+  },
   "Contract Lifecycle": {
     "Party A": "",
     "Party B": "",
@@ -155,16 +158,30 @@ All outputs follow this JSON structure. See [`docs/REQUIREMENTS.md`](docs/REQUIR
     "Authorized Signatory - Party A": "",
     "Authorized Signatory - Party B": ""
   },
+  "Business Terms": {
+    "Document Type": "",
+    "Termination Notice Period": ""
+  },
   "Commercial Operations": {
     "Billing Frequency": "",
     "Payment Terms": "",
     "Expense Reimbursement Rules": ""
+  },
+  "Finance Terms": {
+    "Pricing Model Type": "",
+    "Currency": "",
+    "Contract Value": ""
   },
   "Risk & Compliance": {
     "Indemnification Clause Reference": "",
     "Limitation of Liability Cap": "",
     "Insurance Requirements": "",
     "Warranties / Disclaimers": ""
+  },
+  "Legal Terms": {
+    "Governing Law": "",
+    "Confidentiality Clause Reference": "",
+    "Force Majeure Clause Reference": ""
   }
 }
 ```
