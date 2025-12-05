@@ -1,0 +1,43 @@
+Prompt Improvement Questions - For Review
+
+1. Document Type & Role Description
+- Prompt currently says "Master Service Agreement" but we now handle NDAs too
+- Should we update to: "Master Service Agreement or Non-Disclosure Agreement" or keep generic?
+
+2. Organization Name vs Party A/Party B
+- What is "Organization Name" relative to Party A/Party B?
+- Is it the same entity or different? Need clarification for extraction guidance.
+
+3. Document Type Edge Cases
+- What if document is both MSA and NDA?
+- What if unclear (e.g., just "Services Agreement")?
+
+4. Termination Notice Period Format
+- Should we enforce exact format: "30 days" (not "thirty days" or "30-day")?
+- Handle "calendar days" vs "business days"?
+- Normalize units (e.g., "1 month" = "30 days")?
+
+5. Contract Value Format
+- Always include decimals (e.g., "50000.00") or allow "50000"?
+- How to handle currency symbols (e.g., "$50,000" → "50000.00")?
+- Keep currency separate from value?
+
+6. Currency Field
+- List all supported currencies or keep open?
+- What if currency not mentioned - infer or "Not Found"?
+
+7. Pricing Model Type
+- What if hybrid model (e.g., fixed base + hourly)? Pick primary?
+- Normalize "Time and Materials" to "T&M"?
+
+8. Force Majeure Special Case
+- Only clause that explicitly returns "Not Found" if absent - keep this special or make consistent?
+
+9. Search Guidance Organization
+- Reorganize by logical groups (Document-level, Party info, Dates, Commercial, Legal)?
+
+10. Prompt Length
+- Keep comprehensive or split into clearer sections?
+
+Priority: Medium - Current prompt works, but these clarifications will improve extraction accuracy.
+
