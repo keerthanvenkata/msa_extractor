@@ -1,7 +1,7 @@
 # Project Prompt
 
 You are helping build a Python-based contract intelligence system called **MSA Metadata Extractor**.
-The system’s purpose is to read *Master Service Agreements (MSAs)* and extract a stable, well-defined set of metadata fields into structured, machine-readable JSON for downstream workflows.
+The system's purpose is to read *Master Service Agreements (MSAs)* and *Non-Disclosure Agreements (NDAs)* and extract a stable, well-defined set of metadata fields into structured, machine-readable JSON for downstream workflows. The system focuses on MSA extraction; NDAs are detected but NDA-specific fields are not extracted.
 
 ---
 
@@ -99,38 +99,32 @@ LLM PROMPTING PHILOSOPHY
 - When extracting clause references, ask for the nearest heading/section number and a short excerpt (1-2 sentences).
 - Add a follow-up step to validate/parse dates into ISO format; if ambiguous, return the literal string the model found and flag as "AmbiguousDate".
 
-Example prompt template (use exactly this pattern in code when calling Gemini):
-"""
-You are a contract analyst. Extract the following metadata fields from the given Master Service Agreement and return VALID JSON ONLY matching this schema:
+Example prompt template (see `ai/gemini_client.py` for the actual implementation):
+The prompt is organized into clear sections:
+1. **Role & Task**: Contract analyst extracting from MSA/NDA (focus on MSA)
+2. **Schema**: JSON schema structure
+3. **Field Definitions**: Detailed definitions for each field
+4. **Extraction Rules**: Organized by logical groups:
+   - General Rules
+   - Document-Level Fields (Document Type with edge cases)
+   - Party Information (Organization Name, Party A/B, Signatories)
+   - Date Fields (with normalization)
+   - Commercial & Finance Fields (Pricing Model with Hybrid, Currency allowlist, Contract Value with decimals)
+   - Legal & Compliance Fields (consistent clause reference handling)
+5. **Search Guidance**: Organized by logical groups (Document-level, Party info, Dates, Commercial, Legal)
+6. **Contract Content**: Text or images
 
-<insert full JSON schema here>
+Key improvements (January 2026):
+- Document Type edge case handling (MSA+NDA, unclear cases)
+- Organization Name clarification (parent company vs legal entities)
+- Termination Notice Period normalization (units, calendar/business days)
+- Pricing Model Type includes "Hybrid" option
+- Currency limited to USD/INR allowlist
+- Contract Value always includes decimals
+- All clause references consistently return "Not Found" if absent
+- Search guidance reorganized by logical groups for better clarity
 
-Rules:
-1. If a field cannot be determined, use "Not Found" (never null, empty list, or other placeholders).
-2. For dates:
-   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
-   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
-   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
-3. For "Expiration / Termination Date":
-   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
-   - If no explicit expiration: Return "Not Found"
-4. For "Indemnification Clause Reference":
-   - Return the section heading/number and a 1–2 sentence excerpt
-   - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-5. For Party A and Party B:
-   - Extract full legal entity names as stated in the contract
-   - Party A is typically the client/service recipient (first party mentioned)
-   - Party B is typically the vendor/service provider (second party mentioned)
-   - Look in the contract header, "Parties" section, or first paragraph
-6. For Authorized Signatories:
-   - Extract separately for each party from signature pages or execution sections
-   - Include full name and title/designation
-   - If multiple signatories for one party, combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
-7. Return no commentary, no extra keys, and no markdown — JSON only.
-
-MSA TEXT:
-\"\"\"<contract text here>\"\"\"
+See `ai/gemini_client.py` `_build_extraction_prompt()` method for the complete, up-to-date prompt.
 """
 
 ---
