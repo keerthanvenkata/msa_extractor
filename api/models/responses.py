@@ -79,9 +79,42 @@ class ResultResponse(BaseModel):
                 "created_at": "2025-11-12T10:30:00Z",
                 "completed_at": "2025-11-12T10:32:15Z",
                 "metadata": {
+                    "Org Details": {
+                        "Organization Name": "Adaequare Inc"
+                    },
                     "Contract Lifecycle": {
-                        "Effective Date": "2025-01-01",
-                        "Expiration / Termination Date": "2028-03-31"
+                        "Party A": "Adaequare Inc.",
+                        "Party B": "Orbit Inc.",
+                        "Execution Date": "2025-03-14",
+                        "Effective Date": "2025-04-01",
+                        "Expiration / Termination Date": "2028-03-31",
+                        "Authorized Signatory - Party A": "John Doe, VP of Operations",
+                        "Authorized Signatory - Party B": "Jane Smith, CEO"
+                    },
+                    "Business Terms": {
+                        "Document Type": "MSA",
+                        "Termination Notice Period": "30 days"
+                    },
+                    "Commercial Operations": {
+                        "Billing Frequency": "Monthly",
+                        "Payment Terms": "Net 30 days from invoice date",
+                        "Expense Reimbursement Rules": "Reimbursed as per client travel policy, pre-approval required"
+                    },
+                    "Finance Terms": {
+                        "Pricing Model Type": "T&M",
+                        "Currency": "USD",
+                        "Contract Value": "50000.00"
+                    },
+                    "Risk & Compliance": {
+                        "Indemnification Clause Reference": "Section 12 – Indemnification: Each party agrees to indemnify...",
+                        "Limitation of Liability Cap": "Aggregate liability not to exceed fees paid in previous 12 months",
+                        "Insurance Requirements": "CGL $2M per occurrence; Workers Comp as per law",
+                        "Warranties / Disclaimers": "Services to be performed in a professional manner; no other warranties implied"
+                    },
+                    "Legal Terms": {
+                        "Governing Law": "Texas, USA",
+                        "Confidentiality Clause Reference": "Section 8 – Confidential Information: Each party agrees to maintain confidentiality...",
+                        "Force Majeure Clause Reference": "Section 15 – Force Majeure: Neither party shall be liable..."
                     }
                 },
                 "error_message": None
