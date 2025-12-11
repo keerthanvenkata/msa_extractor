@@ -189,7 +189,7 @@ METADATA_SCHEMA = {
 # Field definitions for LLM prompts (from docs/REQUIREMENTS.md)
 FIELD_DEFINITIONS = {
     "Org Details": {
-        "Organization Name": "Full legal name of the contracting organization (counterparty). Format: As stated in the agreement (e.g., 'Adaequare Inc')"
+        "Organization Name": "Full legal name of the contracting organization (parent company/business entity). If a brand is mentioned elsewhere in the document, map that brand to Organization Name. If no brand is mentioned, use the same value as the legal entity name (Party A or Party B, whichever is the primary contracting organization). Format: As stated in the agreement (e.g., 'Adaequare Inc')"
     },
     "Contract Lifecycle": {
         "Party A": "Name of the first party to the agreement (typically the client or service recipient). Format: Full legal entity name as stated in the contract (e.g., Adaequare Inc.)",
@@ -201,8 +201,8 @@ FIELD_DEFINITIONS = {
         "Authorized Signatory - Party B": "Name and designation of the individual authorized to sign on behalf of Party B. Format: Full name and title (e.g., Jane Smith, CEO). Extract from signature page or execution section."
     },
     "Business Terms": {
-        "Document Type": "Type of agreement as stated by the title or heading. Use 'MSA' for Master/Professional Services Agreement and 'NDA' for Non-Disclosure Agreement. Format: 'MSA' or 'NDA'",
-        "Termination Notice Period": "Minimum written notice required to terminate the agreement. Extract the default notice period and note any special cases. Format: '<number> <unit>' (e.g., '30 days'). Ex: 'may terminate the agreement on 30 days written notice'; note nuance: after initial 6 months, work orders may be terminated on 15 days written notice. Return the primary agreement notice as value ('30 days')"
+        "Document Type": "Type of agreement as stated by the title or heading. Use 'MSA' for Master/Professional Services Agreement or 'Services Agreement'. Use 'NDA' for Non-Disclosure Agreement. Edge cases: If document contains both MSA and NDA elements, set to 'MSA' if commercial terms (pricing, payment, termination) exist; otherwise 'NDA'. If unclear (e.g., just 'Services Agreement'), default to 'MSA' if pricing/term/termination are found; else 'NDA'. Format: 'MSA' or 'NDA'",
+        "Termination Notice Period": "Minimum written notice required to terminate the agreement. Accept various formats: '30 days', 'thirty (30) calendar days', '1 month', '60 business days'. Normalize units: '1 month' = '30 days', '1 year' = '365 days'. Format: '<number> days' (e.g., '30 days'). Extract the primary/default notice period for the main agreement. If multiple periods exist (e.g., different for work orders), return the primary agreement notice. Examples: '30 calendar days' → '30 days', '1 month' → '30 days', 'sixty (60) business days' → '60 days'"
     },
     "Commercial Operations": {
         "Billing Frequency": "How often invoices are issued under the MSA. Examples: Monthly, Quarterly, Milestone-based, As-invoiced",
@@ -210,9 +210,9 @@ FIELD_DEFINITIONS = {
         "Expense Reimbursement Rules": "Terms governing travel, lodging, and other reimbursable expenses. Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required)"
     },
     "Finance Terms": {
-        "Pricing Model Type": "Commercial structure indicated by references to hourly rates, work orders, and rate schedules. Use 'T&M' if billed by hourly rates; use 'Fixed' or 'Subscription' only if explicitly stated. Format: Enum ['Fixed','T&M','Subscription'].",
-        "Currency": "Settlement/monetary currency inferred from currency symbols or stated amounts. Format: ISO code (e.g., 'USD'). If a different currency is explicitly stated, prefer that.",
-        "Contract Value": "Total contract value if explicitly stated; otherwise return 'Not Found'. Many PSAs/MSAs defer value to Work Orders/SOWs. Format: Decimal number or 'Not Found' if not specified."
+        "Pricing Model Type": "Commercial structure indicated by references to hourly rates, work orders, and rate schedules. Must be exactly one of: 'Fixed', 'T&M', 'Subscription', or 'Hybrid' (case-sensitive). Normalize 'Time and Materials' or 'Time & Materials' to 'T&M'. Use 'T&M' if billed by hourly rates. Use 'Fixed' or 'Subscription' only if explicitly stated. If hybrid model (e.g., fixed base + hourly), set to 'Hybrid'. Format: Enum ['Fixed','T&M','Subscription','Hybrid'].",
+        "Currency": "Settlement/monetary currency. Limited allowlist: 'USD' or 'INR' only (expandable later). If currency symbol detected: Infer ($ → USD, ₹ → INR). If currency explicitly stated: Use that value if it's USD or INR. If currency absent or not in allowlist: Return 'Not Found'. If multiple currencies mentioned, prefer the primary settlement currency. Format: 'USD', 'INR', or 'Not Found'.",
+        "Contract Value": "Total contract value if explicitly stated; otherwise return 'Not Found'. Always include decimals (e.g., '50000.00' not '50000'). Keep the format as stated in the agreement (preserve decimal precision). Remove currency symbols and commas (e.g., '$50,000' → '50000.00'). Many PSAs/MSAs defer value to Work Orders/SOWs. Format: Decimal number with decimals (e.g., '50000.00') or 'Not Found' if not specified."
     },
     "Risk & Compliance": {
         "Indemnification Clause Reference": "Clause defining indemnity obligations and covered risks. Format: Section heading/number and 1-2 sentence excerpt (e.g., Section 12 – Indemnification: Each party agrees to indemnify...)",
@@ -222,8 +222,8 @@ FIELD_DEFINITIONS = {
     },
     "Legal Terms": {
         "Governing Law": "Jurisdiction whose laws govern the agreement, including venue/court location if specified. Format: Text as stated (e.g., 'Texas, USA' or 'Laws of the State of Texas; courts of Collin County, Texas')",
-        "Confidentiality Clause Reference": "Clause title/number and a brief excerpt describing confidentiality obligations and return of materials. Format: 'Section <number> – <title>: <1–2 sentence excerpt>'",
-        "Force Majeure Clause Reference": "Clause title/number and short excerpt describing relief from obligations due to extraordinary events. If no explicit clause exists, return 'Not Found'"
+        "Confidentiality Clause Reference": "Clause title/number and a brief excerpt describing confidentiality obligations and return of materials. If no explicit clause exists, return 'Not Found'. Format: 'Section <number> – <title>: <1–2 sentence excerpt>' or 'Not Found'",
+        "Force Majeure Clause Reference": "Clause title/number and short excerpt describing relief from obligations due to extraordinary events. If no explicit clause exists, return 'Not Found'. Note: Consistent with all clause references - all return 'Not Found' if absent. Format: 'Section <number> – <title>: <1–2 sentence excerpt>' or 'Not Found'"
     }
 }
 
