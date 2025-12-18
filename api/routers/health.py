@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from api.dependencies import get_db
 from api.models.responses import HealthResponse
+from api import __version__
 from config import DB_PATH
 from storage.database import ExtractionDB
 from utils.logger import get_logger
@@ -65,7 +66,7 @@ async def health_check():
         # Build response
         response = HealthResponse(
             status=health_status,
-            version="1.0.0",
+            version=__version__,
             database=db_status,
             storage_type=storage_type,
             timestamp=datetime.now().isoformat(),
@@ -86,7 +87,7 @@ async def health_check():
         logger.error(f"Health check error: {e}", exc_info=True)
         error_response = HealthResponse(
             status="unhealthy",
-            version="1.0.0",
+            version=__version__,
             database="unknown",
             storage_type="local",
             timestamp=datetime.now().isoformat(),

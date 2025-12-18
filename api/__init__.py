@@ -5,5 +5,5 @@ Provides REST API endpoints for document upload, job status tracking,
 and metadata extraction results.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
