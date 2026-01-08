@@ -1,5 +1,12 @@
 """
-Validation service for MSA metadata extraction.
+DEPRECATED: Validation service for MSA metadata extraction.
+
+This service is deprecated. Validation is now integrated directly into the extraction
+process via the GeminiClient. The LLM now returns validation scores, match flags, and
+notes as part of the extraction response.
+
+This file is kept for reference only and should not be used in new code.
+Validation is handled in ai/gemini_client.py as part of the extraction prompt.
 
 Validates extracted metadata against industry-standard templates and examples.
 Adds validation scores, flags, and additional insights to the extracted metadata.
