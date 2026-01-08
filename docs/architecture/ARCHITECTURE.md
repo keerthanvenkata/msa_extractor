@@ -1,10 +1,13 @@
 # System Architecture
 
-**Last Updated:** November 12, 2025
+**Last Updated:** January 8, 2026  
+**Version:** v2.0.0
 
 ## Overview
 
 The MSA Metadata Extractor is a modular system designed to extract structured metadata from Master Service Agreements (MSAs) using a combination of text extraction, OCR, and Large Language Models (LLMs).
+
+**Architecture Decisions:** See [Architecture Decision Records (ADRs)](adr/README.md) for detailed rationale behind major design choices.
 
 ## High-Level Architecture
 
@@ -81,7 +84,13 @@ The MSA Metadata Extractor is a modular system designed to extract structured me
 
 ### 3. AI Integration
 - **GeminiClient**: Handles both text and vision LLM calls
+  - Builds prompts using config-based instructions (`FIELD_INSTRUCTIONS`, `TEMPLATE_REFERENCES`)
+  - Performs integrated extraction and validation in single LLM call
+  - Returns enhanced schema with match flags and validation scores
 - **SchemaValidator**: Validates and normalizes extracted metadata
+  - Handles enhanced schema structure (extracted_value, match_flag, validation)
+  - Validates match flags and validation status enums
+  - Normalizes validation scores and notes
 
 ### 4. Persistence & Storage
 - **ExtractionDB**: SQLite database for job tracking, result storage, and logging

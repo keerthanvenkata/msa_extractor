@@ -1,6 +1,7 @@
 # Documentation Index
 
-**Last Updated:** November 12, 2025
+**Last Updated:** January 8, 2026  
+**Version:** v2.0.0
 
 The `docs/` directory contains comprehensive documentation for the MSA Metadata Extractor project, organized into logical sections for easy navigation.
 
@@ -60,6 +61,10 @@ Located in [`architecture/`](architecture/):
 
 - **[System Architecture](architecture/ARCHITECTURE.md)** — High-level system architecture, component overview, and data flow
 - **[Extraction Architecture](architecture/EXTRACTION_ARCHITECTURE.md)** — Detailed extraction system design with content extraction methods and LLM processing modes
+- **[Architecture Decision Records (ADRs)](architecture/adr/)** — Major architectural decisions and rationale
+  - **v2.0.0 Decisions**: [ADR-0001](architecture/adr/0001-enhanced-schema-structure.md), [ADR-0002](architecture/adr/0002-config-refactoring-separation-of-concerns.md), [ADR-0003](architecture/adr/0003-integrated-validation-vs-separate-service.md)
+  - **Historical Decisions**: [ADR-0004](architecture/adr/0004-two-tier-extraction-architecture.md) through [ADR-0011](architecture/adr/0011-environment-based-configuration.md)
+  - See [ADR Index](architecture/adr/README.md) for complete list
 
 ### Legacy Documentation
 
@@ -138,7 +143,20 @@ docs/
 │
 ├── architecture/          # Architecture & Design
 │   ├── ARCHITECTURE.md
-│   └── EXTRACTION_ARCHITECTURE.md
+│   ├── EXTRACTION_ARCHITECTURE.md
+│   └── adr/              # Architecture Decision Records
+│       ├── README.md    # ADR Index
+│       ├── 0001-enhanced-schema-structure.md
+│       ├── 0002-config-refactoring-separation-of-concerns.md
+│       ├── 0003-integrated-validation-vs-separate-service.md
+│       ├── 0004-two-tier-extraction-architecture.md
+│       ├── 0005-fastapi-framework-choice.md
+│       ├── 0006-sqlite-database-choice.md
+│       ├── 0007-multimodal-as-default.md
+│       ├── 0008-hybrid-extraction-as-default.md
+│       ├── 0009-retry-logic-exponential-backoff.md
+│       ├── 0010-json-schema-validation.md
+│       └── 0011-environment-based-configuration.md
 │
 ├── setup/                 # Setup & Installation
 │   ├── windows_ocr_setup.md
@@ -172,7 +190,8 @@ docs/
 │
 ├── PROJECT_STATUS.md      # Project Management
 ├── ISSUES_AND_TODOS.md
-└── REQUIREMENTS.md        # Requirements & Schema
+├── REQUIREMENTS.md        # Requirements & Schema
+└── CHANGELOG.md           # Version history and changes
 ```
 
 ---
