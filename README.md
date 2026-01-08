@@ -147,51 +147,55 @@ All outputs follow this JSON structure. See [`docs/REQUIREMENTS.md`](docs/REQUIR
 ```json
 {
   "Org Details": {
-    "Organization Name": ""
+    "Organization Name": {
+      "extracted_value": "Adaequare Inc",
+      "match_flag": "same_as_template",
+      "validation": {
+        "score": 100,
+        "status": "valid",
+        "notes": ""
+      }
+    }
   },
   "Contract Lifecycle": {
-    "Party A": "",
-    "Party B": "",
-    "Execution Date": "",
-    "Effective Date": "",
-    "Expiration / Termination Date": "",
-    "Authorized Signatory - Party A": "",
-    "Authorized Signatory - Party B": ""
-  },
-  "Business Terms": {
-    "Document Type": "",
-    "Termination Notice Period": ""
-  },
-  "Commercial Operations": {
-    "Billing Frequency": "",
-    "Payment Terms": "",
-    "Expense Reimbursement Rules": ""
-  },
-  "Finance Terms": {
-    "Pricing Model Type": "",
-    "Currency": "",
-    "Contract Value": ""
-  },
-  "Risk & Compliance": {
-    "Indemnification Clause Reference": "",
-    "Limitation of Liability Cap": "",
-    "Insurance Requirements": "",
-    "Warranties / Disclaimers": ""
-  },
-  "Legal Terms": {
-    "Governing Law": "",
-    "Confidentiality Clause Reference": "",
-    "Force Majeure Clause Reference": ""
+    "Party A": {
+      "extracted_value": "Adaequare Inc.",
+      "match_flag": "same_as_template",
+      "validation": {
+        "score": 100,
+        "status": "valid",
+        "notes": ""
+      }
+    },
+    "Execution Date": {
+      "extracted_value": "2025-03-14",
+      "match_flag": "same_as_template",
+      "validation": {
+        "score": 100,
+        "status": "valid",
+        "notes": ""
+      }
+    }
   }
 }
 ```
 
+**Enhanced Schema Structure (v2.0.0):**
+Each field now includes:
+- **`extracted_value`**: The actual extracted value (string)
+- **`match_flag`**: Comparison to template (`same_as_template`, `similar_not_exact`, `different_from_template`, `flag_for_review`, `not_found`)
+- **`validation`**: Quality assessment with:
+  - `score`: 0-100 (quality score)
+  - `status`: `valid`, `warning`, `invalid`, or `not_found`
+  - `notes`: Optional insights or recommendations
+
 **Key Rules:**
-- Fields that cannot be found will return `"Not Found"` (never null or empty)
+- Fields that cannot be found will return `"Not Found"` for `extracted_value` with `match_flag: "not_found"` and `validation.status: "not_found"`
 - Dates: Preferred ISO format `yyyy-mm-dd`; if ambiguous, include `(AmbiguousDate)` flag
 - Expiration Date: Return `"Evergreen"` if contract auto-renews
 - Multiple values: Combine with semicolons (e.g., multiple signatories)
 - Clause references: Include section heading/number and 1-2 sentence excerpt
+- **Validation**: All fields include validation scores and status, even if not found
 
 See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) for complete field definitions and examples.
 
