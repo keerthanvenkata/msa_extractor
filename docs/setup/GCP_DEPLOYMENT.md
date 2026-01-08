@@ -329,7 +329,7 @@ Expected response:
 ```json
 {
   "status": "healthy",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "database": "connected",
   "storage_type": "local",
   "timestamp": "2025-11-13T10:30:00Z"
@@ -430,7 +430,7 @@ curl https://your-service-url/api/v1/extract/{job_id}/logs
 
 - **"Illegal header value" error:**
   - **Cause:** API key from Secret Manager may have trailing newlines/whitespace
-  - **Fix:** Application automatically strips whitespace from `GEMINI_API_KEY` (fixed in v1.0.0)
+  - **Fix:** Application automatically strips whitespace from `GEMINI_API_KEY` (fixed in v2.0.0)
   - **Prevention:** Ensure Secret Manager secrets don't have extra newlines when creating
 
 ---

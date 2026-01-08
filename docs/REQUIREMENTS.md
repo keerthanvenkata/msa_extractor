@@ -224,7 +224,12 @@ When modifying requirements:
 
 ## Version History
 
-- **January 2026**: Updated based on QC/testing feedback: Added Hybrid pricing model, limited currency allowlist (USD/INR), improved termination notice period normalization, clarified Organization Name vs Party A/B, added document type edge case handling, made Force Majeure consistent with other clause references, reorganized search guidance by logical groups, improved prompt structure with clearer sections.
+- **v2.0.0 (January 2026)**: Major update with validation and template integration features:
+  - Added per-field validation (score, status, notes) integrated into extraction response
+  - Added match flags (same_as_template, similar_not_exact, different_from_template, flag_for_review, not_found)
+  - Refactored config: separated FIELD_INSTRUCTIONS and TEMPLATE_REFERENCES
+  - Enhanced schema structure: each field now includes extracted_value, match_flag, and validation
+  - Updated based on QC/testing feedback: Added Hybrid pricing model, limited currency allowlist (USD/INR), improved termination notice period normalization, clarified Organization Name vs Party A/B, added document type edge case handling, made Force Majeure consistent with other clause references, reorganized search guidance by logical groups, improved prompt structure with clearer sections.
 - **December 2025**: Added new fields: Organization Name, Document Type, Termination Notice Period, Pricing Model Type, Currency, Contract Value, Governing Law, Confidentiality Clause Reference, and Force Majeure Clause Reference. Added new categories: Org Details, Business Terms, Finance Terms, and Legal Terms.
 - **November 14, 2025**: Added Party A, Party B, and separate authorized signatories for each party
 - **November 11, 2025**: Initial requirements definition with exact field definitions and examples

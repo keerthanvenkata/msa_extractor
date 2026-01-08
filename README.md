@@ -217,5 +217,5 @@ pytest tests/
 
 ## License
 
-© 2025 Keerthan Venkata. All rights reserved.
+© 2026 Keerthan Venkata. All rights reserved.
 

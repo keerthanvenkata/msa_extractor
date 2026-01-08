@@ -449,7 +449,7 @@ async def upload_pdf(
 ```json
 {
   "status": "healthy",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "database": "connected",
   "timestamp": "2025-01-07T10:30:00Z"
 }

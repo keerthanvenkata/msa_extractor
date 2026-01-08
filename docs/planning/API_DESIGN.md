@@ -1,8 +1,8 @@
 # API Design Specification
 
-**Last Updated:** November 12, 2025  
+**Last Updated:** January 8, 2026  
 **Status:** Design Phase  
-**Version:** v1.0
+**Version:** v2.0.0
 
 ---
 
@@ -342,7 +342,7 @@ Health check endpoint (for load balancers and monitoring).
 ```json
 {
   "status": "healthy",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "database": "connected",
   "storage_type": "local",
   "timestamp": "2025-11-12T10:30:00Z"
