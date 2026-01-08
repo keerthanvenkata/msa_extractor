@@ -414,7 +414,7 @@ class HealthResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "status": "healthy",
-                "version": "1.1.0",
+                "version": "2.0.0",
                 "database": "connected",
                 "storage_type": "local",
                 "timestamp": "2025-11-12T10:30:00Z",

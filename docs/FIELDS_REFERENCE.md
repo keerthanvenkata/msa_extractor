@@ -1,7 +1,7 @@
 # MSA Metadata Fields Reference
 
-**Version:** v1.1.0  
-**Date:** December 2025  
+**Version:** v2.0.0  
+**Date:** January 2026  
 **Purpose:** Complete reference of all extractable fields with descriptions and typical section locations
 
 This document lists all metadata fields currently extracted from MSAs, their descriptions, formats, and typical locations in contracts. Use this to map fields to your template's clause numbers.
