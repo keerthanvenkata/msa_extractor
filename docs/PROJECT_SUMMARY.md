@@ -91,24 +91,30 @@
 - `GET /api/v1/extract/{job_id}/logs` - Retrieve job execution logs
 - `GET /api/v1/health` - Health check endpoint
 
-### 5. Metadata Extraction Schema
-Extracts 13 structured fields across 3 categories:
+### 5. Metadata Extraction Schema (v2.0.0 Enhanced)
+Extracts 22 structured fields across 7 categories with integrated validation:
 
-**Contract Lifecycle (7 fields):**
-- Party A & Party B identification
-- Execution, Effective, and Expiration dates
-- Authorized signatories for both parties
+**Enhanced Field Structure:**
+Each field includes:
+- `extracted_value`: The actual extracted value
+- `match_flag`: Template comparison (`same_as_template`, `similar_not_exact`, `different_from_template`, `flag_for_review`, `not_found`)
+- `validation`: Quality assessment with score (0-100), status, and notes
 
-**Commercial Operations (3 fields):**
-- Billing frequency
-- Payment terms
-- Expense reimbursement rules
+**Field Categories:**
+- **Org Details** (1 field): Organization Name
+- **Contract Lifecycle** (7 fields): Party A, Party B, Execution Date, Effective Date, Expiration/Termination Date, Authorized Signatories
+- **Business Terms** (2 fields): Document Type, Termination Notice Period
+- **Commercial Operations** (3 fields): Billing Frequency, Payment Terms, Expense Reimbursement Rules
+- **Finance Terms** (3 fields): Pricing Model Type, Currency, Contract Value
+- **Risk & Compliance** (4 fields): Indemnification Clause Reference, Limitation of Liability Cap, Insurance Requirements, Warranties/Disclaimers
+- **Legal Terms** (3 fields): Governing Law, Confidentiality Clause Reference, Force Majeure Clause Reference
 
-**Risk & Compliance (4 fields):**
-- Indemnification clause references
-- Limitation of liability caps
-- Insurance requirements
-- Warranties and disclaimers
+**v2.0.0 New Features:**
+- Per-field validation scores and status
+- Template comparison via match flags
+- Integrated validation (single LLM call)
+- Config-based field instructions
+- Template reference support
 
 ### 6. Production Features
 - **Job Management**: UUID-based job tracking with status monitoring

@@ -24,6 +24,14 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - ✅ CLI interface (single file + batch processing)
 - ✅ Configuration management (environment variables)
 
+### v2.0.0 New Features (January 2026)
+- ✅ **Enhanced Schema Structure**: Each field includes `extracted_value`, `match_flag`, and `validation` object
+- ✅ **Per-Field Validation**: Integrated validation with scores (0-100), status, and notes
+- ✅ **Match Flags**: Template comparison flags (`same_as_template`, `similar_not_exact`, `different_from_template`, `flag_for_review`, `not_found`)
+- ✅ **Config Refactoring**: Separated `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` from prompt builder
+- ✅ **Template Integration**: Support for template clause references and sample answers
+- ✅ **Integrated Validation**: Validation performed in same LLM call as extraction (single API call)
+
 ### Quality & Reliability
 - ✅ Resource management (proper file handle closing)
 - ✅ Error handling and validation
