@@ -1,11 +1,12 @@
 # Gemini Client
 
 **Module:** `ai.gemini_client`  
-**Last Updated:** November 12, 2025
+**Last Updated:** January 8, 2026  
+**Version:** v2.0.0
 
 ## Purpose
 
-The `GeminiClient` class provides integration with Google Gemini API for metadata extraction. It supports three processing modes:
+The `GeminiClient` class provides integration with Google Gemini API for metadata extraction with integrated validation. It supports three processing modes:
 
 - **Text-based extraction** (using Gemini text model)
 - **Image-based extraction** (using Gemini Vision model)
@@ -15,9 +16,12 @@ The `GeminiClient` class provides integration with Google Gemini API for metadat
 
 - Text and vision model support
 - Multimodal input (text + images in single call)
-- Schema-aware prompt generation
+- **Config-based prompt generation**: Uses `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` from config
+- **Integrated validation**: Returns validation scores and match flags as part of extraction
+- **Template comparison**: Match flags indicate how extracted values compare to templates
+- **Enhanced schema**: Returns `extracted_value`, `match_flag`, and `validation` for each field
 - JSON parsing with markdown handling
-- Schema validation and normalization (validation BEFORE normalization)
+- Schema validation and normalization
 - Retry logic with exponential backoff
 - Error handling with fallback
 
@@ -53,13 +57,16 @@ client = GeminiClient()
 metadata = client.extract_metadata_multimodal(text, image_bytes_list)
 ```
 
-## Prompt Template
+## Prompt Template (v2.0.0)
 
 The client uses a detailed prompt template that includes:
+- Schema structure (enhanced with validation requirements)
 - Field definitions from `FIELD_DEFINITIONS`
+- Field-specific instructions from `FIELD_INSTRUCTIONS` (config-based)
+- Template references from `TEMPLATE_REFERENCES` (if populated)
+- Match flag values and validation requirements
 - Extraction rules (dates, Evergreen, multiple values, etc.)
-- Schema structure
-- Examples and format specifications
+- Search guidance
 
 See `docs/REQUIREMENTS.md` for complete field definitions.
 
