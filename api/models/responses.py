@@ -80,41 +80,225 @@ class ResultResponse(BaseModel):
                 "completed_at": "2025-11-12T10:32:15Z",
                 "metadata": {
                     "Org Details": {
-                        "Organization Name": "Adaequare Inc"
+                        "Organization Name": {
+                            "extracted_value": "Adaequare Inc",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        }
                     },
                     "Contract Lifecycle": {
-                        "Party A": "Adaequare Inc.",
-                        "Party B": "Orbit Inc.",
-                        "Execution Date": "2025-03-14",
-                        "Effective Date": "2025-04-01",
-                        "Expiration / Termination Date": "2028-03-31",
-                        "Authorized Signatory - Party A": "John Doe, VP of Operations",
-                        "Authorized Signatory - Party B": "Jane Smith, CEO"
+                        "Party A": {
+                            "extracted_value": "Adaequare Inc.",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Party B": {
+                            "extracted_value": "Orbit Inc.",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Execution Date": {
+                            "extracted_value": "2025-03-14",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Effective Date": {
+                            "extracted_value": "2025-04-01",
+                            "match_flag": "similar_not_exact",
+                            "validation": {
+                                "score": 90,
+                                "status": "valid",
+                                "notes": "Date format correct, differs from template by 18 days"
+                            }
+                        },
+                        "Expiration / Termination Date": {
+                            "extracted_value": "2028-03-31",
+                            "match_flag": "different_from_template",
+                            "validation": {
+                                "score": 85,
+                                "status": "warning",
+                                "notes": "Valid date but different term length than template"
+                            }
+                        },
+                        "Authorized Signatory - Party A": {
+                            "extracted_value": "John Doe, VP of Operations",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Authorized Signatory - Party B": {
+                            "extracted_value": "Jane Smith, CEO",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        }
                     },
                     "Business Terms": {
-                        "Document Type": "MSA",
-                        "Termination Notice Period": "30 days"
+                        "Document Type": {
+                            "extracted_value": "MSA",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Termination Notice Period": {
+                            "extracted_value": "30 days",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        }
                     },
                     "Commercial Operations": {
-                        "Billing Frequency": "Monthly",
-                        "Payment Terms": "Net 30 days from invoice date",
-                        "Expense Reimbursement Rules": "Reimbursed as per client travel policy, pre-approval required"
+                        "Billing Frequency": {
+                            "extracted_value": "Monthly",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Payment Terms": {
+                            "extracted_value": "Net 30 days from invoice date",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Expense Reimbursement Rules": {
+                            "extracted_value": "Reimbursed as per client travel policy, pre-approval required",
+                            "match_flag": "similar_not_exact",
+                            "validation": {
+                                "score": 95,
+                                "status": "valid",
+                                "notes": "Minor wording differences from template"
+                            }
+                        }
                     },
                     "Finance Terms": {
-                        "Pricing Model Type": "T&M",
-                        "Currency": "USD",
-                        "Contract Value": "50000.00"
+                        "Pricing Model Type": {
+                            "extracted_value": "T&M",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Currency": {
+                            "extracted_value": "USD",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Contract Value": {
+                            "extracted_value": "50000.00",
+                            "match_flag": "different_from_template",
+                            "validation": {
+                                "score": 80,
+                                "status": "warning",
+                                "notes": "Value differs from template example"
+                            }
+                        }
                     },
                     "Risk & Compliance": {
-                        "Indemnification Clause Reference": "Section 12 – Indemnification: Each party agrees to indemnify...",
-                        "Limitation of Liability Cap": "Aggregate liability not to exceed fees paid in previous 12 months",
-                        "Insurance Requirements": "CGL $2M per occurrence; Workers Comp as per law",
-                        "Warranties / Disclaimers": "Services to be performed in a professional manner; no other warranties implied"
+                        "Indemnification Clause Reference": {
+                            "extracted_value": "Section 12 – Indemnification: Each party agrees to indemnify...",
+                            "match_flag": "similar_not_exact",
+                            "validation": {
+                                "score": 90,
+                                "status": "valid",
+                                "notes": "Clause found, minor wording variations"
+                            }
+                        },
+                        "Limitation of Liability Cap": {
+                            "extracted_value": "Aggregate liability not to exceed fees paid in previous 12 months",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Insurance Requirements": {
+                            "extracted_value": "CGL $2M per occurrence; Workers Comp as per law",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Warranties / Disclaimers": {
+                            "extracted_value": "Services to be performed in a professional manner; no other warranties implied",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        }
                     },
                     "Legal Terms": {
-                        "Governing Law": "Texas, USA",
-                        "Confidentiality Clause Reference": "Section 8 – Confidential Information: Each party agrees to maintain confidentiality...",
-                        "Force Majeure Clause Reference": "Section 15 – Force Majeure: Neither party shall be liable..."
+                        "Governing Law": {
+                            "extracted_value": "Texas, USA",
+                            "match_flag": "different_from_template",
+                            "validation": {
+                                "score": 75,
+                                "status": "warning",
+                                "notes": "Jurisdiction differs from template"
+                            }
+                        },
+                        "Confidentiality Clause Reference": {
+                            "extracted_value": "Section 8 – Confidential Information: Each party agrees to maintain confidentiality...",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        },
+                        "Force Majeure Clause Reference": {
+                            "extracted_value": "Section 15 – Force Majeure: Neither party shall be liable...",
+                            "match_flag": "same_as_template",
+                            "validation": {
+                                "score": 100,
+                                "status": "valid",
+                                "notes": ""
+                            }
+                        }
                     }
                 },
                 "error_message": None
