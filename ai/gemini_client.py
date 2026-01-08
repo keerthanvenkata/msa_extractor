@@ -282,32 +282,36 @@ GENERAL RULES:
 1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
 2. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
 3. Return no commentary, no extra keys, and no markdown — JSON only.
-4. For each field, you must provide:
-   - extracted_value: The actual extracted value
-   - match_flag: One of {MATCH_FLAG_VALUES}
-   - validation: Object with score (0-100), status ({VALIDATION_STATUS_VALUES}), and notes (optional)
+4. For EACH field in the schema, you MUST provide a complete object with:
+   - extracted_value: The actual extracted value (string)
+   - match_flag: One of the allowed values below (string)
+   - validation: A validation object with score, status, and notes (object)
 
-MATCH FLAG VALUES:
-- "same_as_template": Extracted value exactly matches template example
-- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording)
-- "different_from_template": Extracted value differs significantly from template
-- "flag_for_review": Value extracted but needs human review (ambiguous, unusual, or complex)
-- "not_found": Field not found in document (use "{NOT_FOUND_VALUE}" for extracted_value)
+MATCH FLAG VALUES (choose exactly one per field):
+- "same_as_template": Extracted value exactly matches template example (if template provided)
+- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording, slight variations)
+- "different_from_template": Extracted value differs significantly from template or uses different approach
+- "flag_for_review": Value extracted but needs human review (ambiguous, unusual format, complex scenario, or unclear)
+- "not_found": Field not found in document (set extracted_value to "{NOT_FOUND_VALUE}")
 
-VALIDATION REQUIREMENTS:
-For each field, provide a validation object:
-- score: Integer 0-100
-  * 100: Perfect match with template, complete and correct
-  * 75-99: Good match, minor issues
-  * 50-74: Acceptable but deviates from template
-  * 25-49: Significant issues or deviations
-  * 0-24: Poor quality or missing critical information
-- status: One of {VALIDATION_STATUS_VALUES}
-  * "valid": Field is correct and complete
-  * "warning": Field has minor issues or deviations
-  * "invalid": Field has significant problems
+VALIDATION REQUIREMENTS (required for EVERY field):
+For each field, you MUST provide a validation object with:
+- score: Integer 0-100 (required)
+  * 100: Perfect match with template (if provided), complete, correct, and properly formatted
+  * 90-99: Excellent quality, minor formatting differences
+  * 75-89: Good quality, acceptable with minor issues or deviations
+  * 50-74: Acceptable but deviates from template or has moderate issues
+  * 25-49: Significant issues, deviations, or quality concerns
+  * 0-24: Poor quality, missing critical information, or incorrect format
+- status: One of the allowed values below (required)
+  * "valid": Field is correct, complete, and properly formatted
+  * "warning": Field has minor issues, deviations, or needs attention
+  * "invalid": Field has significant problems, incorrect format, or missing required information
   * "not_found": Field not found in document
-- notes: Optional string (max 500 chars) with validation insights, deviations, or recommendations
+- notes: String (optional, max 500 chars) with validation insights, deviations from template, recommendations, or explanations
+
+IMPORTANT: You must provide validation for ALL fields, even if the field is "not_found". 
+For "not_found" fields: set score to 0, status to "not_found", and notes explaining why it wasn't found.
 
 FIELD-SPECIFIC EXTRACTION GUIDANCE:
 Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
@@ -386,32 +390,36 @@ GENERAL RULES:
 1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
 2. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
 3. Return no commentary, no extra keys, and no markdown — JSON only.
-4. For each field, you must provide:
-   - extracted_value: The actual extracted value
-   - match_flag: One of {MATCH_FLAG_VALUES}
-   - validation: Object with score (0-100), status ({VALIDATION_STATUS_VALUES}), and notes (optional)
+4. For EACH field in the schema, you MUST provide a complete object with:
+   - extracted_value: The actual extracted value (string)
+   - match_flag: One of the allowed values below (string)
+   - validation: A validation object with score, status, and notes (object)
 
-MATCH FLAG VALUES:
-- "same_as_template": Extracted value exactly matches template example
-- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording)
-- "different_from_template": Extracted value differs significantly from template
-- "flag_for_review": Value extracted but needs human review (ambiguous, unusual, or complex)
-- "not_found": Field not found in document (use "{NOT_FOUND_VALUE}" for extracted_value)
+MATCH FLAG VALUES (choose exactly one per field):
+- "same_as_template": Extracted value exactly matches template example (if template provided)
+- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording, slight variations)
+- "different_from_template": Extracted value differs significantly from template or uses different approach
+- "flag_for_review": Value extracted but needs human review (ambiguous, unusual format, complex scenario, or unclear)
+- "not_found": Field not found in document (set extracted_value to "{NOT_FOUND_VALUE}")
 
-VALIDATION REQUIREMENTS:
-For each field, provide a validation object:
-- score: Integer 0-100
-  * 100: Perfect match with template, complete and correct
-  * 75-99: Good match, minor issues
-  * 50-74: Acceptable but deviates from template
-  * 25-49: Significant issues or deviations
-  * 0-24: Poor quality or missing critical information
-- status: One of {VALIDATION_STATUS_VALUES}
-  * "valid": Field is correct and complete
-  * "warning": Field has minor issues or deviations
-  * "invalid": Field has significant problems
+VALIDATION REQUIREMENTS (required for EVERY field):
+For each field, you MUST provide a validation object with:
+- score: Integer 0-100 (required)
+  * 100: Perfect match with template (if provided), complete, correct, and properly formatted
+  * 90-99: Excellent quality, minor formatting differences
+  * 75-89: Good quality, acceptable with minor issues or deviations
+  * 50-74: Acceptable but deviates from template or has moderate issues
+  * 25-49: Significant issues, deviations, or quality concerns
+  * 0-24: Poor quality, missing critical information, or incorrect format
+- status: One of the allowed values below (required)
+  * "valid": Field is correct, complete, and properly formatted
+  * "warning": Field has minor issues, deviations, or needs attention
+  * "invalid": Field has significant problems, incorrect format, or missing required information
   * "not_found": Field not found in document
-- notes: Optional string (max 500 chars) with validation insights, deviations, or recommendations
+- notes: String (optional, max 500 chars) with validation insights, deviations from template, recommendations, or explanations
+
+IMPORTANT: You must provide validation for ALL fields, even if the field is "not_found". 
+For "not_found" fields: set score to 0, status to "not_found", and notes explaining why it wasn't found.
 
 FIELD-SPECIFIC EXTRACTION GUIDANCE:
 Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
