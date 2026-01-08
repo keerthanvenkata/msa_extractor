@@ -246,3 +246,4 @@ VALIDATION_TEMPLATES_PATH = os.getenv("VALIDATION_TEMPLATES_PATH", "config/valid
 5. **Batch Validation:** Validate multiple contracts together
 
 
+
