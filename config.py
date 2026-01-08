@@ -146,45 +146,247 @@ if LOG_FILE_ENABLED:
 
 # JSON Schema structure (as defined in docs/REQUIREMENTS.md)
 # See docs/REQUIREMENTS.md for field definitions, examples, and update checklist
+# Enhanced structure with extracted_value, match_flag, and validation per field
 METADATA_SCHEMA = {
     "Org Details": {
-        "Organization Name": ""
+        "Organization Name": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Contract Lifecycle": {
-        "Party A": "",
-        "Party B": "",
-        "Execution Date": "",
-        "Effective Date": "",
-        "Expiration / Termination Date": "",
-        "Authorized Signatory - Party A": "",
-        "Authorized Signatory - Party B": ""
+        "Party A": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Party B": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Execution Date": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Effective Date": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Expiration / Termination Date": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Authorized Signatory - Party A": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Authorized Signatory - Party B": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Business Terms": {
-        "Document Type": "",
-        "Termination Notice Period": ""
+        "Document Type": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Termination Notice Period": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Commercial Operations": {
-        "Billing Frequency": "",
-        "Payment Terms": "",
-        "Expense Reimbursement Rules": ""
+        "Billing Frequency": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Payment Terms": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Expense Reimbursement Rules": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Finance Terms": {
-        "Pricing Model Type": "",
-        "Currency": "",
-        "Contract Value": ""
+        "Pricing Model Type": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Currency": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Contract Value": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Risk & Compliance": {
-        "Indemnification Clause Reference": "",
-        "Limitation of Liability Cap": "",
-        "Insurance Requirements": "",
-        "Warranties / Disclaimers": ""
+        "Indemnification Clause Reference": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Limitation of Liability Cap": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Insurance Requirements": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Warranties / Disclaimers": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     },
     "Legal Terms": {
-        "Governing Law": "",
-        "Confidentiality Clause Reference": "",
-        "Force Majeure Clause Reference": ""
+        "Governing Law": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Confidentiality Clause Reference": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        },
+        "Force Majeure Clause Reference": {
+            "extracted_value": "",
+            "match_flag": "",
+            "validation": {
+                "score": 0,
+                "status": "",
+                "notes": ""
+            }
+        }
     }
 }
+
+# Match flag allowed values
+MATCH_FLAG_VALUES = [
+    "same_as_template",
+    "similar_not_exact",
+    "different_from_template",
+    "flag_for_review",
+    "not_found"
+]
+
+# Validation status allowed values
+VALIDATION_STATUS_VALUES = [
+    "valid",
+    "warning",
+    "invalid",
+    "not_found"
+]
 
 # Field definitions for LLM prompts (from docs/REQUIREMENTS.md)
 FIELD_DEFINITIONS = {
