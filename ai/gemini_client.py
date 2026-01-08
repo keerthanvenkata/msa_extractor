@@ -15,6 +15,10 @@ from config import (
     GEMINI_VISION_MODEL,
     METADATA_SCHEMA,
     FIELD_DEFINITIONS,
+    FIELD_INSTRUCTIONS,
+    TEMPLATE_REFERENCES,
+    MATCH_FLAG_VALUES,
+    VALIDATION_STATUS_VALUES,
     NOT_FOUND_VALUE,
     MAX_TEXT_LENGTH,
     MAX_FIELD_LENGTH,
@@ -245,8 +249,10 @@ class GeminiClient:
         """
         schema_json = json.dumps(METADATA_SCHEMA, indent=2)
         
-        # Build field definitions section
+        # Build sections
         definitions_text = self._build_field_definitions_text()
+        instructions_text = self._build_field_instructions_text()
+        template_refs_text = self._build_template_references_text()
         
         if text:
             prompt = f"""You are a contract analyst. Extract the following metadata fields from the given Master Service Agreement (MSA) or Non-Disclosure Agreement (NDA). Focus on MSA extraction; detect NDA but do not extract NDA-specific fields. Return VALID JSON ONLY matching this schema:
@@ -256,6 +262,18 @@ class GeminiClient:
 FIELD DEFINITIONS:
 {definitions_text}
 
+FIELD-SPECIFIC INSTRUCTIONS:
+{instructions_text}
+"""
+            
+            # Add template references if available
+            if template_refs_text:
+                prompt += f"""
+TEMPLATE REFERENCES (Use as examples for extraction):
+{template_refs_text}
+"""
+            
+            prompt += f"""
 ================================================================================
 EXTRACTION RULES
 ================================================================================
@@ -264,99 +282,36 @@ GENERAL RULES:
 1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
 2. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
 3. Return no commentary, no extra keys, and no markdown — JSON only.
+4. For each field, you must provide:
+   - extracted_value: The actual extracted value
+   - match_flag: One of {MATCH_FLAG_VALUES}
+   - validation: Object with score (0-100), status ({VALIDATION_STATUS_VALUES}), and notes (optional)
 
-DOCUMENT-LEVEL FIELDS:
-4. For "Document Type":
-   - Must be exactly "MSA" or "NDA" (case-sensitive)
-   - Use "MSA" for Master/Professional Services Agreement or "Services Agreement"
-   - Use "NDA" for Non-Disclosure Agreement
-   - Determine from document title or heading
-   - Edge cases:
-     * If document contains both MSA and NDA elements: Set to "MSA" if commercial terms (pricing, payment, termination) exist; otherwise "NDA"
-     * If unclear (e.g., just "Services Agreement"): Default to "MSA" if pricing/term/termination are found; else "NDA"
+MATCH FLAG VALUES:
+- "same_as_template": Extracted value exactly matches template example
+- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording)
+- "different_from_template": Extracted value differs significantly from template
+- "flag_for_review": Value extracted but needs human review (ambiguous, unusual, or complex)
+- "not_found": Field not found in document (use "{NOT_FOUND_VALUE}" for extracted_value)
 
-PARTY INFORMATION:
-5. For "Organization Name":
-   - Full legal name of the contracting organization (parent company/business entity)
-   - If a brand is mentioned elsewhere in the document, map that brand to Organization Name
-   - If no brand is mentioned, use the same value as the legal entity name (Party A or Party B, whichever is the primary contracting organization)
-   - Look in preamble/opening party identification (typically Page 1)
+VALIDATION REQUIREMENTS:
+For each field, provide a validation object:
+- score: Integer 0-100
+  * 100: Perfect match with template, complete and correct
+  * 75-99: Good match, minor issues
+  * 50-74: Acceptable but deviates from template
+  * 25-49: Significant issues or deviations
+  * 0-24: Poor quality or missing critical information
+- status: One of {VALIDATION_STATUS_VALUES}
+  * "valid": Field is correct and complete
+  * "warning": Field has minor issues or deviations
+  * "invalid": Field has significant problems
+  * "not_found": Field not found in document
+- notes: Optional string (max 500 chars) with validation insights, deviations, or recommendations
 
-6. For "Party A" and "Party B":
-   - Extract full legal entity names as stated in the contract header
-   - Party A is typically the client/service recipient (first party mentioned)
-   - Party B is typically the vendor/service provider (second party mentioned)
-   - Prefer legal entity names from the contract header over brand names
-   - Look in the contract header, "Parties" section, or first paragraph
-
-7. For "Authorized Signatories":
-   - Extract separately for each party from signature pages or execution sections
-   - Include full name and title/designation
-   - If multiple signatories for one party, combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
-
-DATE FIELDS:
-8. For dates (Execution Date, Effective Date):
-   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
-   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
-   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
-
-9. For "Expiration / Termination Date":
-   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
-   - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
-
-10. For "Termination Notice Period":
-    - Accept various formats: "30 days", "thirty (30) calendar days", "1 month", "60 business days"
-    - Normalize units: "1 month" = "30 days", "1 year" = "365 days"
-    - Format: "<number> days" (e.g., "30 days")
-    - Note the day type if specified (calendar days vs business days) in the extracted text
-    - Extract the primary/default notice period for the main agreement
-    - If multiple periods exist (e.g., different for work orders), return the primary agreement notice
-    - Examples:
-      * "30 calendar days" → "30 days"
-      * "1 month" → "30 days"
-      * "sixty (60) business days" → "60 days"
-
-COMMERCIAL & FINANCE FIELDS:
-11. For "Pricing Model Type":
-    - Must be exactly one of: "Fixed", "T&M", "Subscription", or "Hybrid" (case-sensitive)
-    - Normalize "Time and Materials" or "Time & Materials" to "T&M"
-    - Use "T&M" if billed by hourly rates
-    - Use "Fixed" or "Subscription" only if explicitly stated
-    - If hybrid model (e.g., fixed base + hourly): Set to "Hybrid"
-    - Note: For hybrid models, the raw text description will be captured in the extracted value
-
-12. For "Currency":
-    - Limited allowlist: "USD" or "INR" only (expandable later)
-    - If currency symbol detected: Infer ($ → USD, ₹ → INR)
-    - If currency explicitly stated: Use that value if it's USD or INR
-    - If currency absent or not in allowlist: Return "{NOT_FOUND_VALUE}"
-    - If multiple currencies mentioned, prefer the primary settlement currency
-
-13. For "Contract Value":
-    - Always include decimals (e.g., "50000.00" not "50000")
-    - Keep the format as stated in the agreement (preserve decimal precision)
-    - Remove currency symbols and commas (e.g., "$50,000" → "50000.00")
-    - Many MSAs defer value to Work Orders/SOWs - return "{NOT_FOUND_VALUE}" if not specified in main agreement
-
-14. For "Billing Frequency", "Payment Terms", "Expense Reimbursement Rules":
-    - Extract as stated in the document
-    - Look in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar
-
-LEGAL & COMPLIANCE FIELDS:
-15. For clause references (Indemnification, Confidentiality, Force Majeure):
-    - If no explicit clause exists, return "{NOT_FOUND_VALUE}" (consistent across all clause references)
-    - If clause exists: Return the section heading/number and a 1–2 sentence excerpt
-    - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-    - Note: Force Majeure is no longer special - all clause references follow the same rule
-
-16. For "Governing Law":
-    - Extract jurisdiction and venue/court location if specified
-    - Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law"
-
-17. For "Indemnification Clause Reference", "Limitation of Liability Cap", "Insurance Requirements", "Warranties / Disclaimers":
-    - Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions"
-    - If clause reference absent, return "{NOT_FOUND_VALUE}"
+FIELD-SPECIFIC EXTRACTION GUIDANCE:
+Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
+Use TEMPLATE REFERENCES (if provided) as examples to guide extraction and determine match_flag values.
 
 ================================================================================
 SEARCH GUIDANCE (Organized by Logical Groups)
@@ -411,6 +366,18 @@ MSA TEXT:
 FIELD DEFINITIONS:
 {definitions_text}
 
+FIELD-SPECIFIC INSTRUCTIONS:
+{instructions_text}
+"""
+            
+            # Add template references if available
+            if template_refs_text:
+                prompt += f"""
+TEMPLATE REFERENCES (Use as examples for extraction):
+{template_refs_text}
+"""
+            
+            prompt += f"""
 ================================================================================
 EXTRACTION RULES
 ================================================================================
@@ -419,99 +386,36 @@ GENERAL RULES:
 1. If a field cannot be determined, use "{NOT_FOUND_VALUE}" (never null, empty list, or other placeholders).
 2. Each field value must not exceed {MAX_FIELD_LENGTH} characters. If a field would exceed this limit, truncate it appropriately while preserving the most important information.
 3. Return no commentary, no extra keys, and no markdown — JSON only.
+4. For each field, you must provide:
+   - extracted_value: The actual extracted value
+   - match_flag: One of {MATCH_FLAG_VALUES}
+   - validation: Object with score (0-100), status ({VALIDATION_STATUS_VALUES}), and notes (optional)
 
-DOCUMENT-LEVEL FIELDS:
-4. For "Document Type":
-   - Must be exactly "MSA" or "NDA" (case-sensitive)
-   - Use "MSA" for Master/Professional Services Agreement or "Services Agreement"
-   - Use "NDA" for Non-Disclosure Agreement
-   - Determine from document title or heading
-   - Edge cases:
-     * If document contains both MSA and NDA elements: Set to "MSA" if commercial terms (pricing, payment, termination) exist; otherwise "NDA"
-     * If unclear (e.g., just "Services Agreement"): Default to "MSA" if pricing/term/termination are found; else "NDA"
+MATCH FLAG VALUES:
+- "same_as_template": Extracted value exactly matches template example
+- "similar_not_exact": Extracted value is similar to template but with minor differences (format, wording)
+- "different_from_template": Extracted value differs significantly from template
+- "flag_for_review": Value extracted but needs human review (ambiguous, unusual, or complex)
+- "not_found": Field not found in document (use "{NOT_FOUND_VALUE}" for extracted_value)
 
-PARTY INFORMATION:
-5. For "Organization Name":
-   - Full legal name of the contracting organization (parent company/business entity)
-   - If a brand is mentioned elsewhere in the document, map that brand to Organization Name
-   - If no brand is mentioned, use the same value as the legal entity name (Party A or Party B, whichever is the primary contracting organization)
-   - Look in preamble/opening party identification (typically Page 1)
+VALIDATION REQUIREMENTS:
+For each field, provide a validation object:
+- score: Integer 0-100
+  * 100: Perfect match with template, complete and correct
+  * 75-99: Good match, minor issues
+  * 50-74: Acceptable but deviates from template
+  * 25-49: Significant issues or deviations
+  * 0-24: Poor quality or missing critical information
+- status: One of {VALIDATION_STATUS_VALUES}
+  * "valid": Field is correct and complete
+  * "warning": Field has minor issues or deviations
+  * "invalid": Field has significant problems
+  * "not_found": Field not found in document
+- notes: Optional string (max 500 chars) with validation insights, deviations, or recommendations
 
-6. For "Party A" and "Party B":
-   - Extract full legal entity names as stated in the contract header
-   - Party A is typically the client/service recipient (first party mentioned)
-   - Party B is typically the vendor/service provider (second party mentioned)
-   - Prefer legal entity names from the contract header over brand names
-   - Look in the contract header, "Parties" section, or first paragraph
-
-7. For "Authorized Signatories":
-   - Extract separately for each party from signature pages or execution sections
-   - Include full name and title/designation
-   - If multiple signatories for one party, combine with semicolons
-   - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
-
-DATE FIELDS:
-8. For dates (Execution Date, Effective Date):
-   - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
-   - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
-   - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
-
-9. For "Expiration / Termination Date":
-   - If contract is "Evergreen" (auto-renews): Return "Evergreen"
-   - If no explicit expiration: Return "{NOT_FOUND_VALUE}"
-
-10. For "Termination Notice Period":
-    - Accept various formats: "30 days", "thirty (30) calendar days", "1 month", "60 business days"
-    - Normalize units: "1 month" = "30 days", "1 year" = "365 days"
-    - Format: "<number> days" (e.g., "30 days")
-    - Note the day type if specified (calendar days vs business days) in the extracted text
-    - Extract the primary/default notice period for the main agreement
-    - If multiple periods exist (e.g., different for work orders), return the primary agreement notice
-    - Examples:
-      * "30 calendar days" → "30 days"
-      * "1 month" → "30 days"
-      * "sixty (60) business days" → "60 days"
-
-COMMERCIAL & FINANCE FIELDS:
-11. For "Pricing Model Type":
-    - Must be exactly one of: "Fixed", "T&M", "Subscription", or "Hybrid" (case-sensitive)
-    - Normalize "Time and Materials" or "Time & Materials" to "T&M"
-    - Use "T&M" if billed by hourly rates
-    - Use "Fixed" or "Subscription" only if explicitly stated
-    - If hybrid model (e.g., fixed base + hourly): Set to "Hybrid"
-    - Note: For hybrid models, the raw text description will be captured in the extracted value
-
-12. For "Currency":
-    - Limited allowlist: "USD" or "INR" only (expandable later)
-    - If currency symbol detected: Infer ($ → USD, ₹ → INR)
-    - If currency explicitly stated: Use that value if it's USD or INR
-    - If currency absent or not in allowlist: Return "{NOT_FOUND_VALUE}"
-    - If multiple currencies mentioned, prefer the primary settlement currency
-
-13. For "Contract Value":
-    - Always include decimals (e.g., "50000.00" not "50000")
-    - Keep the format as stated in the agreement (preserve decimal precision)
-    - Remove currency symbols and commas (e.g., "$50,000" → "50000.00")
-    - Many MSAs defer value to Work Orders/SOWs - return "{NOT_FOUND_VALUE}" if not specified in main agreement
-
-14. For "Billing Frequency", "Payment Terms", "Expense Reimbursement Rules":
-    - Extract as stated in the document
-    - Look in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar
-
-LEGAL & COMPLIANCE FIELDS:
-15. For clause references (Indemnification, Confidentiality, Force Majeure):
-    - If no explicit clause exists, return "{NOT_FOUND_VALUE}" (consistent across all clause references)
-    - If clause exists: Return the section heading/number and a 1–2 sentence excerpt
-    - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
-    - Note: Force Majeure is no longer special - all clause references follow the same rule
-
-16. For "Governing Law":
-    - Extract jurisdiction and venue/court location if specified
-    - Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law"
-
-17. For "Indemnification Clause Reference", "Limitation of Liability Cap", "Insurance Requirements", "Warranties / Disclaimers":
-    - Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions"
-    - If clause reference absent, return "{NOT_FOUND_VALUE}"
+FIELD-SPECIFIC EXTRACTION GUIDANCE:
+Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
+Use TEMPLATE REFERENCES (if provided) as examples to guide extraction and determine match_flag values.
 
 ================================================================================
 SEARCH GUIDANCE (Organized by Logical Groups)
@@ -571,6 +475,65 @@ Extract all text from the image(s) and analyze it to fill in the schema above.
             lines.append("")
         
         return "\n".join(lines)
+    
+    def _build_field_instructions_text(self) -> str:
+        """
+        Build field-specific instructions text for prompt.
+        
+        Returns:
+            Formatted field instructions string
+        """
+        lines = []
+        
+        for category, fields in FIELD_INSTRUCTIONS.items():
+            lines.append(f"{category}:")
+            for field_name, instruction in fields.items():
+                lines.append(f"  - {field_name}:")
+                # Split instruction into bullet points if it contains newlines
+                instruction_lines = instruction.strip().split('\n')
+                for line in instruction_lines:
+                    if line.strip():
+                        lines.append(f"    {line.strip()}")
+            lines.append("")
+        
+        return "\n".join(lines)
+    
+    def _build_template_references_text(self) -> str:
+        """
+        Build template references text for prompt (if available).
+        
+        Returns:
+            Formatted template references string, or empty if not populated
+        """
+        lines = []
+        has_references = False
+        
+        for category, fields in TEMPLATE_REFERENCES.items():
+            category_lines = []
+            for field_name, ref_data in fields.items():
+                clause_excerpt = ref_data.get("clause_excerpt", "").strip()
+                sample_answer = ref_data.get("sample_answer", "").strip()
+                clause_name = ref_data.get("clause_name", "").strip()
+                
+                if clause_excerpt or sample_answer or clause_name:
+                    has_references = True
+                    category_lines.append(f"  - {field_name}:")
+                    if clause_name:
+                        category_lines.append(f"    Template Section: {clause_name}")
+                    if clause_excerpt:
+                        category_lines.append(f"    Template Clause: {clause_excerpt}")
+                    if sample_answer:
+                        category_lines.append(f"    Sample Answer: {sample_answer}")
+            
+            if category_lines:
+                lines.append(f"{category}:")
+                lines.extend(category_lines)
+                lines.append("")
+        
+        if has_references:
+            return "\n".join(lines)
+        else:
+            return ""  # Return empty if no template references populated yet
     
     def _call_with_retry(self, api_call: Callable, operation: str = "api_call"):
         """
