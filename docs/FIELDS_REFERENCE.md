@@ -4,7 +4,9 @@
 **Date:** January 2026  
 **Purpose:** Complete reference of all extractable fields with descriptions and typical section locations
 
-This document lists all metadata fields currently extracted from MSAs, their descriptions, formats, and typical locations in contracts. Use this to map fields to your template's clause numbers.
+This document lists all metadata fields currently extracted from MSAs, their descriptions, formats, and typical locations in contracts.
+
+**Note:** As of v2.0.0, each field returns an enhanced structure with `extracted_value`, `match_flag`, and `validation` object. See [REQUIREMENTS.md](REQUIREMENTS.md) for the complete schema structure.
 
 ---
 
@@ -359,75 +361,47 @@ This document lists all metadata fields currently extracted from MSAs, their des
 
 ---
 
-## Template Mapping Instructions
+## Enhanced Schema Structure (v2.0.0)
 
-### For Each Field:
-1. **Identify the clause/section number** from your template PDF
-2. **Note the section heading** as it appears in the template
-3. **Extract a sample excerpt** (1-2 sentences) from that section
-4. **Document any variations** or alternative section names
+Each field now returns an enhanced object:
 
-### Example Mapping Format:
-```
-Field: Execution Date
-Template Section: Section 18 - Execution
-Section Number: 18
-Section Heading: "Execution"
-Sample Excerpt: "This Agreement shall be executed on the date last written below by both parties..."
-Alternative Names: "Signing Date", "Date of Execution"
+```json
+{
+  "extracted_value": "string",
+  "match_flag": "same_as_template" | "similar_not_exact" | "different_from_template" | "flag_for_review" | "not_found",
+  "validation": {
+    "score": 0-100,
+    "status": "valid" | "warning" | "invalid" | "not_found",
+    "notes": "string (optional, max 500 chars)"
+  }
+}
 ```
 
----
+## Field Metadata
 
-## Notes for Template Integration
+All fields have associated metadata in `FIELD_INSTRUCTIONS` (in `config.py`):
+- **mandatory_field**: Whether field is mandatory (yes/no)
+- **negotiable**: Whether field is negotiable (yes/no)
+- **expected_position**: Expected/standard position for non-negotiable fields
 
-1. **Section Numbers:** Document the exact section/clause numbers from your template
-2. **Section Headings:** Note the exact wording of section headings
-3. **Sample Excerpts:** Extract 1-2 sentence examples from each section
-4. **Alternative Names:** Document any alternative section names that might appear
-5. **Field Additions:** Use this document to identify which new fields to add based on your template
-6. **Validation vs Extraction:** Decide whether to:
-   - Keep validation separate (current skeleton approach)
-   - Integrate template examples into extraction prompt
-   - Add validation fields alongside extraction
+This metadata is used for LLM context and is NOT part of the response schema.
 
----
+## Template References
 
-## Architecture Decision Points
+All fields have template references in `TEMPLATE_REFERENCES` (in `config.py`):
+- **clause_excerpt**: Relevant excerpt from template clause
+- **sample_answer**: Sample answer from template
+- **clause_name**: Name/number of clause in template
 
-### Option A: Separate Validation (Current Skeleton)
-- **Pros:** 
-  - Clear separation of concerns
-  - Can be disabled independently
-  - Two-stage process (extract, then validate)
-- **Cons:**
-  - Two LLM calls (cost/time)
-  - Validation may not inform extraction
+These references are included in the prompt to guide extraction and match flag assignment.
 
-### Option B: Integrated Extraction with Examples
-- **Pros:**
-  - Single LLM call
-  - Examples guide extraction directly
-  - More efficient
-- **Cons:**
-  - Larger prompt
-  - Less flexible (harder to update validation separately)
+## Template Integration Status
 
-### Option C: Hybrid Approach
-- **Pros:**
-  - Examples in extraction prompt for guidance
-  - Separate validation for scoring/flags
-  - Best of both worlds
-- **Cons:**
-  - More complex
-  - Still two LLM calls
+✅ **Complete**: All 22 fields now have:
+- Field definitions
+- Field instructions with metadata
+- Template references (clause excerpts, sample answers, clause names)
+- Enhanced schema structure support
 
----
-
-**Next Steps:**
-1. Fill in "Section Reference" for each field from your template
-2. Add sample excerpts from template sections
-3. Identify any new fields to add
-4. Decide on architecture approach (A, B, or C)
-5. Update extraction/validation accordingly
+See [config.py](../../config.py) for complete `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` definitions.
 
