@@ -5,59 +5,253 @@ This document lists all metadata fields, descriptions, and configuration that ar
 ## Overview
 
 The system sends the following to Gemini:
-1. **JSON Schema Structure** - The exact structure expected in the response
+1. **JSON Schema Structure** - The exact structure expected in the response (enhanced with match_flag and validation)
 2. **Field Definitions** - Detailed descriptions for each field
-3. **Extraction Rules** - Specific rules for handling edge cases
-4. **Search Guidance** - Instructions on where to find information in documents
-5. **Contract Text/Images** - The actual contract content to analyze
+3. **Field-Specific Instructions** - LLM extraction instructions with metadata (mandatory_field, negotiable, expected_position)
+4. **Template References** - Clause excerpts, sample answers, and clause names from standard template (when available)
+5. **Extraction Rules** - Specific rules for handling edge cases, match flags, and validation
+6. **Search Guidance** - Instructions on where to find information in documents
+7. **Contract Text/Images** - The actual contract content to analyze
 
 ---
 
 ## JSON Schema Structure
 
-The following JSON schema is sent to Gemini (from `METADATA_SCHEMA` in `config.py`):
+The following JSON schema is sent to Gemini (from `METADATA_SCHEMA` in `config.py`). **Note:** As of v2.0.0, each field is an enhanced object with `extracted_value`, `match_flag`, and `validation`:
 
 ```json
 {
   "Org Details": {
-    "Organization Name": ""
+    "Organization Name": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Contract Lifecycle": {
-    "Party A": "",
-    "Party B": "",
-    "Execution Date": "",
-    "Effective Date": "",
-    "Expiration / Termination Date": "",
-    "Authorized Signatory - Party A": "",
-    "Authorized Signatory - Party B": ""
+    "Party A": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Party B": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Execution Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Effective Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Expiration / Termination Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Authorized Signatory - Party A": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Authorized Signatory - Party B": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Business Terms": {
-    "Document Type": "",
-    "Termination Notice Period": ""
+    "Document Type": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Termination Notice Period": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Commercial Operations": {
-    "Billing Frequency": "",
-    "Payment Terms": "",
-    "Expense Reimbursement Rules": ""
+    "Billing Frequency": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Payment Terms": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Expense Reimbursement Rules": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Finance Terms": {
-    "Pricing Model Type": "",
-    "Currency": "",
-    "Contract Value": ""
+    "Pricing Model Type": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Currency": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Contract Value": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Risk & Compliance": {
-    "Indemnification Clause Reference": "",
-    "Limitation of Liability Cap": "",
-    "Insurance Requirements": "",
-    "Warranties / Disclaimers": ""
+    "Indemnification Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Limitation of Liability Cap": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Insurance Requirements": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Warranties / Disclaimers": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Legal Terms": {
-    "Governing Law": "",
-    "Confidentiality Clause Reference": "",
-    "Force Majeure Clause Reference": ""
+    "Governing Law": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Confidentiality Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Force Majeure Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   }
 }
 ```
+
+**Field Structure (v2.0.0):**
+- `extracted_value`: The actual extracted value (string)
+- `match_flag`: One of `"same_as_template"`, `"similar_not_exact"`, `"different_from_template"`, `"flag_for_review"`, or `"not_found"`
+- `validation`: Object with:
+  - `score`: Integer 0-100 (quality score)
+  - `status`: One of `"valid"`, `"warning"`, `"invalid"`, or `"not_found"`
+  - `notes`: Optional string (max 500 chars) with insights
 
 ---
 
@@ -222,66 +416,100 @@ The following JSON schema is sent to Gemini (from `METADATA_SCHEMA` in `config.p
 
 The following rules are sent to Gemini in the prompt:
 
-1. **Missing Values**: If a field cannot be determined, use `"Not Found"` (never null, empty list, or other placeholders).
+1. **Enhanced Field Structure**: For EACH field, you MUST provide a complete object with:
+   - `extracted_value`: The actual extracted value (string)
+   - `match_flag`: One of the allowed values (see Match Flag Values below)
+   - `validation`: A validation object with score, status, and notes (see Validation Requirements below)
 
-2. **Date Formatting**:
+2. **Missing Values**: If a field cannot be determined, use `"Not Found"` for `extracted_value` (never null, empty list, or other placeholders). Set `match_flag` to `"not_found"` and `validation.status` to `"not_found"`.
+
+3. **Date Formatting**:
    - Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14)
    - If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag
    - Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)"
 
-3. **Expiration / Termination Date**:
+4. **Expiration / Termination Date**:
    - If contract is "Evergreen" (auto-renews): Return "Evergreen"
    - If no explicit expiration: Return "Not Found"
 
-4. **Document Type**:
+5. **Document Type**:
    - Must be exactly "MSA" or "NDA" (case-sensitive)
    - Use "MSA" for Master/Professional Services Agreement
    - Use "NDA" for Non-Disclosure Agreement
    - Determine from document title or heading
 
-5. **Termination Notice Period**:
+6. **Termination Notice Period**:
    - Format: "<number> <unit>" (e.g., "30 days", "3 months")
    - Extract the primary/default notice period for the main agreement
    - If multiple periods exist (e.g., different for work orders), return the primary agreement notice
 
-6. **Pricing Model Type**:
+7. **Pricing Model Type**:
    - Must be exactly one of: "Fixed", "T&M", or "Subscription" (case-sensitive)
    - Use "T&M" if billed by hourly rates
    - Use "Fixed" or "Subscription" only if explicitly stated
 
-7. **Currency**:
-   - Use ISO currency code (e.g., "USD", "INR", "EUR", "GBP")
-   - Infer from currency symbols ($, ₹, €, £) or explicitly stated amounts
+8. **Currency**:
+   - Limited allowlist: "USD" or "INR" only (expandable later)
+   - Infer from currency symbols ($ → USD, ₹ → INR)
+   - If currency explicitly stated: Use that value if it's USD or INR
+   - If currency absent or not in allowlist: Return "Not Found"
    - If multiple currencies mentioned, prefer the primary settlement currency
 
-8. **Contract Value**:
+9. **Contract Value**:
    - Return decimal number if explicitly stated (e.g., "50000.00" or "50000")
    - Many MSAs defer value to Work Orders/SOWs - return "Not Found" if not specified in main agreement
    - Normalize commas if present
 
-9. **Force Majeure Clause Reference**:
+10. **Force Majeure Clause Reference**:
    - If no explicit clause exists, return "Not Found"
    - Otherwise, return section heading/number and brief excerpt
 
-10. **Clause References** (Indemnification, Confidentiality, Force Majeure):
+11. **Clause References** (Indemnification, Confidentiality, Force Majeure):
     - Return the section heading/number and a 1–2 sentence excerpt
     - Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
 
-11. **Party A and Party B**:
+12. **Party A and Party B**:
    - Extract full legal entity names as stated in the contract
    - Party A is typically the client/service recipient (first party mentioned)
    - Party B is typically the vendor/service provider (second party mentioned)
    - Look in the contract header, "Parties" section, or first paragraph
 
-12. **Authorized Signatories**:
+13. **Authorized Signatories**:
     - Extract separately for each party from signature pages or execution sections
     - Include full name and title/designation
     - If multiple signatories for one party, combine with semicolons
     - Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A)
 
-13. **Field Length Limits**: Each field value must not exceed `MAX_FIELD_LENGTH` characters (default: 1000). If a field would exceed this limit, truncate it appropriately while preserving the most important information.
+14. **Field Length Limits**: Each field value must not exceed `MAX_FIELD_LENGTH` characters (default: 1000). If a field would exceed this limit, truncate it appropriately while preserving the most important information.
 
-14. **Response Format**: Return no commentary, no extra keys, and no markdown — JSON only.
+15. **Response Format**: Return no commentary, no extra keys, and no markdown — JSON only.
+
+16. **Match Flag Values** (choose exactly one per field):
+    - `"same_as_template"`: Extracted value exactly matches template example (if template provided)
+    - `"similar_not_exact"`: Extracted value is similar to template but with minor differences (format, wording, slight variations)
+    - `"different_from_template"`: Extracted value differs significantly from template or uses different approach
+    - `"flag_for_review"`: Value extracted but needs human review (ambiguous, unusual format, complex scenario, or unclear)
+    - `"not_found"`: Field not found in document (set extracted_value to `"Not Found"`)
+
+17. **Validation Requirements** (required for EVERY field):
+    - `score`: Integer 0-100 (required)
+      * 100: Perfect match with template (if provided), complete, correct, and properly formatted
+      * 90-99: Excellent quality, minor formatting differences
+      * 75-89: Good quality, acceptable with minor issues or deviations
+      * 50-74: Acceptable but deviates from template or has moderate issues
+      * 25-49: Significant issues, deviations, or quality concerns
+      * 0-24: Poor quality, missing critical information, or incorrect format
+    - `status`: One of `"valid"`, `"warning"`, `"invalid"`, or `"not_found"` (required)
+    - `notes`: String (optional, max 500 chars) with validation insights, deviations from template, recommendations, or explanations
+
+18. **Negotiable Fields Guidance**:
+    - For fields marked as "negotiable" in FIELD-SPECIFIC INSTRUCTIONS, the extracted values do NOT need to match the template.
+    - These fields (e.g., Party A, Party B, Execution Date, Payment Terms, Currency) will naturally vary between contracts.
+    - When setting match_flag for negotiable fields:
+      * Use `"same_as_template"` only if the STRUCTURE/FORMAT matches (e.g., both use "Net 30 days" format)
+      * Use `"different_from_template"` if the actual VALUES differ (e.g., different party names, different dates, different payment terms)
+      * The match_flag should reflect structural similarity, not value similarity for negotiable fields
+    - For non-negotiable fields (e.g., Limitation of Liability Cap, Warranties), the match_flag should reflect how closely the extracted clause matches the template clause structure and content.
 
 ---
 
@@ -325,11 +553,13 @@ The prompt sent to Gemini follows this structure:
 
 1. **Role Definition**: "You are a contract analyst."
 2. **Task**: "Extract the following metadata fields from the given Master Service Agreement and return VALID JSON ONLY matching this schema:"
-3. **Schema**: The JSON schema structure (indented, pretty-printed)
+3. **Schema**: The JSON schema structure (indented, pretty-printed) with enhanced structure
 4. **Field Definitions**: All field definitions organized by category
-5. **Extraction Rules**: The 14 extraction rules listed above
-6. **Search Guidance**: Instructions on where to find information
-7. **Contract Content**: Either:
+5. **Field-Specific Instructions**: LLM extraction instructions with metadata (mandatory_field, negotiable, expected_position) from `FIELD_INSTRUCTIONS` in `config.py`
+6. **Template References**: Clause excerpts, sample answers, and clause names from standard template (when available) from `TEMPLATE_REFERENCES` in `config.py`
+7. **Extraction Rules**: The 18 extraction rules listed above (including match flags and validation)
+8. **Search Guidance**: Instructions on where to find information
+9. **Contract Content**: Either:
    - For text model: The contract text wrapped in triple quotes
    - For vision model: Instructions to extract text from the image(s) provided
 
@@ -383,15 +613,19 @@ After receiving the response from Gemini:
 7. Legal Terms (3 fields)
 
 **Special Handling**:
+- Enhanced Structure: Each field includes `extracted_value`, `match_flag`, and `validation` object
+- Match Flags: Template comparison flags for compliance tracking
+- Validation: Per-field quality scores (0-100) and status (valid/warning/invalid/not_found)
 - Dates: ISO format preferred, with ambiguous date flagging
 - Evergreen contracts: Special "Evergreen" value for expiration
 - Missing values: Always use "Not Found" (never null/empty)
 - Field length: Maximum 1000 characters per field
 - Multiple signatories: Combine with semicolons
 - Document Type: Must be exactly "MSA" or "NDA" (case-sensitive)
-- Pricing Model Type: Must be exactly "Fixed", "T&M", or "Subscription" (case-sensitive)
-- Currency: ISO currency code (USD, INR, EUR, GBP)
+- Pricing Model Type: Must be exactly "Fixed", "T&M", "Subscription", or "Hybrid" (case-sensitive)
+- Currency: Limited allowlist "USD" or "INR" only (expandable later)
 - Contract Value: Decimal number or "Not Found" if not specified
 - Force Majeure: Returns "Not Found" if clause doesn't exist
+- Negotiable Fields: Match flags reflect structural similarity, not value similarity
 
 

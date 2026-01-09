@@ -62,49 +62,243 @@ This document defines the canonical schema and field definitions for MSA metadat
 | **Confidentiality Clause Reference** | Clause title/number and a brief excerpt describing confidentiality obligations and return of materials. | `Section 8 – Confidential Information: Each party agrees to maintain confidentiality...` |
 | **Force Majeure Clause Reference** | Clause title/number and short excerpt describing relief from obligations due to extraordinary events. If no explicit clause exists, return 'Not Found'. Note: Consistent with all clause references - all return 'Not Found' if absent. | `Section 15 – Force Majeure: Neither party shall be liable...` or `Not Found` |
 
-## JSON Schema Structure
+## JSON Schema Structure (v2.0.0 Enhanced)
+
+**Note:** As of v2.0.0, each field is an enhanced object with `extracted_value`, `match_flag`, and `validation`:
 
 ```json
 {
   "Org Details": {
-    "Organization Name": ""
+    "Organization Name": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Contract Lifecycle": {
-    "Party A": "",
-    "Party B": "",
-    "Execution Date": "",
-    "Effective Date": "",
-    "Expiration / Termination Date": "",
-    "Authorized Signatory - Party A": "",
-    "Authorized Signatory - Party B": ""
+    "Party A": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Party B": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Execution Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Effective Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Expiration / Termination Date": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Authorized Signatory - Party A": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Authorized Signatory - Party B": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Business Terms": {
-    "Document Type": "",
-    "Termination Notice Period": ""
+    "Document Type": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Termination Notice Period": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Commercial Operations": {
-    "Billing Frequency": "",
-    "Payment Terms": "",
-    "Expense Reimbursement Rules": ""
+    "Billing Frequency": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Payment Terms": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Expense Reimbursement Rules": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Finance Terms": {
-    "Pricing Model Type": "",
-    "Currency": "",
-    "Contract Value": ""
+    "Pricing Model Type": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Currency": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Contract Value": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Risk & Compliance": {
-    "Indemnification Clause Reference": "",
-    "Limitation of Liability Cap": "",
-    "Insurance Requirements": "",
-    "Warranties / Disclaimers": ""
+    "Indemnification Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Limitation of Liability Cap": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Insurance Requirements": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Warranties / Disclaimers": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   },
   "Legal Terms": {
-    "Governing Law": "",
-    "Confidentiality Clause Reference": "",
-    "Force Majeure Clause Reference": ""
+    "Governing Law": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Confidentiality Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    },
+    "Force Majeure Clause Reference": {
+      "extracted_value": "",
+      "match_flag": "",
+      "validation": {
+        "score": 0,
+        "status": "",
+        "notes": ""
+      }
+    }
   }
 }
 ```
+
+**Field Structure:**
+- `extracted_value`: The actual extracted value (string)
+- `match_flag`: One of `"same_as_template"`, `"similar_not_exact"`, `"different_from_template"`, `"flag_for_review"`, or `"not_found"`
+- `validation`: Object with:
+  - `score`: Integer 0-100 (quality score)
+  - `status`: One of `"valid"`, `"warning"`, `"invalid"`, or `"not_found"`
+  - `notes`: Optional string (max 500 chars) with insights
 
 ## Field Rules
 
@@ -229,6 +423,9 @@ When modifying requirements:
   - Added match flags (same_as_template, similar_not_exact, different_from_template, flag_for_review, not_found)
   - Refactored config: separated FIELD_INSTRUCTIONS and TEMPLATE_REFERENCES
   - Enhanced schema structure: each field now includes extracted_value, match_flag, and validation
+  - Added field metadata: mandatory_field, negotiable, expected_position in FIELD_INSTRUCTIONS for LLM context
+  - Populated TEMPLATE_REFERENCES: clause excerpts, sample answers, and clause names for all 22 fields
+  - Added negotiable fields guidance: match_flag reflects structural similarity, not value similarity
   - Updated based on QC/testing feedback: Added Hybrid pricing model, limited currency allowlist (USD/INR), improved termination notice period normalization, clarified Organization Name vs Party A/B, added document type edge case handling, made Force Majeure consistent with other clause references, reorganized search guidance by logical groups, improved prompt structure with clearer sections.
 - **December 2025**: Added new fields: Organization Name, Document Type, Termination Notice Period, Pricing Model Type, Currency, Contract Value, Governing Law, Confidentiality Clause Reference, and Force Majeure Clause Reference. Added new categories: Org Details, Business Terms, Finance Terms, and Legal Terms.
 - **November 14, 2025**: Added Party A, Party B, and separate authorized signatories for each party

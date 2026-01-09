@@ -1,6 +1,6 @@
 # Project Status & Roadmap
 
-**Last Updated:** January 8, 2026  
+**Last Updated:** January 9, 2026  
 **Current Version:** v2.0.0
 
 ## Current Version Status: ✅ Production Ready
@@ -30,7 +30,11 @@ The MSA Metadata Extractor is fully functional and ready for testing with real-w
 - ✅ **Match Flags**: Template comparison flags (`same_as_template`, `similar_not_exact`, `different_from_template`, `flag_for_review`, `not_found`)
 - ✅ **Config Refactoring**: Separated `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` from prompt builder
 - ✅ **Template Integration**: Support for template clause references and sample answers
+- ✅ **Template References Population**: All 22 fields now have complete template references (clause excerpts, sample answers, clause names)
+- ✅ **Field Metadata**: Added `mandatory_field`, `negotiable`, and `expected_position` to `FIELD_INSTRUCTIONS` for all 22 fields
+- ✅ **Negotiable Fields Guidance**: Explicit prompt guidance that match_flag reflects structural similarity, not value similarity
 - ✅ **Integrated Validation**: Validation performed in same LLM call as extraction (single API call)
+- ✅ **Architecture Decision Records**: Comprehensive ADRs for all major architectural decisions
 
 ### Quality & Reliability
 - ✅ Resource management (proper file handle closing)
