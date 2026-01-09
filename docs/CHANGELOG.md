@@ -13,12 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Match Flags**: Template comparison flags (`same_as_template`, `similar_not_exact`, `different_from_template`, `flag_for_review`, `not_found`)
 - **Config Refactoring**: Separated `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` from prompt builder
 - **Template Integration**: Support for template clause references, sample answers, and clause names
+- **Field Metadata**: Added `mandatory_field`, `negotiable`, and `expected_position` to `FIELD_INSTRUCTIONS` for LLM context
+- **Template References**: Populated `TEMPLATE_REFERENCES` with clause excerpts, sample answers, and clause names for all 22 fields
+- **Negotiable Fields Guidance**: Explicit prompt guidance that match_flag reflects structural similarity, not value similarity for negotiable fields
 - **Integrated Validation**: Validation performed in same LLM call as extraction (single API call, more efficient)
 - **Architecture Decision Records (ADRs)**: Added ADRs for major architectural decisions
 
 ### Changed
 - **Breaking Change**: Schema structure changed from simple strings to enhanced objects
 - **Prompt Builder**: Now uses config-based instructions instead of hardcoded rules
+- **Prompt Structure**: Added field-specific instructions and template references sections
 - **Schema Validator**: Updated to handle enhanced structure with validation
 - **API Response Models**: Updated examples to show new structure
 - **Documentation**: Comprehensive updates across all documentation files
