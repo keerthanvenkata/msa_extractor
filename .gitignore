@@ -6,6 +6,8 @@ ENV/
 
 # Scratch files
 scratch/
+scratch*.txt
+templates/
 
 # Python
 __pycache__/
