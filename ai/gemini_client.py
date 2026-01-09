@@ -495,13 +495,32 @@ Extract all text from the image(s) and analyze it to fill in the schema above.
         
         for category, fields in FIELD_INSTRUCTIONS.items():
             lines.append(f"{category}:")
-            for field_name, instruction in fields.items():
+            for field_name, field_data in fields.items():
                 lines.append(f"  - {field_name}:")
-                # Split instruction into bullet points if it contains newlines
-                instruction_lines = instruction.strip().split('\n')
-                for line in instruction_lines:
-                    if line.strip():
-                        lines.append(f"    {line.strip()}")
+                
+                # Extract instruction and metadata
+                instruction = field_data.get("instruction", "")
+                mandatory_field = field_data.get("mandatory_field", "").strip()
+                negotiable = field_data.get("negotiable", "").strip()
+                expected_position = field_data.get("expected_position", "").strip()
+                
+                # Add instruction text
+                if instruction:
+                    instruction_lines = instruction.strip().split('\n')
+                    for line in instruction_lines:
+                        if line.strip():
+                            lines.append(f"    {line.strip()}")
+                
+                # Add metadata if available
+                if mandatory_field or negotiable or expected_position:
+                    lines.append("")
+                    if mandatory_field:
+                        lines.append(f"    Mandatory Field: {mandatory_field}")
+                    if negotiable:
+                        lines.append(f"    Negotiable: {negotiable}")
+                    if expected_position:
+                        lines.append(f"    Expected Position: {expected_position}")
+            
             lines.append("")
         
         return "\n".join(lines)

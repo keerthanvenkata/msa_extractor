@@ -436,51 +436,96 @@ NOT_FOUND_VALUE = "Not Found"
 # Field-Specific LLM Instructions
 # ============================================================================
 
-# Field-specific instructions for LLM extraction (moved from prompt builder)
+# Field-specific instructions for LLM extraction
 # These are additional instructions beyond the basic field definitions
-# Structure: {category: {field_name: "instruction_text"}}
+# Structure: {category: {field_name: {instruction, mandatory_field, negotiable, expected_position}}}
+# - instruction: Detailed extraction guidance text (required)
+# - mandatory_field: "yes" or "no" - whether this is a mandatory clause in the template
+# - negotiable: "yes" or "no" - whether this field is typically negotiable
+# - expected_position: Brief description of the expected/standard answer (from template)
 FIELD_INSTRUCTIONS = {
     "Org Details": {
-        "Organization Name": """Full legal name of the contracting organization (parent company/business entity).
+        "Organization Name": {
+            "instruction": """Full legal name of the contracting organization (parent company/business entity).
 If a brand is mentioned elsewhere in the document, map that brand to Organization Name.
 If no brand is mentioned, use the same value as the legal entity name (Party A or Party B, whichever is the primary contracting organization).
-Look in preamble/opening party identification (typically Page 1)."""
+Look in preamble/opening party identification (typically Page 1).""",
+            "mandatory_field": "",  # To be filled from spreadsheet
+            "negotiable": "",  # To be filled from spreadsheet
+            "expected_position": ""  # To be filled from spreadsheet
+        }
     },
     "Contract Lifecycle": {
-        "Party A": """Extract full legal entity names as stated in the contract header.
+        "Party A": {
+            "instruction": """Extract full legal entity names as stated in the contract header.
 Party A is typically the client/service recipient (first party mentioned).
 Prefer legal entity names from the contract header over brand names.
 Look in the contract header, "Parties" section, or first paragraph.""",
-        "Party B": """Extract full legal entity names as stated in the contract header.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Party B": {
+            "instruction": """Extract full legal entity names as stated in the contract header.
 Party B is typically the vendor/service provider (second party mentioned).
 Prefer legal entity names from the contract header over brand names.
 Look in the contract header, "Parties" section, or first paragraph.""",
-        "Execution Date": """Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14).
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Execution Date": {
+            "instruction": """Preferred format: ISO yyyy-mm-dd (e.g., 2025-03-14).
 If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag.
 Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)".
 Look in signature pages or execution sections.""",
-        "Effective Date": """Preferred format: ISO yyyy-mm-dd (e.g., 2025-04-01).
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Effective Date": {
+            "instruction": """Preferred format: ISO yyyy-mm-dd (e.g., 2025-04-01).
 If ambiguous or unclear: Return the literal text found and include "(AmbiguousDate)" as a flag.
 Example: "March 14, 2025 (AmbiguousDate)" or "Q1 2025 (AmbiguousDate)".
 May be defined relative to Execution Date. Look in "Effective Date" clause or "Commencement" section.""",
-        "Expiration / Termination Date": """If contract is "Evergreen" (auto-renews): Return "Evergreen".
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Expiration / Termination Date": {
+            "instruction": """If contract is "Evergreen" (auto-renews): Return "Evergreen".
 If no explicit expiration: Return "Not Found".
 Preferred format: ISO yyyy-mm-dd (e.g., 2028-03-31).
 If ambiguous: Return the literal text found and include "(AmbiguousDate)" as a flag.
 Look in "Term" or "Termination" section.""",
-        "Authorized Signatory - Party A": """Extract separately for each party from signature pages or execution sections.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Authorized Signatory - Party A": {
+            "instruction": """Extract separately for each party from signature pages or execution sections.
 Include full name and title/designation.
 If multiple signatories for one party, combine with semicolons.
 Example: "John Doe, VP of Operations; Jane Smith, CFO" (for Party A).
 Look in signature pages (typically last page or last few pages).""",
-        "Authorized Signatory - Party B": """Extract separately for each party from signature pages or execution sections.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Authorized Signatory - Party B": {
+            "instruction": """Extract separately for each party from signature pages or execution sections.
 Include full name and title/designation.
 If multiple signatories for one party, combine with semicolons.
 Example: "Jane Smith, CEO; John Doe, CFO" (for Party B).
-Look in signature pages (typically last page or last few pages)."""
+Look in signature pages (typically last page or last few pages).""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     },
     "Business Terms": {
-        "Document Type": """Must be exactly "MSA" or "NDA" (case-sensitive).
+        "Document Type": {
+            "instruction": """Must be exactly "MSA" or "NDA" (case-sensitive).
 Use "MSA" for Master/Professional Services Agreement or "Services Agreement".
 Use "NDA" for Non-Disclosure Agreement.
 Determine from document title or heading.
@@ -488,7 +533,12 @@ Edge cases:
 - If document contains both MSA and NDA elements: Set to "MSA" if commercial terms (pricing, payment, termination) exist; otherwise "NDA"
 - If unclear (e.g., just "Services Agreement"): Default to "MSA" if pricing/term/termination are found; else "NDA"
 Look in document title/header (typically Page 1).""",
-        "Termination Notice Period": """Accept various formats: "30 days", "thirty (30) calendar days", "1 month", "60 business days".
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Termination Notice Period": {
+            "instruction": """Accept various formats: "30 days", "thirty (30) calendar days", "1 month", "60 business days".
 Normalize units: "1 month" = "30 days", "1 year" = "365 days".
 Format: "<number> days" (e.g., "30 days").
 Note the day type if specified (calendar days vs business days) in the extracted text.
@@ -498,69 +548,138 @@ Examples:
 - "30 calendar days" → "30 days"
 - "1 month" → "30 days"
 - "sixty (60) business days" → "60 days"
-Look in termination sections (e.g., "Section Four – Termination")."""
+Look in termination sections (e.g., "Section Four – Termination").""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     },
     "Commercial Operations": {
-        "Billing Frequency": """Extract as stated in the document.
+        "Billing Frequency": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
 Examples: Monthly, Quarterly, Milestone-based, As-invoiced.""",
-        "Payment Terms": """Extract as stated in the document.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Payment Terms": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
 Format: Terms as stated (e.g., Net 30 days from invoice date).""",
-        "Expense Reimbursement Rules": """Extract as stated in the document.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Expense Reimbursement Rules": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Payment", "Fees", "Compensation", "Commercial Terms", "Financial Terms", or similar.
 May also be in "Expenses", "Reimbursement", or "Travel" sections.
-Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required)."""
+Format: Rules as stated (e.g., Reimbursed as per client travel policy, pre-approval required).""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     },
     "Finance Terms": {
-        "Pricing Model Type": """Must be exactly one of: "Fixed", "T&M", "Subscription", or "Hybrid" (case-sensitive).
+        "Pricing Model Type": {
+            "instruction": """Must be exactly one of: "Fixed", "T&M", "Subscription", or "Hybrid" (case-sensitive).
 Normalize "Time and Materials" or "Time & Materials" to "T&M".
 Use "T&M" if billed by hourly rates.
 Use "Fixed" or "Subscription" only if explicitly stated.
 If hybrid model (e.g., fixed base + hourly): Set to "Hybrid".
 Note: For hybrid models, the raw text description will be captured in the extracted value.
 Look in sections about work orders, rate schedules, or commercial terms (e.g., "Section Three – Work Orders").""",
-        "Currency": """Limited allowlist: "USD" or "INR" only (expandable later).
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Currency": {
+            "instruction": """Limited allowlist: "USD" or "INR" only (expandable later).
 If currency symbol detected: Infer ($ → USD, ₹ → INR).
 If currency explicitly stated: Use that value if it's USD or INR.
 If currency absent or not in allowlist: Return "Not Found".
 If multiple currencies mentioned, prefer the primary settlement currency.
 May appear in any monetary amounts (e.g., insurance limits, payment terms, rate schedules).""",
-        "Contract Value": """Always include decimals (e.g., "50000.00" not "50000").
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Contract Value": {
+            "instruction": """Always include decimals (e.g., "50000.00" not "50000").
 Keep the format as stated in the agreement (preserve decimal precision).
 Remove currency symbols and commas (e.g., "$50,000" → "50000.00").
 Many MSAs defer value to Work Orders/SOWs - return "Not Found" if not specified in main agreement.
-Check Work Orders/SOW references."""
+Check Work Orders/SOW references.""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     },
     "Risk & Compliance": {
-        "Indemnification Clause Reference": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
+        "Indemnification Clause Reference": {
+            "instruction": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
 If clause exists: Return the section heading/number and a 1–2 sentence excerpt.
 Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".""",
-        "Limitation of Liability Cap": """Extract as stated in the document.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Limitation of Liability Cap": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Limitation of Liability", "Insurance", "Warranties", or "General Provisions".
 Format: Cap as stated (e.g., Aggregate liability not to exceed fees paid in previous 12 months).""",
-        "Insurance Requirements": """Extract as stated in the document.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Insurance Requirements": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 Format: Requirements as stated (e.g., CGL $2M per occurrence; Workers Comp as per law).""",
-        "Warranties / Disclaimers": """Extract as stated in the document.
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Warranties / Disclaimers": {
+            "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 May also be in "Service Level" or "Performance" sections.
-Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied)."""
+Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied).""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     },
     "Legal Terms": {
-        "Governing Law": """Extract jurisdiction and venue/court location if specified.
+        "Governing Law": {
+            "instruction": """Extract jurisdiction and venue/court location if specified.
 Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law" (e.g., "Section Seventeen – Governing Law").
 Format: Text as stated (e.g., 'Texas, USA' or 'Laws of the State of Texas; courts of Collin County, Texas').""",
-        "Confidentiality Clause Reference": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Confidentiality Clause Reference": {
+            "instruction": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
 If clause exists: Return the section heading/number and a 1–2 sentence excerpt.
 Example: "Section 8 – Confidential Information: Each party agrees to maintain confidentiality..."
 Check sections about confidential information (e.g., "Section Eight – Confidential Information").""",
-        "Force Majeure Clause Reference": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        },
+        "Force Majeure Clause Reference": {
+            "instruction": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
 If clause exists: Return the section heading/number and a 1–2 sentence excerpt.
 Example: "Section 15 – Force Majeure: Neither party shall be liable..."
 Search for "Force Majeure" explicitly; if absent, return "Not Found".
-Note: Consistent with all clause references - all return "Not Found" if absent."""
+Note: Consistent with all clause references - all return "Not Found" if absent.""",
+            "mandatory_field": "",
+            "negotiable": "",
+            "expected_position": ""
+        }
     }
 }
 
