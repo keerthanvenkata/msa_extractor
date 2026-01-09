@@ -17,6 +17,8 @@ ADRs are documents that capture important architectural decisions along with the
 - **[ADR-0001: Enhanced Schema Structure](0001-enhanced-schema-structure.md)** - Validation and match flags
 - **[ADR-0002: Config Refactoring](0002-config-refactoring-separation-of-concerns.md)** - Separation of concerns
 - **[ADR-0003: Integrated Validation](0003-integrated-validation-vs-separate-service.md)** - Validation architecture
+- **[ADR-0012: Negotiable Fields Guidance](0012-negotiable-fields-guidance.md)** - Match flag guidance for negotiable fields
+- **[ADR-0013: Template References Approach](0013-template-references-approach.md)** - Template integration approach
 
 ### Historical Decisions (November 2025)
 
