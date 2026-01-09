@@ -622,34 +622,34 @@ Check Work Orders/SOW references.""",
 If clause exists: Return the section heading/number and a 1–2 sentence excerpt.
 Example: "Section 12 – Indemnification: Each party agrees to indemnify..."
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "yes",
+            "expected_position": "Mutual Indemnification"
         },
         "Limitation of Liability Cap": {
             "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Limitation of Liability", "Insurance", "Warranties", or "General Provisions".
 Format: Cap as stated (e.g., Aggregate liability not to exceed fees paid in previous 12 months).""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "no",
+            "expected_position": "Liability capped at fees paid in preceding 12 months excluding IP"
         },
         "Insurance Requirements": {
             "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 Format: Requirements as stated (e.g., CGL $2M per occurrence; Workers Comp as per law).""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "no",
+            "negotiable": "yes",
+            "expected_position": "Will provide if it is covered under our existing coverage"
         },
         "Warranties / Disclaimers": {
             "instruction": """Extract as stated in the document.
 Look in sections named: "Risk", "Liability", "Indemnification", "Insurance", "Warranties", or "General Provisions".
 May also be in "Service Level" or "Performance" sections.
 Format: Text as stated (e.g., Services to be performed in a professional manner; no other warranties implied).""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "no",
+            "expected_position": "Mutual Warranties"
         }
     },
     "Legal Terms": {
@@ -657,18 +657,18 @@ Format: Text as stated (e.g., Services to be performed in a professional manner;
             "instruction": """Extract jurisdiction and venue/court location if specified.
 Look in sections named "Governing Law", "Jurisdiction", or "Applicable Law" (e.g., "Section Seventeen – Governing Law").
 Format: Text as stated (e.g., 'Texas, USA' or 'Laws of the State of Texas; courts of Collin County, Texas').""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "yes",
+            "expected_position": "Laws of India, Jurisdiction - Hyderabad/India"
         },
         "Confidentiality Clause Reference": {
             "instruction": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
 If clause exists: Return the section heading/number and a 1–2 sentence excerpt.
 Example: "Section 8 – Confidential Information: Each party agrees to maintain confidentiality..."
 Check sections about confidential information (e.g., "Section Eight – Confidential Information").""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "no",
+            "expected_position": "Confidentiality standard clauses"
         },
         "Force Majeure Clause Reference": {
             "instruction": """If no explicit clause exists, return "Not Found" (consistent across all clause references).
@@ -676,9 +676,9 @@ If clause exists: Return the section heading/number and a 1–2 sentence excerpt
 Example: "Section 15 – Force Majeure: Neither party shall be liable..."
 Search for "Force Majeure" explicitly; if absent, return "Not Found".
 Note: Consistent with all clause references - all return "Not Found" if absent.""",
-            "mandatory_field": "",
-            "negotiable": "",
-            "expected_position": ""
+            "mandatory_field": "yes",
+            "negotiable": "no",
+            "expected_position": "Standard Boilerplate clause"
         }
     }
 }
