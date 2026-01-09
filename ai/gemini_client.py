@@ -317,6 +317,15 @@ FIELD-SPECIFIC EXTRACTION GUIDANCE:
 Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
 Use TEMPLATE REFERENCES (if provided) as examples to guide extraction and determine match_flag values.
 
+IMPORTANT NOTE ON NEGOTIABLE FIELDS:
+- For fields marked as "negotiable" in FIELD-SPECIFIC INSTRUCTIONS, the extracted values do NOT need to match the template.
+- These fields (e.g., Party A, Party B, Execution Date, Payment Terms, Currency) will naturally vary between contracts.
+- When setting match_flag for negotiable fields:
+  * Use "same_as_template" only if the STRUCTURE/FORMAT matches (e.g., both use "Net 30 days" format)
+  * Use "different_from_template" if the actual VALUES differ (e.g., different party names, different dates, different payment terms)
+  * The match_flag should reflect structural similarity, not value similarity for negotiable fields
+- For non-negotiable fields (e.g., Limitation of Liability Cap, Warranties), the match_flag should reflect how closely the extracted clause matches the template clause structure and content.
+
 ================================================================================
 SEARCH GUIDANCE (Organized by Logical Groups)
 ================================================================================
@@ -424,6 +433,15 @@ For "not_found" fields: set score to 0, status to "not_found", and notes explain
 FIELD-SPECIFIC EXTRACTION GUIDANCE:
 Refer to FIELD-SPECIFIC INSTRUCTIONS above for detailed guidance on each field.
 Use TEMPLATE REFERENCES (if provided) as examples to guide extraction and determine match_flag values.
+
+IMPORTANT NOTE ON NEGOTIABLE FIELDS:
+- For fields marked as "negotiable" in FIELD-SPECIFIC INSTRUCTIONS, the extracted values do NOT need to match the template.
+- These fields (e.g., Party A, Party B, Execution Date, Payment Terms, Currency) will naturally vary between contracts.
+- When setting match_flag for negotiable fields:
+  * Use "same_as_template" only if the STRUCTURE/FORMAT matches (e.g., both use "Net 30 days" format)
+  * Use "different_from_template" if the actual VALUES differ (e.g., different party names, different dates, different payment terms)
+  * The match_flag should reflect structural similarity, not value similarity for negotiable fields
+- For non-negotiable fields (e.g., Limitation of Liability Cap, Warranties), the match_flag should reflect how closely the extracted clause matches the template clause structure and content.
 
 ================================================================================
 SEARCH GUIDANCE (Organized by Logical Groups)
