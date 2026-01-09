@@ -1,7 +1,7 @@
 # Gemini Client
 
 **Module:** `ai.gemini_client`  
-**Last Updated:** January 8, 2026  
+**Last Updated:** January 9, 2026  
 **Version:** v2.0.0
 
 ## Purpose
@@ -17,6 +17,9 @@ The `GeminiClient` class provides integration with Google Gemini API for metadat
 - Text and vision model support
 - Multimodal input (text + images in single call)
 - **Config-based prompt generation**: Uses `FIELD_INSTRUCTIONS` and `TEMPLATE_REFERENCES` from config
+- **Field metadata integration**: Displays `mandatory_field`, `negotiable`, and `expected_position` in prompt
+- **Template references**: Includes clause excerpts, sample answers, and clause names in prompt
+- **Negotiable fields guidance**: Explicit instructions for match flag assignment on negotiable fields
 - **Integrated validation**: Returns validation scores and match flags as part of extraction
 - **Template comparison**: Match flags indicate how extracted values compare to templates
 - **Enhanced schema**: Returns `extracted_value`, `match_flag`, and `validation` for each field
@@ -60,15 +63,26 @@ metadata = client.extract_metadata_multimodal(text, image_bytes_list)
 ## Prompt Template (v2.0.0)
 
 The client uses a detailed prompt template that includes:
-- Schema structure (enhanced with validation requirements)
-- Field definitions from `FIELD_DEFINITIONS`
-- Field-specific instructions from `FIELD_INSTRUCTIONS` (config-based)
-- Template references from `TEMPLATE_REFERENCES` (if populated)
-- Match flag values and validation requirements
-- Extraction rules (dates, Evergreen, multiple values, etc.)
-- Search guidance
+1. **Role Definition**: "You are a contract analyst."
+2. **Task**: Extract metadata and return VALID JSON ONLY matching the schema
+3. **Schema Structure**: Enhanced structure with `extracted_value`, `match_flag`, and `validation` for each field
+4. **Field Definitions**: All field definitions from `FIELD_DEFINITIONS` organized by category
+5. **Field-Specific Instructions**: LLM extraction instructions from `FIELD_INSTRUCTIONS` (config-based) including:
+   - Field-specific extraction instructions
+   - `mandatory_field`: Whether field is mandatory (yes/no)
+   - `negotiable`: Whether field is negotiable (yes/no)
+   - `expected_position`: Expected/standard position for non-negotiable fields
+6. **Template References**: Clause excerpts, sample answers, and clause names from `TEMPLATE_REFERENCES` (populated for all 22 fields)
+7. **Extraction Rules**: 18 rules including:
+   - Enhanced field structure requirements
+   - Match flag values and assignment guidance
+   - Validation requirements (score, status, notes)
+   - Negotiable fields guidance (match_flag reflects structure, not values)
+   - Date formatting, Evergreen contracts, multiple values, etc.
+8. **Search Guidance**: Instructions on where to find information in documents
+9. **Contract Content**: Either contract text or images
 
-See `docs/REQUIREMENTS.md` for complete field definitions.
+See `docs/REQUIREMENTS.md` for complete field definitions and `docs/GEMINI_METADATA_FIELDS.md` for complete prompt structure.
 
 ## Configuration
 
