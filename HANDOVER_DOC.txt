@@ -1,0 +1,74 @@
+To: Lead Developer / Project Maintainer
+From: Keerthan Venkata
+Date: February 12, 2026
+Subject: Architectural Decisions, Critical Learnings, and the "Golden Path" Forward
+
+--------------------------------------------------------------------------------
+1. Executive Summary
+The MSA Metadata Extractor is a contract intelligence system currently running on a Hybrid Multimodal Architecture. While the current production code functions effectively using Gemini Vision to handle mixed-media contracts, my research and "in-the-trenches" experimentation have identified a superior long-term strategy.
+This report outlines where the project is now (and why), and where it must go to solve the "Middle Ignorance" problem and guarantee high-stakes data integrity.
+
+--------------------------------------------------------------------------------
+2. The "Golden Path" Strategy: Learnings & Future Architecture
+Based on my personal research notes and experimentation. This is the blueprint for the next major refactor.
+The Problem: "Middle Ignorance" & Hallucinations
+We found that feeding massive contracts (50+ pages) into a single context window allows LLMs to prioritize the beginning (preamble) and end (signatures) while neglecting the middle (e.g., liability caps buried in Section 14). This leads to silent failures or hallucinations where the model confidently invents data it couldn't find.
+The Solution: Semantic Chunking + Candidate Building + LLM Judge
+To exponentially reduce hallucinations, you must move away from "one-shot" extraction to an Agentic Workflow.
+1. Semantic Chunking & Candidate Generation
+• Don't: Split by arbitrary pages.
+• Do: Split by semantic sections (e.g., "Indemnification", "Fees").
+• Process: Ask the LLM to generate candidate answers from these chunks independently.
+2. The LLM as a Judge (Critical Step)
+• Concept: Feed the generated candidates plus their surrounding context to a second LLM instance acting as a "Judge."
+• Mechanism: The Judge evaluates the evidence for each candidate and selects the optimal answer.
+• Key Insight: Providing context around candidates to the Judge drastically reduces hallucinations. The Judge should also generate its own confidence score for the final selection.
+3. The Agentic Loop & Feedback
+• Split Extraction & Validation: Contrary to our current combined implementation (ADR-0003), these should be separate calls. The validation step provides feedback to the extraction agent.
+• Max Tries (Hard Stop): The agent loop must have a strict MAX_RETRIES limit. If the agent cannot satisfy the validator after N attempts, it must stop and flag for human review. Do not loop indefinitely.
+
+--------------------------------------------------------------------------------
+3. Quality Control: The "Non-Negotiables"
+Clarifying the philosophy on Evals and QC.
+In high-stakes contract extraction, our tolerance for error is specific:
+• Acceptable Error: A "False Negative" or a mistake where the system has Low Confidence or flags it for review. It is acceptable if the system says, "I can't find the Termination Date" or "I think this is the date, but I'm only 40% sure."
+• The Non-Negotiable: A "False Positive" (Confident Wrong Result). The Quality Control (QC) layer must never let through a result where the model is high-confidence (e.g., Score 100/100) but factualy wrong.
+    ◦ Action Item: Evals must aggressively test for hallucinations. If a model confidently extracts a specific Liability Cap that doesn't exist, the system has failed.
+
+--------------------------------------------------------------------------------
+4. Current Architecture & Trade-Offs
+Why the production code looks the way it does today.
+Decision
+The Trade-Off
+Why We Did It (Context)
+Multimodal by Default
+Higher Cost vs. Accuracy
+We found text-only models failed on scanned signature pages. We accepted the higher cost of Gemini Vision to ensure signatory fields were never missed .
+Integrated Validation
+Coupling vs. Speed
+We merged validation into the extraction prompt (ADR-0003). Trade-off: This saved 1 API call latency but made the prompt complex. Future: Split this as per "Golden Path" above .
+Hybrid Extraction
+Complexity vs. Flexibility
+We built a coordinator that treats text pages as text and image pages as images. This handles "Frankenstein" PDFs (digital text + scanned signatures) better than any single mode .
+Ephemeral Database
+Persistence vs. Speed
+We used SQLite on Cloud Run. Risk: Data vanishes on restart. Action: Immediate migration to Cloud SQL is required for production .
+
+--------------------------------------------------------------------------------
+5. Immediate Roadmap for the Inheritor
+Phase 1: Stability (The "Must Haves")
+1. Fix Persistence: Migrate storage/database.py to Cloud SQL (PostgreSQL). The current SQLite setup deletes job history whenever the Cloud Run container scales down.
+2. Security P0: Implement the Data Masking Plan defined in planning/DATA_MASKING_PLAN.md. We cannot process sensitive PII/Financial data without masking names and accounts before sending them to the LLM .
+Phase 2: The Refactor (The "Golden Path")
+1. Implement the Agent Loop: Refactor ExtractionCoordinator to separate extraction from validation. Allow the validator to reject an extraction and request a retry with specific feedback.
+2. Add the Judge: Insert the "LLM as Judge" step to evaluate candidates from long documents.
+3. Knowledge Graphs: As noted in my thoughts, the next leap in accuracy for complex cross-references (e.g., "Liability is capped at the value defined in the SOW") will come from building a Knowledge Graph of entities and relations .
+Phase 3: Human-in-the-Loop (HITL)
+• UI Update: The frontend must display the Confidence Score and Candidate List to the human reviewer.
+• Comments: Allow the reviewer to see the AI's reasoning (comments) and add their own notes during the review process.
+
+--------------------------------------------------------------------------------
+Final Handoff Note
+The codebase is modular. You can swap the GeminiClient or PDFExtractor without breaking the API contract. Rely on the Architecture Decision Records (ADRs) in docs/architecture/adr/—they explain the history of every major choice we made.
+Focus on the Non-Negotiables: Accuracy on what we do output is more important than extracting everything.
+Good luck and all the best.
